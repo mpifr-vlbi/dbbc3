@@ -289,8 +289,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         resp = {}
-        synthNum = int(board / 2) +1
-        sourceNum = board % 2 + 1
+        boardNum = self._boardToDigit(board)
+        synthNum = int(boardNum / 2) +1
+        sourceNum = boardNum % 2 + 1
 
         self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
         ret = self.sendCommand("synth=%d,cw" % synthNum)
