@@ -26,7 +26,7 @@ class DBBC3Validation(object):
         
         print("[%s] %s" % (level, message))
         if resolutionMsg != "":
-                print "[%s] \033[1;34m%s\033[0m" % (RESOLUTION, resolutionMsg)
+                print "[%s] \033[1;34m%s\033[0m" % (self.RESOLUTION, resolutionMsg)
 
         if exit:
             if (self.ignoreErrors):
@@ -131,9 +131,9 @@ class DBBC3Validation(object):
 
         errorCount = 0
 
-        bstats = dbbc3.core3_bstat(boardNum)
+        bstats = self.dbbc3.core3_bstat(boardNum)
         if bstats is None:
-                self.report (self.ERROR, dbbc3.lastResponse, exit=True)
+                self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
 
 
         for samplerNum in range(self.dbbc3.config.numSamplers):
@@ -181,13 +181,13 @@ class DBBC3Validation(object):
         Checks if synthesizer serving the given board is locked
         '''
 
-        board = dbbc3._boardToChar(board)
-        locked = dbbc3.synthLock(board)
+        board = self.dbbc3._boardToChar(board)
+        ret = self.dbbc3.synthLock(board)
 
         error = 0
 
         print "\n===Checking synthesizer lock state of board %s" % (board)
-        self._reportLock(board, locked)
+        self._reportLock(board, ret['locked'])
 
         #if error > 0 and exitOnError:
         #    if self.ignoreErrors:
