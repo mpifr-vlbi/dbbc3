@@ -1,13 +1,9 @@
-#!/usr/bin/env python
-
 from DBBC3Config import DBBC3Config
 import DBBC3Commandset as d3cs
 import socket
 import atexit
 import re
 import sys
-import numpy as np
-import types
 
 from time import sleep
 
@@ -18,41 +14,15 @@ class DBBC3ValueException(DBBC3Exception):
 	
 class DBBC3(object):
 
-	# constants
-	NUMSAMPLERS = 4
-
-	def __initOld__(self, host, port, timeout=120, verbose=False):
-
-                self.config = DBBC3Config()
-		self.socket = None
-		self.timeout = timeout
-		self.lastCmdState = -1
-		self.verbose = verbose
-		atexit.register(self.disconnect)
-		self.lastCommand = ""
-		self.lastResponse = ""
-
-                self.config.setNumCoreBoards(4)
-		self.config.host = host
-		self.config.port = port
-                print self.config.coreBoards
-
-
-		
-        def __init__(self, dbbc3Config):
+        def __init__(self, dbbc3Config, mode="", version=""):
 
             self.config = dbbc3Config
             self.socket = None
 
-            self.initCommandSet(mode="OCT_D")
+            # attach command set
+            d3cs.DBBC3Commandset(self, mode, version)
 
-        def initCommandSet(self, mode="", version=""):
             
-            if (mode=="OCT_D"):
-                cmd = d3cs.DBBC3CommandsetOCTD(self)
-            else:
-                cmd = d3cs.DBBC3Commandset(self)
-
 	def connect(self, timeout=120):
 
             try:
@@ -134,7 +104,7 @@ if __name__ == "__main__":
 
     config.numCoreBoards = 4
     config.host="192.168.0.60"
-    dbbc3 = DBBC3(config)
+    dbbc3 = DBBC3(config, mode="OCT_D", version="")
 
 
     dbbc3.connect()

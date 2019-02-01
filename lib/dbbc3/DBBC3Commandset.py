@@ -1,12 +1,75 @@
 import types 
 import re
 import time
+import importlib
+import inspect
+import sys
+
+def getMatchingCommandset(mode, version):
+    '''
+    Determines the Commandset sub-class to be used for the 
+    given mode and version.
+
+    All Subclasses should be derived from DBBC3CommandsetDefault and should
+    follow the naming convention: DBBC3Commandset_MODE_VERSION
+    e.g. DBBC3Commandset_OCT_D_110
+    '''
+
+    # parse all class names of this module
+    current_module = sys.modules[__name__]
+
+    
+    pattern = re.compile("DBBC3Commandset_%s_(.*)"%(mode))
+
+    versions = []
+    for key in dir(current_module):
+        if isinstance( getattr(current_module, key), type ):
+            match = pattern.match(key)
+            if match:
+                versions.append(match.group(1))
+
+    # no versions found for this mode
+    if len(versions) == 0:
+        return("")
+
+    versions.sort()
+
+    if (version == ""):
+        # if no specific version was requested return the most recent one
+        pickVer = versions[-1]
+    else:
+        pickVer = versions[0]
+        for i in versions:
+            if int(i) <= int(version):
+                pickVer = i
+            else:
+                break
+
+    ret = "DBBC3Commandset_%s_%s" % (mode,pickVer)
+    print "Selecting commandset version: %s" % ret   
+
+    return(ret)
+
 
 class DBBC3Commandset(object):
+
+    def __init__(self,clas, mode="", version=""):
+        
+        csClassName = getMatchingCommandset(mode, version )
+    
+        if (csClassName == ""):
+            csClassName = "DBBC3CommandsetDefault"
+
+        CsClass = getattr(importlib.import_module("DBBC3Commandset"), csClassName)
+        CsClass(clas)
+        
+
+class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def __init__(self, clas):
         #for method in [x for x, y in DBBC3Commandset.__dict__.items() if type(y) == types.FunctionType]:
         #    print method
+
         clas.dbbcif = types.MethodType (self.dbbcif.im_func, clas)
         clas.enableloop = types.MethodType (self.enableloop.im_func, clas)
         clas.disableloop = types.MethodType (self.disableloop.im_func, clas)
@@ -104,6 +167,16 @@ class DBBC3Commandset(object):
         '''
 
         boardNum = self._boardToDigit(board) +1
+        return(pow)
+
+    def core3_bstat(self, board):
+        '''
+        Obtains the 2-bit statistics for all samplers of the given board
+        Returns a 2D array containing the 4 levels for all samplers of the given board
+        Returns None if the core board is not connected
+        '''
+
+        boardNum = self._boardToDigit(board) +1
         boardId = self._boardToChar(board)
 
         sampler = []
@@ -173,6 +246,7 @@ class DBBC3Commandset(object):
         Returns: an array holding the state
         '''
 
+        resp = {}
         board = self._boardToDigit(board)
         
         freq = -1
@@ -198,9 +272,10 @@ class DBBC3Commandset(object):
                         locked[1]=0
                 elif line.startswith("S2 locked"):
                         locked[1]=1
+        resp['locked'] = locked[sourceNum-1]
 
 
-        return locked[sourceNum-1]
+        return resp
 
     def synthFreq(self, board):
         ''' 
@@ -208,19 +283,12 @@ class DBBC3Commandset(object):
         board: core board identifier (numeric or char)
 
         Returns the synthesizer frequency in MHz
-        Returns: -1 in case of error
-        '''
-
-        resp = {} 
-        board = self._boardToDigit(board)
-        
-        freq = -1
-
-        # Each synthesizer has two outputs (source=1 or 2)
-        # board A is served by synth 1 source 1
         # board B is served by synth 1 source 2
         # board C is served by synth 2 source 1
         # etc.
+        '''
+
+        resp = {}
         synthNum = int(board / 2) +1
         sourceNum = board % 2 + 1
 
@@ -258,11 +326,11 @@ class DBBC3Commandset(object):
         return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
 
 
-class DBBC3CommandsetOCTD(DBBC3Commandset):
+class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
     def __init__(self, clas):
 
-        DBBC3Commandset.__init__(self,clas)
+        DBBC3CommandsetDefault.__init__(self,clas)
 
         clas.tap = types.MethodType (self.tap.im_func, clas)
         clas.tap2 = types.MethodType (self.tap2.im_func, clas)
@@ -281,4 +349,13 @@ class DBBC3CommandsetOCTD(DBBC3Commandset):
         '''
 
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
+
+class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
+    pass
+class DBBC3Commandset_DDC_S_010(DBBC3Commandset):
+    pass
+class DBBC3Commandset_OCT_D_150(DBBC3Commandset):
+    pass
+class DBBC3Commandset_OCT_D_220(DBBC3Commandset):
+    pass
 
