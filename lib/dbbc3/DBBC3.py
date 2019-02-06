@@ -1,18 +1,27 @@
-############################################################################################
-#  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-############################################################################################
+# -*- coding: utf-8 -*-
+'''
+  module for monitoring and control of the DBBC3 VLBI backend
+  
+  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+__author__ = "Helge Rottmann"
+__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__license__ = "GPLv3"
+
 
 from DBBC3Config import DBBC3Config
 import DBBC3Commandset as d3cs
@@ -20,8 +29,8 @@ import socket
 import atexit
 import re
 import sys
-
 from time import sleep
+
 
 class DBBC3Exception(Exception):
 	pass
@@ -29,8 +38,10 @@ class DBBC3ValueException(DBBC3Exception):
 	pass
 	
 class DBBC3(object):
+	''' Main class of the DBBC3 module.'''
 
         def __init__(self, dbbc3Config, mode="", version=""):
+	    ''' Constructor '''
 
             self.config = dbbc3Config
             self.socket = None
@@ -38,8 +49,12 @@ class DBBC3(object):
             # attach command set
             d3cs.DBBC3Commandset(self, mode, version)
 
-            
 	def connect(self, timeout=120):
+	    '''
+	    open a socket connection to the DBBC3 control software
+	    
+            timeout: the connection timeout in seconds (default 120)
+	    '''
 
             try:
                 self.socket = socket.create_connection((self.config.host, self.config.port), timeout)
