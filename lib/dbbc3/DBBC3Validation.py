@@ -1,18 +1,29 @@
-############################################################################################
-#  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-############################################################################################
+# -*- coding: utf-8 -*-
+'''
+  This module is part of the DBBC3 package and implements higher
+  level validation methods for verification of the proper
+  initialization and configuration of the DBBC3 VLBI backend
+
+
+  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+__author__ = "Helge Rottmann"
+__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__license__ = "GPLv3"
 
 import re
 import sys
@@ -59,7 +70,7 @@ class DBBC3Validation(object):
         4) input should be set to 2 (unless check is disabled with the downConversion parameter)
         '''
         
-        board = self.dbbc3._boardToChar(board)
+        board = self.dbbc3.boardToChar(board)
         print "\n=== Checking IF power level on core board %s" % board.upper()
 
 
@@ -101,7 +112,7 @@ class DBBC3Validation(object):
     def validateSamplerPower(self, boardNum):
 
         errors = 0
-        board = self.dbbc3._boardToChar(boardNum)
+        board = self.dbbc3.boardToChar(boardNum)
         print "\n ===Checking sampler gains for board %s" % (board)
 
         pow= self.dbbc3.core3_power(boardNum)
@@ -142,7 +153,7 @@ class DBBC3Validation(object):
 
     def validateSamplerOffsets(self, boardNum):
 
-        board = self.dbbc3._boardToChar(boardNum)
+        board = self.dbbc3.boardToChar(boardNum)
         print "\n===Checking sampler offsets for board %s" % (board)
 
         errorCount = 0
@@ -197,7 +208,7 @@ class DBBC3Validation(object):
         Checks if synthesizer serving the given board is locked
         '''
 
-        board = self.dbbc3._boardToChar(board)
+        board = self.dbbc3.boardToChar(board)
         ret = self.dbbc3.synthLock(board)
 
         error = 0
@@ -220,7 +231,7 @@ class DBBC3Validation(object):
 
         '''
 
-        board = self.dbbc3._boardToChar(board)
+        board = self.dbbc3.boardToChar(board)
         freq = self.dbbc3.synthFreq(board)
 
         print "\n===Checking GCoMo synthesizer frequency of board %s" % (board)

@@ -87,11 +87,9 @@ class DBBC3(object):
 		return(self.lastResponse)
 
 	
-	def getBoardName(self, boardNum):
-		return(self.config.coreBoards[boardNum-1])
-
-        def _boardToChar(self, board):
+        def boardToChar(self, board):
             '''
+	    Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
             board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
             Returns the core board identifier as uppercase char e.g. A
             '''
@@ -108,8 +106,9 @@ class DBBC3(object):
 
             return(board)
 
-        def _boardToDigit(self, board):
+        def boardToDigit(self, board):
             '''
+	    Converts the core board ID (e.g. A) into the board number (starting at 0)
             board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
             Returns the core board identifier as integer (starting at 0 for board A)
             '''

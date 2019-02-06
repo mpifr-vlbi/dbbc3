@@ -1,18 +1,28 @@
-############################################################################################
-#  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-############################################################################################
+# -*- coding: utf-8 -*-
+'''
+  This module is part of the DBBC3 package and implements the command set
+  of the DBBC3 for the various modes and versions
+  
+
+  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+__author__ = "Helge Rottmann"
+__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__license__ = "GPLv3"
 
 import types 
 import re
@@ -160,7 +170,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Returns: None in case the core3 board is not connected
         '''
 
-        boardNum = self._boardToDigit(board) +1
+        boardNum = self.boardToDigit(board) +1
 
         pow = []
         ret = self.sendCommand("core3h=%d,core3_power" % (boardNum))
@@ -182,7 +192,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Returns None if the core board is not connected
         '''
 
-        boardNum = self._boardToDigit(board) +1
+        boardNum = self.boardToDigit(board) +1
         return(pow)
 
     def core3_bstat(self, board):
@@ -192,8 +202,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Returns None if the core board is not connected
         '''
 
-        boardNum = self._boardToDigit(board) +1
-        boardId = self._boardToChar(board)
+        boardNum = self.boardToDigit(board) +1
+        boardId = self.boardToChar(board)
 
         sampler = []
         for samplerNum in range(self.config.numSamplers):
@@ -221,7 +231,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         resp = {}
-        board = self._boardToChar(board).lower()
+        board = self.boardToChar(board).lower()
         ret = self.sendCommand("dbbcif%s" % (board))
 
         pattern = re.compile("dbbcif%s/\s(\d),(\d+),(.+),(\d),(\d+),(\d+)"%(board))
@@ -263,7 +273,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         resp = {}
-        board = self._boardToDigit(board)
+        board = self.boardToDigit(board)
         
         freq = -1
 
@@ -305,7 +315,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         resp = {}
-        boardNum = self._boardToDigit(board)
+        boardNum = self.boardToDigit(board)
         synthNum = int(boardNum / 2) +1
         sourceNum = boardNum % 2 + 1
 
