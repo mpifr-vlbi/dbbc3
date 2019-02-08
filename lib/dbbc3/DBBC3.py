@@ -23,8 +23,8 @@ __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
 
-from DBBC3Config import DBBC3Config
-import DBBC3Commandset as d3cs
+from dbbc3.DBBC3Config import DBBC3Config
+from dbbc3.DBBC3Commandset import DBBC3Commandset
 import socket
 import atexit
 import re
@@ -47,7 +47,7 @@ class DBBC3(object):
             self.socket = None
 
             # attach command set
-            d3cs.DBBC3Commandset(self, mode, version)
+            DBBC3Commandset(self, mode, version)
 
 	def connect(self, timeout=120):
 	    '''

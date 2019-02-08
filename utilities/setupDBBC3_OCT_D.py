@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-from DBBC3 import DBBC3
-from DBBC3Config import DBBC3Config
-from DBBC3Validation import DBBC3Validation
+from dbbc3.DBBC3 import DBBC3
+from dbbc3.DBBC3Config import DBBC3Config
+from dbbc3.DBBC3Validation import DBBC3Validation
 import re
 import sys
 import numpy as np

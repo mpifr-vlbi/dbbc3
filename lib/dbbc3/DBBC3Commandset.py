@@ -86,7 +86,7 @@ class DBBC3Commandset(object):
         if (csClassName == ""):
             csClassName = "DBBC3CommandsetDefault"
 
-        CsClass = getattr(importlib.import_module("DBBC3Commandset"), csClassName)
+        CsClass = getattr(importlib.import_module("dbbc3.DBBC3Commandset"), csClassName)
         CsClass(clas)
         
 
