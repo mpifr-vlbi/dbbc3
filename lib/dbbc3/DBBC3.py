@@ -34,8 +34,6 @@ from time import sleep
 
 class DBBC3Exception(Exception):
 	pass
-class DBBC3ValueException(DBBC3Exception):
-	pass
 	
 class DBBC3(object):
 	''' Main class of the DBBC3 module.'''
@@ -86,6 +84,18 @@ class DBBC3(object):
 		self.lastResponse = self.socket.recv(1024)	
 		return(self.lastResponse)
 
+
+        def _valueToHex(self, value):
+
+            if isinstance(value, str):
+                if not value.startswith("0x"):
+                    raise ValueError("")
+                hexVal = value
+
+            else:
+                hexVal = hex(value)
+
+            return (hexVal)
 	
         def boardToChar(self, board):
             '''
@@ -98,11 +108,11 @@ class DBBC3(object):
             # if board was given as number fetch the correct board letter
             if board.isdigit():
                 if ((int(board) < 0) or (int(board) > self.config.numCoreBoards)):
-                    raise DBBC3ValueException("Core board must be within %s" % (self.config.coreBoards))
+                    raise ValueError("Core board must be within %s" % (self.config.coreBoards))
                 board = self.config.coreBoards[int(board)]
             elif board.isalpha():
                 if board not in (self.config.coreBoards):
-                    raise DBBC3ValueException("Core board must be within %s" % (self.config.coreBoards))
+                    raise ValueError("Core board must be within %s" % (self.config.coreBoards))
 
             return(board)
 
@@ -116,12 +126,12 @@ class DBBC3(object):
 
             # if board was given as number fetch the correct board letter
             if board.isdigit():
-                if ((int(board) < 0) or (int(board) > self.config.numCoreBoards)):
-                    raise DBBC3ValueException("Core board must be within %s" % (self.config.coreBoards))
+                if ((int(board) < 0) or (int(board) >= self.config.numCoreBoards)):
+                    raise ValueError("Core board must be within %s" % (self.config.coreBoards))
                 board = int(board)
             elif board.isalpha():
                 if board not in (self.config.coreBoards):
-                    raise DBBC3ValueException("Core board must be within %s" % (self.config.coreBoards))
+                    raise ValueError("Core board must be within %s" % (self.config.coreBoards))
                 board = ord(board) - 65
 
             return(board)
