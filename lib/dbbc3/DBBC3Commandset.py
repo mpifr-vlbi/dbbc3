@@ -115,8 +115,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.synthLock = types.MethodType (self.synthLock.im_func, clas)
         clas.checkphase = types.MethodType (self.checkphase.im_func, clas)
         clas.time = types.MethodType (self.time.im_func, clas)
-        clas.core3_bstat = types.MethodType (self.core3_bstat.im_func, clas)
-        clas.core3_power = types.MethodType (self.core3_power.im_func, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.im_func, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.im_func, clas)
@@ -128,6 +126,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.core3h_regread_dec = types.MethodType (self.core3h_regread_dec.im_func, clas)
         clas.core3h_regwrite = types.MethodType (self.core3h_regwrite.im_func, clas)
         clas.core3h_regupdate = types.MethodType (self.core3h_regupdate.im_func, clas)
+        clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.im_func, clas)
+        clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.im_func, clas)
+        clas.core3h_core3_corr = types.MethodType (self.core3h_core3_corr.im_func, clas)
+        clas.core3h_core3_mode = types.MethodType (self.core3h_core3_mode.im_func, clas)
+        clas.core3h_core3_init = types.MethodType (self.core3h_core3_init.im_func, clas)
+        clas.core3h_reboot = types.MethodType (self.core3h_reboot.im_func, clas)
+        clas.core3h_reset = types.MethodType (self.core3h_reset.im_func, clas)
+        clas.core3h_output = types.MethodType (self.core3h_output.im_func, clas)
+        clas.core3h_start = types.MethodType (self.core3h_start.im_func, clas)
 
         clas.adb3l_reset = types.MethodType (self.adb3l_reset.im_func, clas)
         clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.im_func, clas)
@@ -138,6 +145,46 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_delay = types.MethodType (self.adb3l_delay.im_func, clas)
         clas.adb3l_offset = types.MethodType (self.adb3l_offset.im_func, clas)
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.im_func, clas)
+
+    def time(self):
+        '''
+        Reads time information from all boards. For each board a dict with the
+        following keys is obtained:
+        seconds:
+        halfYearsSince2000:
+        daysSince2000:
+        timestamp:
+        timestampAsString:
+        
+        Returns: array of dicts; one entry for each board (0=A)
+        '''
+
+        resp = []
+        ret = self.sendCommand("time")
+
+        lines = ret.split("\n")
+        entry = {}
+        for line in lines:
+            line = line.strip()
+            tok = line.split("=")
+            if len(tok) == 2:
+                value = tok[1].strip()
+                if (value.isdigit()):
+                    value = int(value)
+                entry[tok[0].strip()] = value
+            elif "FiLa10G" in line:
+                resp.append(entry)
+                entry =  {}
+            else:
+                # 2019-01-30T13:32:08
+                try:
+                    dateTime = time.strptime(line,"%Y-%m-%dT%H:%M:%S")
+                    entry["timestamp"] = dateTime
+                    entry["timestampAsString"] = line
+                except:
+                    continue
+                
+        return(resp)
 
 
     def core3h_regread(self, board, regNum, device="core3"):
@@ -254,107 +301,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(True)
 
-    def time(self):
-        '''
-        Reads time information from all boards. For each board a dict with the
-        following keys is obtained:
-        seconds:
-        halfYearsSince2000:
-        daysSince2000:
-        timestamp:
-        timestampAsString:
         
-        Returns: array of dicts; one entry for each board (0=A)
-        '''
-
-        resp = []
-        ret = self.sendCommand("time")
-
-        lines = ret.split("\n")
-        entry = {}
-        for line in lines:
-            line = line.strip()
-            tok = line.split("=")
-            if len(tok) == 2:
-                value = tok[1].strip()
-                if (value.isdigit()):
-                    value = int(value)
-                entry[tok[0].strip()] = value
-            elif "FiLa10G" in line:
-                resp.append(entry)
-                entry =  {}
-            else:
-                # 2019-01-30T13:32:08
-                try:
-                    dateTime = time.strptime(line,"%Y-%m-%dT%H:%M:%S")
-                    entry["timestamp"] = dateTime
-                    entry["timestampAsString"] = line
-                except:
-                    continue
-                
-        return(resp)
-
-        
-    def core3_power(self, board):
-        '''
-        Obtains the gains of all 4 samplers of the given board
-
-        Returns: the array of the sampler gains
-        Returns: None in case the core3 board is not connected
-        '''
-
-        boardNum = self.boardToDigit(board) +1
-
-        pow = []
-        ret = self.sendCommand("core3h=%d,core3_power" % (boardNum))
-
-        if "not connected" in ret:
-                return None
-
-        pow.append(self.core3h_regread(boardNum, 5))
-        pow.append(self.core3h_regread(boardNum, 6))
-        pow.append(self.core3h_regread(boardNum, 7))
-        pow.append(self.core3h_regread(boardNum, 8))
-
-        return(pow)
-
-    def core3_bstat(self, board):
-        '''
-        Obtains the 2-bit statistics for all samplers of the given board
-        Returns a 2D array containing the 4 levels for all samplers of the given board
-        Returns None if the core board is not connected
-        '''
-
-        boardNum = self.boardToDigit(board) +1
-        return(pow)
-
-    def core3_bstat(self, board):
-        '''
-        Obtains the 2-bit statistics for all samplers of the given board
-        Returns a 2D array containing the 4 levels for all samplers of the given board
-        Returns None if the core board is not connected
-        '''
-
-        boardNum = self.boardToDigit(board) +1
-        boardId = self.boardToChar(board)
-
-        sampler = []
-        for samplerNum in range(self.config.numSamplers):
-                bstats = []
-                ret = self.sendCommand("core3h=%s,core3_bstat %d" % (boardNum,samplerNum))
-
-                if "not connected" in ret:
-                        return(None)
-
-                # evaluate the registers that contain the statistics
-                bstats.append(self.core3h_regread(boardNum, 5))
-                bstats.append(self.core3h_regread(boardNum, 6))
-                bstats.append(self.core3h_regread(boardNum, 7))
-                bstats.append(self.core3h_regread(boardNum, 8))
-                sampler.append(bstats)
-
-        return (sampler)
-
     def dbbcif(self, board):
         '''
         Reads the IF power on the given board
@@ -488,6 +435,150 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
 
     # CORE3H commands
+    def core3h_start(self, board, format="vdif", force=False):
+        '''
+        Starts/restart sending of formatted output data
+        '''
+        boardNum = self.boardToDigit(board)+1
+
+        for form in format.split("+"):
+            self._validateDataFormat(form)
+
+        cmd = "core3h=%d,start %s " % (boardNum, format)
+        if force:
+            cmd += "force"
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+        
+
+    def core3h_output(self, board, outputIndex=0, frameId=0, duration=1):
+        '''
+        Displays output debug information.
+
+        The command displays the first 16 words of the first frame that was sent
+        within the current second interval. The frame is recorded at the output
+        with the given outputIndex. 1PPS/frame-header/end-of-frame/frame-drop bits
+        attached to the stream are displayed together with the data.
+        If duration is given, a new frame is displayed every second. The debug sequence
+        can be cancelled by pressing <space> or <enter>.
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "core3h=%d,output %d %d %d" %(boardNum, outputIndex, frameId, duration)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def core3h_reset(self, board, keepsync=False):
+        '''
+        Resets FiLa10G datapathand erases the syncronized time (optional)
+
+        If called without arguments the complete datapath is reset and time 
+        synchonization is lost.
+        If called with keepsync=True, FiLa10G tries to maintain the current 
+        time synchronization. For this to work the input stage of the data path
+        and the timers are not reset.
+        Warning:  Time synchronization will not be correct
+        anymore in the rare but possible case that a data sample with a 1PPS
+        flag is lost during the reset process.
+        '''
+        
+        boardNum = self.boardToDigit(board)+1
+    
+        cmd = "core3h=%d,reset " %(boardNum)
+        if keepsync:
+            cmd += "keepsync"
+        ret = self.sendCommand(cmd)
+
+        for line in ret.split("\n"):
+            if ("Reset done" in line):
+                return(True)
+
+        return(False)
+
+    def core3h_reboot(self, board):
+        '''
+        Reboots the system. The FiLa10G hardware and software for the given board is reset to 
+        its initial state, i.e. as it was directly after the programming of the FPGA and
+        lets the FiLa10G system boot again.
+        Warning: all previously configured settings and states are lost when rebooting!
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+
+        Return:
+        True: if successful
+        False: otherwise
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        ret = self.sendCommand("core3h=%d,reboot" %(boardNum))
+
+        for line in ret.split("\n"):
+            if ("not connected" in line):
+                return(False)
+        return(True)
+
+        
+    def core3h_core3_init(self, board):
+        '''
+        Initializes the given core3h board and sets parameters as specified in 
+        the control file.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+
+        Return:
+        True if successful
+        False otherwise
+        '''
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,core3_init " % (boardNum)
+
+        ret = self.sendCommand(cmd)
+        for line in ret.split("\n"):
+            if "Reset done" in line:
+                return(True)
+
+        return(False)
+
+    def core3h_core3_mode(self, board, mode=None):
+        '''
+        Gets or sets the Core3h mode.
+        If the optional mode parameter is ommited the currently set mode is returned.
+        If given, mode must be a valid Core3h mode (as listed in DBBC3Config.core3hModes)
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        mode (optional): if ommited gets the currently active mode
+
+        Return:
+        A string containing the currently set mode
+        '''
+
+        retMode = ""
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,core3_mode " % (boardNum)
+        if mode:
+            self._validateCore3hMode(mode)
+            cmd += mode
+        
+        ret = self.sendCommand(cmd)
+        for line in ret.split("\n"):
+            if "data from all samplers is merged" in line:
+                retMode="merged"
+            elif "data from two samplers is merged" in line:
+                retMode="half_merged"
+            elif "data from each sampler is sent to a different output" in line:
+                retMode="independent"
+            elif "data from pfb" in line:
+                retMode="pfb"
+
+        return(retMode)
+        
     def core3h_version(self, board):
         ''' 
         Displays the firmware version
@@ -570,6 +661,99 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return (entry)
 
+    def core3h_core3_bstat(self, board, sampler):
+        '''
+        Obtains the 2-bit sampler statistics for the given core board 
+        and sampler.
+
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+        sampler: the sampler number (starting at 0)
+
+
+        Returns:
+        List containing the 4 levels
+        None: if the core board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+        boardId = self.boardToChar(board)
+
+        self._validateSamplerNum(sampler)
+
+        bstats = []
+        ret = self.sendCommand("core3h=%s,core3_bstat %d" % (boardNum,sampler))
+
+        if "not connected" in ret:
+                return(None)
+
+        # evaluate the registers that contain the statistics
+        bstats.append(self.core3h_regread(boardNum-1, 5))
+        bstats.append(self.core3h_regread(boardNum-1, 6))
+        bstats.append(self.core3h_regread(boardNum-1, 7))
+        bstats.append(self.core3h_regread(boardNum-1, 8))
+
+        return (bstats)
+
+    def core3h_core3_power(self, board):
+        '''
+        Obtains the gains of all 4 samplers of the given board
+
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+
+        Return:
+        List containing the gains for all samplers (a[0] = sampler1 etc.)
+        None:  in case the core3 board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+
+        pow = []
+        ret = self.sendCommand("core3h=%d,core3_power" % (boardNum))
+
+        if "not connected" in ret:
+                return None
+
+        pow.append(self.core3h_regread(boardNum-1, 5))
+        pow.append(self.core3h_regread(boardNum-1, 6))
+        pow.append(self.core3h_regread(boardNum-1, 7))
+        pow.append(self.core3h_regread(boardNum-1, 8))
+
+        return(pow)
+
+    def core3h_core3_corr(self, board):
+        '''
+        Performs cross-correlation between the samplers of the given board. Correlation
+        products are between these samplers:
+        1) 0-1
+        2) 1-2
+        3) 2-3 
+        
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+        
+        Return:
+        List containing the three cross-correlations in the order described above
+        '''
+
+        corr = [0] * 3 
+        boardNum = self.boardToDigit(board) +1
+
+        ret = self.sendCommand("core3h=%s,core3_corr" % (boardNum))
+
+        for line in ret.split("\n"):
+            if "0-1" in line:
+                corr[0] = line.split(":")[1].strip()
+            elif "1-2" in line:
+                corr[1] = line.split(":")[1].strip()
+            elif "2-3" in line:
+                corr[2] = line.split(":")[1].strip()
+
+        return(corr)
+
+
+
     # ADB3L commands
     def adb3l_reset(self):
         '''
@@ -636,6 +820,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
+        self._validateSamplerNum(sampler)
 
         cmd = "adb3l=SDA_on=%d,%d" % (boardNum, sampler)
 
@@ -658,6 +843,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
+        self._validateSamplerNum(sampler)
     
         if value < 0 or value>1023:
             raise ValueError("sampler delay value must be in the range 0-1023")
@@ -682,6 +868,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
+        self._validateSamplerNum(sampler)
 
         if value < 0 or value>255:
             raise ValueError("sampler offset value must be in the range 0-255")
@@ -706,6 +893,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
+        self._validateSamplerNum(sampler)
 
         if value < 0 or value>255:
             raise ValueError("sampler gain value must be in the range 0-255")

@@ -36,6 +36,10 @@ class DBBC3Exception(Exception):
 	pass
 	
 class DBBC3(object):
+        
+        dataFormats = ["vdif","mk5b","raw"]
+        core3hModes = ["independent","half_merged", "merged", "pfb"]
+
 	''' Main class of the DBBC3 module.'''
 
         def __init__(self, dbbc3Config, mode="", version=""):
@@ -84,6 +88,25 @@ class DBBC3(object):
 		self.lastResponse = self.socket.recv(1024)	
 		return(self.lastResponse)
 
+
+        def _validateDataFormat(self, form):
+            if form not in DBBC3.dataFormats:
+                raise ValueError("Invalid data format requested %s. Must be one of %s" % (form, DBBC3.dataFormats))
+
+        def _validateCore3hMode(self, mode):
+            
+            if mode not in DBBC3.core3hModes:
+                raise ValueError("Invalid Core3H mode %s. Must be one of %s" %(mode, DBBC3.core3hModes))
+
+        def _validateSamplerNum (self, sampler):
+            if not isinstance(sampler, int):
+                raise ValueError("Sampler number must be an integer.")
+
+            if sampler < 0:
+                raise ValueError("Sampler number must be >0.")
+
+            if sampler > self.config.numSamplers:
+                raise ValueError("Sampler number must be in the range: 0-%d" % (self.config.numSamplers))
 
         def _valueToHex(self, value):
 
