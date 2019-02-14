@@ -37,6 +37,7 @@ class DBBC3Config(object):
 
         self._numCoreBoards = 0
         self.numSamplers = 4
+        self.numCore3hOutputs = 4
 
     @property
     def numCoreBoards(self):
