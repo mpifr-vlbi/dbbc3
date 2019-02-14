@@ -135,6 +135,12 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.core3h_reset = types.MethodType (self.core3h_reset.im_func, clas)
         clas.core3h_output = types.MethodType (self.core3h_output.im_func, clas)
         clas.core3h_start = types.MethodType (self.core3h_start.im_func, clas)
+        clas.core3h_stop = types.MethodType (self.core3h_stop.im_func, clas)
+        clas.core3h_arp = types.MethodType (self.core3h_arp.im_func, clas)
+        clas.core3h_tengbarp = types.MethodType (self.core3h_tengbarp.im_func, clas)
+        clas.core3h_tengbinfo = types.MethodType (self.core3h_tengbinfo.im_func, clas)
+        clas.core3h_tengbcfg = types.MethodType (self.core3h_tengbcfg.im_func, clas)
+        clas.core3h_destination = types.MethodType (self.core3h_destination.im_func, clas)
 
         clas.adb3l_reset = types.MethodType (self.adb3l_reset.im_func, clas)
         clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.im_func, clas)
@@ -435,24 +441,304 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
 
     # CORE3H commands
+    def core3h_destination(self, board, outputId ,ip="", port=46227, threadId=-1):
+        '''
+        Sets / gets the output destination address and port for the given board and outputId.
+
+        If called without specifying only the outputId the current destination settings are returned.
+
+        When the ip parameters is set to None the respective output is disabled and no frames will be sent.
+
+        When specifying a threadId only frames from that thread are addressed to the given destination.
+        Other threads will not be affected. This is useful when using multi-threaded VDIF. Likewise
+        a single thread can be disabled by setting ip=None and specifying a threadID.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        outputId: the index of the Core3h output (starting at 0)
+        ip: the destination IP address 
+        port (optional): the destination IP port number (default = 46227)
+        threadId: the id of the tread for which to set the destination
+        
+        Return: 
+        Dictionary containing keys: "ip","port","output".
+        In case thread destinations have been set additional keys exist: e.g. "thread_0" holding a dict with ip and port information
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        
+        if threadId >= 0:
+            threadStr = str(threadId)
+        else:
+            threadStr = ""
+
+        #setter part
+        if ip is None:
+            cmd = "core3h=%d,destination %s none %s" % (boardNum, outputId, threadStr)
+            ret = self.sendCommand(cmd)
+        elif ip != "":
+            cmd = "core3h=%d,destination %s %s:%s %s" % (boardNum, outputId, ip, port, threadStr)
+            ret = self.sendCommand(cmd)
+
+        #getter part (always executed even after setting destination
+        cmd = "core3h=%d,destination %s" % (boardNum, outputId)
+        ret = self.sendCommand(cmd)
+
+        #Output 1 destination: 192.168.1.3:46227
+        pat1 = re.compile("\s*Output\s+(\d+)\s+destination:\s+(\d+\.\d+\.\d+\.\d+):(\d+)")
+
+        #Output 1 destination: none
+        pat2 = re.compile("\s*Output\s+(\d+)\s+destination:\s+none")
+        #pat2 = re.compile("\s*Output\s+(\d+):\s+destination of data thread (\d+) rewritten to (\d+\.\d+\.\d+\.\d+):(\d+)")
+
+        #Data thread [0] -> 192.168.1.100:46338
+        pat3 = re.compile("\s*Data thread\s+\[(\d+)\]\s+->\s+(\d+\.\d+\.\d+\.\d+):(\d+)")
+        
+        entry = {}
+        for line in ret.split("\n"):
+            match1 = pat1.match(line) 
+            match2 = pat2.match(line) 
+            match3 = pat3.match(line) 
+            if match1:
+                entry["output"] = match1.group(1)
+                entry["ip"] = match1.group(2)
+                entry["port"] = match1.group(3)
+            elif match2:
+                 entry["output"] = match2.group(1)
+                 entry["ip"] = None
+                 entry["port"] = None
+            elif match3:
+                thread = {}
+                thread["ip"] = match3.group(2)
+                thread["port"] = match3.group(3)
+                entry["thread_%s"%(match3.group(1))] = thread
+
+        return(entry)
+
+
+    def core3h_tengbinfo(self, board, device):
+        '''
+        Retrieve the current parameters of the specified 10Gb ethernet device
+        
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        device: the ethernet device name, e.g. eth0
+
+        Return:
+        a dictionary containing all configuration parameters as key/value pairs. The arp_cache
+             key contains a list of arp entries ("mac","ip")
+
+        Exception:
+        ValueError: in case an unknown ethernet device has been given
+        '''
+
+        response = {} 
+        arpTable = []
+        boardNum = self.boardToDigit(board)+1
+        ret = self.sendCommand("core3h=%d,tengbinfo %s " % (boardNum, device))
+
+        if "not found" in ret:
+            raise ValueError("Unkown ethernet device specified (%s) in call to core3h_tengbinfo." % (device))
+
+        pattern = re.compile("\s+(..:..:..:..:..:..)\s+(\d+\.\d+\.\d+\.\d+)")
+        for line in ret.split("\n"):
+            # first parse normal configuration key/value pairs
+            tok = line.split(":")
+            if len(tok) == 2 or "MAC address" in tok[0]:
+                if "Configuration information" in tok[0]:
+                    continue
+
+                # reformat key; make lower case; replace spaces by underscore; remove .
+                key = (' '.join(tok[0].split())).replace(" ", "_",1).replace(".","").lower()
+                value = ":".join(tok[1:]).strip()
+                response[key] = value
+                continue
+
+            # now parse arp table
+            # MAC		IP
+	    # BA:DC:AF:E4:BE:E2	192.168.1.0
+            match = pattern.match(line)
+            if match:
+                entry = {}
+                entry["mac"] = match.group(1)
+                entry["ip"] = match.group(2)
+                arpTable.append(entry)
+
+        response['arp_cache'] = arpTable 
+        return(response)
+
+    def core3h_tengbcfg(self, board, device, key, value):
+        '''
+        Sets a parameter of the 10Gb ethernet device.
+
+        valid parameters are:
+        ip: IP address
+        mac: MAC address
+        nm: netmask
+        port:  UDP port
+        gateway: IP adress of gateway
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        device: the ethernet device name, e.g. eth0
+        key: the name of the parameter to set
+        value: the new parameter value
+
+        Return:
+        True
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,tengbcfg %s %s=%s" % (boardNum, device, str(key), str(value))
+        ret = self.sendCommand(cmd)
+
+        return(True)
+
+    def core3h_tengbarp(self, board, device, arpId, mac):
+        '''
+        Sets one ARP entry for a 10Gb ethernet device
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        device: the ethernet device name, e.g. eth0
+        arpId: index of the ARP table entry to be modified
+        mac: MAC address to be set
+
+        Return:
+        True
+
+        Exception:
+        ValueError in case an invalid MAC address was given
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        self._validateMAC(mac)
+        
+        cmd = "core3h=%d,tengbarp %s %d %s" % (boardNum, device,arpId, mac)
+        ret = self.sendCommand(cmd)
+        
+        return(True)
+
+    def core3h_arp(self, board, mode=None):
+        '''
+        Enables or disables ARP queries on all ethernet cores.
+
+        If called without the mode parameter the current setting is reported
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        mode (optional): Can be "on" or "off". 
+
+        Return:
+        String containing the current ARP mode ("on" / "off")
+
+        Exception:
+        ValueError: in case an illegal mode has been requested
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        
+        arpMode = "unknown"
+        cmd = "core3h=%d,arp " % (boardNum)
+        if mode:
+            if mode not in ["on","off"]:
+                raise ValueError("Illegal arp mode (%s). Must be on or off." % (mode))
+            cmd += mode
+        ret = self.sendCommand(cmd)
+
+        # ARP requests: off (during data transfer)
+        pattern = re.compile("\s+ARP requests:\s+(.*)")
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                if "on" in match.group(1):
+                    arpMode = "on"
+                elif  "off" in match.group(1):
+                    arpMode = "off"
+                
+
+
+        return (arpMode)
+        
     def core3h_start(self, board, format="vdif", force=False):
         '''
         Starts/restart sending of formatted output data
+        
+        The output data format can be either:
+        vdif:   VDIF format
+        mk5b:   Mark5b format
+        raw:    unformatted
+        
+        In case a single output format is given, this will be used for all outputs.
+        Formats can be set for each of the outputs individually by separating
+        the format specifiers by "+" e.g. vdif+raw+vdif+raw
+        if not explictely specified "vdif" will be used for all outputs.
+
+        Raw format requires no time synchronization. Both vdif and mk5b formats require
+        the respective timer to be synchronized (see core3h_timesync)
+
+        For fast testing: set the force parameter to True to automatically synchronize the
+        timer to "zero" time(='2000-01-01T00:00:00'). Provided that a valid 1PPS signal
+        is available this will always be successful.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        format (optional): a single format specifier or several concatenated by +. Default is "vdif"
+        force (optional): if set to True synchronize time to '2000-01-01T00:00:00'. Default is False
+
+        Return:
+        List containing the format specifiers for all outputs
+
+        Exceptions:
+        ValueError: in case the number of format specifiers exceed the number of available outputs
+        ValueError: in case an unkown format specifier was given
         '''
         boardNum = self.boardToDigit(board)+1
 
-        for form in format.split("+"):
+        outFormats = [""] * 4
+
+        formats = format.split("+")
+        if len(formats) > self.config.numCore3hOutputs:
+            raise ValueError("Too many output formats specified to core3h_start. Maximum number of outputs is %d" % (self.config.numCore3hOutputs))
+        for form in formats:
             self._validateDataFormat(form)
 
         cmd = "core3h=%d,start %s " % (boardNum, format)
         if force:
             cmd += "force"
         ret = self.sendCommand(cmd)
+        # Output 0 format selected: mk5b
+        
+        pattern = re.compile("\s+Output\s+(\d)\s+format selected:\s+(.*)")
 
-        return(ret)
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                outFormats[int(match.group(1))] = match.group(2)
+
+        return(outFormats)
+
+    def core3h_stop(self, board):
+        '''
+        Stops sending of output data
+
+        The opposite of core3h_start
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        ret = self.sendCommand("core3h=%d,stop" % (boardNum))
+        for line in ret.split("\n"):
+            if "Stopped" in line:
+                return(True)
+        return(False)
         
 
-    def core3h_output(self, board, outputIndex=0, frameId=0, duration=1):
+    def core3h_output(self, board, outputIdx=0, frameId=0, duration=1):
         '''
         Displays output debug information.
 
@@ -465,7 +751,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
-        cmd = "core3h=%d,output %d %d %d" %(boardNum, outputIndex, frameId, duration)
+        cmd = "core3h=%d,output %d %d %d" %(boardNum, outputIdx, frameId, duration)
         ret = self.sendCommand(cmd)
 
         return(ret)
@@ -482,6 +768,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Warning:  Time synchronization will not be correct
         anymore in the rare but possible case that a data sample with a 1PPS
         flag is lost during the reset process.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        keepsync (optional): keeps the time synchronization if set to True. Default=False
+
+        Return:
+        True: if successful
+        False: otherwise
         '''
         
         boardNum = self.boardToDigit(board)+1
