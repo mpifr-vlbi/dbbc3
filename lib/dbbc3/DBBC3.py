@@ -85,9 +85,13 @@ class DBBC3(object):
 			raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
 
 		self.lastCommand = command
-		self.lastResponse = self.socket.recv(1024)	
+		self.lastResponse = self.socket.recv(2048)	
 		return(self.lastResponse)
 
+
+        def _validateMAC(self, mac):
+            if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+                raise ValueError("Invalid MAC address %s" % (mac))
 
         def _validateDataFormat(self, form):
             if form not in DBBC3.dataFormats:
