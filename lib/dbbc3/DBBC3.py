@@ -37,7 +37,7 @@ class DBBC3Exception(Exception):
 	
 class DBBC3(object):
         
-        dataFormats = ["vdif","mk5b","raw"]
+        dataFormats = ["vdif","raw"]
         core3hModes = ["independent","half_merged", "merged", "pfb"]
 
 	''' Main class of the DBBC3 module.'''
