@@ -30,6 +30,7 @@ import time
 import importlib
 import inspect
 import sys
+from datetime import datetime
 
 def getMatchingCommandset(mode, version):
     '''
@@ -75,6 +76,34 @@ def getMatchingCommandset(mode, version):
     print "Selecting commandset version: %s" % ret   
 
     return(ret)
+
+def parseTimeResponse(response):
+
+    year = 0
+    doy = 0
+    hour = 0
+    minute = 0
+    second = 0
+
+    timestamp = None
+
+    for line in response.split("\n"):
+        line = line.strip()
+        tok = line.split("=")
+
+        if tok[0].strip() == "halfYearsSince2000":
+            year = int(tok[1]) /2 + 2000
+        elif tok[0].strip() == "seconds":
+            doy = int(int(tok[1]) / 86400)
+            remSecs = int(tok[1]) - doy * 86400
+            hour = remSecs / 3600
+            minute = (remSecs - hour*3600) / 60
+            second = (remSecs - hour*3600 - minute*60)
+
+    if year > 0:
+        timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy+1, hour, minute, second), "%Y %j %H %M %S %Z")
+
+    return(timestamp)
 
 
 class DBBC3Commandset(object):
@@ -141,6 +170,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.core3h_tengbinfo = types.MethodType (self.core3h_tengbinfo.im_func, clas)
         clas.core3h_tengbcfg = types.MethodType (self.core3h_tengbcfg.im_func, clas)
         clas.core3h_destination = types.MethodType (self.core3h_destination.im_func, clas)
+        clas.core3h_vdif_userdata = types.MethodType (self.core3h_vdif_userdata.im_func, clas)
+        clas._getVdifUserdata = types.MethodType (self._getVdifUserdata.im_func, clas)
+        clas.core3h_vdif_enc = types.MethodType (self.core3h_vdif_enc.im_func, clas)
+        clas.core3h_timesync = types.MethodType (self.core3h_timesync.im_func, clas)
+        clas.core3h_time = types.MethodType (self.core3h_time.im_func, clas)
+        clas.core3h_tvg_mode = types.MethodType (self.core3h_tvg_mode.im_func, clas)
+        clas.core3h_splitmode = types.MethodType (self.core3h_splitmode.im_func, clas)
+        clas.core3h_inputselect = types.MethodType (self.core3h_inputselect.im_func, clas)
+        clas.core3h_vsi_swap = types.MethodType (self.core3h_vsi_swap.im_func, clas)
 
         clas.adb3l_reset = types.MethodType (self.adb3l_reset.im_func, clas)
         clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.im_func, clas)
@@ -441,6 +479,313 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
 
     # CORE3H commands
+    def _getVdifUserdata(self, board):
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,vdif_userdata" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        userdata = []
+        for line in ret.split("\n"):
+            line = line.strip()
+            if line.startswith("0x"):
+                userdata.append(line)
+
+        return(userdata)
+        
+    def core3h_vsi_swap(self, board, firstVSI=None, secondVSI=None):
+
+        boardNum = self.boardToDigit(board)+1
+
+        vsiStr = ""
+        count = 0
+        if firstVSI:
+            vsiStr += " " + firstVSI
+            count += 1
+        if secondVSI:
+            vsiStr += " " + secondVSI
+            count += 1
+
+        if count == 1 and firstVSI != "reset":
+            raise ValueError("core3h_vsi_swap: both VSIs must be specified")
+            
+        cmd = "core3h=%d,vsi_swap %s" % (boardNum, vsiStr)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def core3h_inputselect(self, board, source):
+        '''
+        Selects one of the available input data sources.
+
+        The command implictely resets the VSI bitmask, input width and VSI swap settings to their
+        respective defaults. 
+
+        TODO: update the documentation
+
+        Note: it is recommended to execute core3h_reset (with ot without keepsync option) after
+             changing the input source
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        source: one of "tvg","vsi1","vsi2","vsi1-2","vsi1-2-3-4","vsi1-2-3-4-5-6-7-8"
+
+        Return:
+        String containing the current split mode setting; "unknown" if the mode could not be determined
+
+        Exception:
+        ValueError: in case an unknown mode has been specified
+        
+        '''
+
+        response = "unknown"
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,inputselect %s" % (boardNum, source)
+        ret = self.sendCommand(cmd)
+
+        # Input selected: tvg
+        pattern = re.compile("\s*Input selected:\s*(.*)")
+        if "Failed" in ret:
+            raise ValueError("core3h_inputselect: Illegal source supplied: %s" % (source))
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                response = match.group(1)
+
+        return(response)
+
+    def core3h_splitmode(self, board, mode):
+        '''
+        Enables / Disables the split mode
+
+        When split mode is enabled the selected and bitmasked input data is
+        split into two halves exactly in the middle. The two halves will be
+        processed as if they were independent input streams, The lower half
+        (by bit position) is output at output0 the higher half is output as 
+        output1.
+            
+        Split mode requires an input width of at least 2 bit.
+
+        Note: raw and vdif format can be applied independently to each split
+            stream with the heklp of the core3h_start 1+2+3+4 command syntax
+
+        Note: in order to specify a correct VDIF frame setup you have to take
+            into account that the effective input width is halved when the 
+            split mode is enabled.
+
+        Note: A restriction of the split mode is that only output0 is capable
+            of producing multi-threaded VDIF data. At output1 the data will 
+            always be forced to be single-threaded, regardless of the chosen
+            frame setup.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        mode: "on" or "off"
+
+        Return:
+        String containing the current split mode setting; "unknown" if the mode could not be determined
+
+        Exception:
+        ValueError: in case an unknown mode has been specified
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        if mode not in ["on","off"]:
+            raise ValueError("core3h_splitmode: illegal mode supplied: %s" % (mode))
+
+        cmd = "core3h=%d,splitmode %s" % (boardNum, mode)
+        ret = self.sendCommand(cmd)
+
+        if "Split mode: off" in ret:
+            return ("off")
+        elif "Split mode: on" in ret:
+            return ("on")
+        else:
+            return("unknown")
+
+        
+    def core3h_tvg_mode(self, board, mode=None):
+        '''
+        Gets / sets the test vector generator mode for the given board.
+
+        mode can be one of:
+        all-0:  all bits = 0
+        all-1:  all bits = 1
+        vsi-h:  VSI-H test vector pattern
+        cnt:    pattern with four 8-bit counters
+        If called without the mode parameter the current setting is returned.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        mode: the tvg mode identifier (see above)
+    
+        Return:
+        String containing the current tvg mode; "unknown" if the mode could not be determined
+
+        Exception:
+        ValueError: in case an unknown mode has been specified 
+        '''
+        boardNum = self.boardToDigit(board)+1
+
+        retMode = "unknown"
+
+        modeStr = ""
+        if mode:
+            modeStr = mode.strip()
+
+        cmd = "core3h=%d,tvg_mode %s" % (boardNum, modeStr)
+        ret = self.sendCommand(cmd)
+        
+        if "Failed" in ret:
+            raise ValueError("core3h_tvg_mode: illegal TVG mode supplied: %s" % (mode))
+        elif "VSI-H" in ret:
+            retMode = "vsi-h"
+        elif "8-bit counters" in ret:
+            retMode = "cnt"
+        elif "all bits 0" in ret:
+            retMode = "all-0"
+        elif "all bits 1" in ret:
+            retMode = "all-1"
+
+        return(retMode)
+
+    def core3h_time(self, board):
+        '''
+        Displays the current time of the active 1pps source
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+
+        Return:
+        Datetime containing the current UTC timestamp of the active 1PPS source
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,time" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        timestamp = parseTimeResponse(ret)
+
+        return(timestamp)
+
+    def core3h_timesync(self, board, timestamp=None):
+        '''
+        Performs time synchronization for the given core board.
+
+        TODO: Finish method with code for manual setting of time
+        TODO Discuss with Sven 3 sec offset between reported seconds and GPS time
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,timesync" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        lines = ret.split("\n")
+        entry = {}
+        #halfYearsSince2000 = 38
+        #seconds = 3920060
+        #daysSince2000 = 6940
+        #Time synchronization succeeded!
+
+        item = {}
+        item["success"] = False
+
+
+        if "succeeded" in ret:
+            timestamp = parseTimeResponse(ret)
+            item["success"] = True
+            item["timestampUTC"] = timestamp
+            print timestamp, datetime.now()
+
+        print item
+                
+        return (item)
+
+    def core3h_vdif_enc(self, board):
+        '''
+        Get the setting of the VDIF encoding switch.
+
+        If enabled the VSI input data is encoded as mandated by the VDIF standard.
+        If disabled the input data remains unmodified.
+    
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+
+        Return:
+        on: if VDIF encoding is enabled
+        off : if VDIF encoding is disabled
+        unknown: in case the encoding setting could not be determined
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3h=%d,vdif_enc" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        if "on" in ret:
+            return("on")
+        elif "off" in ret:
+            return("off")
+        else:
+            return("unknown")
+        
+    def core3h_vdif_userdata(self, board, d0=None, d1=None, d2=None, d3=None):
+        '''
+        Gets/sets the user data fields in the extended VDIF frame header
+
+        The user data fields are 32bit values. Note that bits 24-31 of the
+        first user data field contain the Extended Data Version (EDV) number.
+        See: https://vlbi.org/vdif/ for details
+
+        d0 - d3 are optional. If not specified the current value of the field is kept.
+
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A") 
+        d0 (optional): the value of the first user data field
+        d1 (optional): the value of the second user data field
+        d2 (optional): the value of the third user data field
+        d3 (optional): the value of the fourth user data field
+
+        Return:
+        List containing the current content of all 4 user data fields
+
+        Exception:
+        ValueError: in case the supplied value cannot be represented as hexadecimal
+        ValueError: in case the length of the supplied value exceeds 32 bit
+        '''
+        boardNum = self.boardToDigit(board)+1
+
+        # first obtain current user data field contents
+        current = self._getVdifUserdata(board)
+        
+        values = ""
+        for i in range(4):
+            x = eval("d"+str(i))
+            if x:
+                valStr = self._valueToHex(x)
+                if (int(valStr, 16) > 0xffffffff):
+                    raise ValueError("core3h_vdif_userdata: value exceeds 32 bit length")
+                values += " " + valStr
+            else:
+                values += " " + current[i]
+
+        cmd = "core3h=%d,vdif_userdata %s" % (boardNum, values)
+        ret = self.sendCommand(cmd)
+
+        userdata = self._getVdifUserdata(board)
+
+        return(userdata)
+
+        
     def core3h_destination(self, board, outputId ,ip="", port=46227, threadId=-1):
         '''
         Sets / gets the output destination address and port for the given board and outputId.
@@ -668,7 +1013,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         
         The output data format can be either:
         vdif:   VDIF format
-        mk5b:   Mark5b format
         raw:    unformatted
         
         In case a single output format is given, this will be used for all outputs.
@@ -676,7 +1020,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         the format specifiers by "+" e.g. vdif+raw+vdif+raw
         if not explictely specified "vdif" will be used for all outputs.
 
-        Raw format requires no time synchronization. Both vdif and mk5b formats require
+        Raw format requires no time synchronization whereas vdif format requires
         the respective timer to be synchronized (see core3h_timesync)
 
         For fast testing: set the force parameter to True to automatically synchronize the
@@ -709,7 +1053,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if force:
             cmd += "force"
         ret = self.sendCommand(cmd)
-        # Output 0 format selected: mk5b
+        # Output 0 format selected: vdif
         
         pattern = re.compile("\s+Output\s+(\d)\s+format selected:\s+(.*)")
 
