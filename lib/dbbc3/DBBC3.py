@@ -129,7 +129,7 @@ class DBBC3(object):
             Checks whether the specified bbc number is valid
             '''
 
-            if bbc not range(1, self.config.numBBCs+1):
+            if bbc not in range(1, self.config.numBBCs+1):
                 raise ValueError("BBC must be in the range 1-%d" % (self.config.numBBCs))
 
         def _validateBBCFreq(self, freq):
@@ -149,7 +149,7 @@ class DBBC3(object):
                 raise ValueError("tpint value must be in the range 1-60")
 
         def _validateOnOff(self, mode):
-            if (mode not in ["on", "off"]:
+            if (mode not in ["on", "off"]):
                 raise ValueError("Mode must be either on or off")
 
         def boardToChar(self, board):

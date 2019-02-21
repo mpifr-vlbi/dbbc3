@@ -804,7 +804,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         cmd = "core3h=%d,time" % (boardNum)
         ret = self.sendCommand(cmd)
 
-        timestamp = parseTimeResponse(ret)
+        timestamp = None
+    	# 2019-02-21T15:09:21
+	for line in ret.split("\n"):
+		try:
+			line = line.strip()
+			timestamp = datetime.strptime(line,"%Y-%m-%dT%H:%M:%S")
+			break
+		except ValueError:
+			continue
 
         return(timestamp)
 
@@ -836,9 +844,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             timestamp = parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
-            print timestamp, datetime.now()
+            #print timestamp, datetime.now()
 
-        print item
                 
         return (item)
 
@@ -1802,24 +1809,24 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return self.sendCommand(cmd)
 
 class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
-        '''
-        Implementation of the DBBC3 Commandset for the 
-        DDC_V mode version 123
-        '''
+    '''
+    Implementation of the DBBC3 Commandset for the 
+    DDC_V mode version 123
+    '''
 
     def __init__(self, clas):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
-        clas.dbbc = types.MethodType (self.ddbc.im_func, clas)
-        clas.dbbcgain = types.MethodType (self.ddbcgain.im_func, clas)
-        clas.dbbcstat = types.MethodType (self.ddbcstat.im_func, clas)
+        clas.dbbc = types.MethodType (self.dbbc.im_func, clas)
+        clas.dbbcgain = types.MethodType (self.dbbcgain.im_func, clas)
+        clas.dbbcstat = types.MethodType (self.dbbcstat.im_func, clas)
         clas.cont_cal = types.MethodType (self.cont_cal.im_func, clas)
         clas.dbbctp = types.MethodType (self.dbbctp.im_func, clas)
         clas.dsc_tp = types.MethodType (self.dsc_tp.im_func, clas)
         clas.dsc_corr = types.MethodType (self.dsc_corr.im_func, clas)
         clas.dsc_bstat = types.MethodType (self.dsc_bstat.im_func, clas)
-        clas.dsc_mag_thr = types.MethodType (self.dsc_mag_thr.im_func, clas)
+        clas.mag_thr = types.MethodType (self.mag_thr.im_func, clas)
         clas.pps_sync = types.MethodType (self.pps_sync.im_func, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.im_func, clas)
 
@@ -1937,7 +1944,21 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         cmd = "pps_delay"
         ret = self.sendCommand(cmd)
 
-        return(ret)
+	#pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+	patStr = "pps_delay/"
+	for i in range(8):
+		patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+	patStr = patStr[:-1] + ";"
+	pattern = re.compile(patStr)
+
+	delays = []
+	for line in ret.split("\n"):
+		match = pattern.match(line)
+		if match:
+			for i in range(self.config.numCoreBoards):
+				delays.append(int(match.group(2+i*2)))
+		
+        return(delays)
     
 class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 

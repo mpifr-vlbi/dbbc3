@@ -28,6 +28,7 @@ __license__ = "GPLv3"
 import re
 import sys
 import numpy as np
+from datetime import datetime
 
 
 class DBBC3Validation(object):
@@ -87,11 +88,11 @@ class DBBC3Validation(object):
         if ret['mode'] != "agc" and agc==True:
                 self.report(self.ERROR, "Automatic gain control is disabled", exit=True)
                 errorCount +=1
-        if ret['gain'] < 20:
-                self.report(self.WARN, "IF input power is too low. The attenuation should be in the range 20-40, but is %d" % (ret['gain']))
+        if ret['attenuation'] < 20:
+                self.report(self.WARN, "IF input power is too low. The attenuation should be in the range 20-40, but is %d" % (ret['attenuation']))
                 errorCount +=1
-        if  ret['gain'] > 40:
-                self.report(self.WARN, "IF input power is too high. The attenuation should be in the range 20-40, but is %d" % (ret['gain']))
+        if  ret['attenuation'] > 40:
+                self.report(self.WARN, "IF input power is too high. The attenuation should be in the range 20-40, but is %d" % (ret['attenuation']))
                 errorCount +=1
         if errorCount == 0:
             self.report(self.OK, "count = %d" % (ret['count']))
@@ -115,7 +116,7 @@ class DBBC3Validation(object):
         board = self.dbbc3.boardToChar(boardNum)
         print "\n ===Checking sampler gains for board %s" % (board)
 
-        pow= self.dbbc3.core3_power(boardNum)
+        pow= self.dbbc3.core3h_core3_power(boardNum)
         if pow is None:
                 self.report(self.ERROR, self.dbbc3.lastResponse, exit=True)
 
@@ -154,39 +155,45 @@ class DBBC3Validation(object):
     def validateSamplerOffsets(self, boardNum):
 
         board = self.dbbc3.boardToChar(boardNum)
-        print "\n===Checking sampler offsets for board %s" % (board)
-
-        errorCount = 0
-
-        bstats = self.dbbc3.core3_bstat(boardNum)
-        if bstats is None:
-                self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
-
 
         for samplerNum in range(self.dbbc3.config.numSamplers):
-                #print bstats[0]+bstats[1], bstats[2]+bstats[3], 1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3])
+
+		errorCount = 0
+        	print "\n===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
+		bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
+		if bstats is None:
+			self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
 
                 # Checking lower against upper half
-                dev = abs(1 - float(bstats[samplerNum][0]+bstats[samplerNum][1]) / float(bstats[samplerNum][2]+bstats[samplerNum][3]))
+		try:
+                	dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
+		except ZeroDivisionError:
+			msg = "Sampler offsets of 0 found %s" % str(bstats)
+                        resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
+	
+                        self.report(self.ERROR, msg, resolv, exit=True)
+			continue
+
+			
                 if dev > 0.10:
                         errorCount += 1
-                        msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats[samplerNum]), dev*100) 
+                        msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100) 
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
                         resolv += "If the problem persists retry restart up to 5 times.\n"
                         resolv += "If the problem persists do a full hardware restart."
 
                         self.report(self.ERROR, msg, resolv, exit=True)
-                if dev > 0.05:
+                elif dev > 0.05:
                         errorCount += 1
-                        msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, bstats[samplerNum], dev*100)  
+                        msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
                         resolv += "If the problem persists retry restart up to 5 times.\n"
                         resolv += "If the problem persists do a full hardware restart."
                 
                         self.report(self.WARN, msg, resolv, exit=False)
 
-        if errorCount == 0:
-                self.report(self.OK, "Asymmetry = %f%%" % dev)
+		if errorCount == 0:
+			self.report(self.OK, "Asymmetry = %f%%" % dev)
 
 
     def _reportLock(self, board, value):
@@ -247,27 +254,74 @@ class DBBC3Validation(object):
                 self.report (self.ERROR, msg, resolv, exit=exitOnError)
         else:
                 self.report(self.OK, "Freq=%d MHz" % freq['actual'])
-    
+
+    def validatePPS(self, exitOnError=True):
+
+	inactive = []
+	notSynced = []
+
+        print "\n===Checking 1PPS synchronisation"
+	delays = self.dbbc3.pps_delay()
+	for i in range(len(delays)):
+		if delays[i] == 0:
+			inactive.append(i)
+		elif delays[i] > 200:
+			notSynced.append(i)
+
+	if len(inactive) > 0:
+		msg = "The following boards report pps_delay=0: %s" % str(inactive)
+		resolv = "Check if these boards have been disabled in the DBBC3 config file"
+                self.report (self.WARN, msg, resolv, exit=exitOnError)
+	if len(notSynced) > 0:
+		msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
+		resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
+		resolv += "If the problem persists probably you have a hardware issue."
+                self.report (self.ERROR, msg, resolv, exit=exitOnError)
+
+	if len(inactive) ==0 and len(notSynced) ==0:
+		self.report(self.OK, "PPS delays: %s" % delays)
+
+    def validateTimesync(self, board, exitOnError=True):
+
+        board = self.dbbc3.boardToChar(board)
+        print "\n=== Checking time synchronisation of core board %s" % board.upper()
+
+	ret = self.dbbc3.core3h_time( board)
+	if not ret:
+		msg = 	"No timestamp could be obtained for core board %s" % board.upper()
+                resolv = "Run core3h_timesync and re-check"
+		resolv += "Check that a GPS antenna is connected to the DBBC3"
+                self.report (self.ERROR, msg, resolv, exit=exitOnError)
+	else:
+		delta = datetime.utcnow() - ret
+		if delta.seconds > 10:
+			msg =   "Difference between reported time and local NTP time > 10s for board %s" % board.upper()
+			resolv = "Run core3h_timesync and re-check"
+			resolv += "Check that the local computer is synchronised via NTP"
+			self.report (self.ERROR, msg, resolv, exit=exitOnError)
+		else:
+			self.report(self.OK, "Reported time: %s" % str(ret))
+
 
 
 if __name__ == "__main__":
 
 	try:
-                from DBBC3Config import DBBC3Config
-                from DBBC3 import DBBC3
-                config = DBBC3Config()
+		from DBBC3Config import DBBC3Config
+		from DBBC3 import DBBC3
+		config = DBBC3Config()
 
-                config.numCoreBoards = 4
-                config.host="192.168.0.60"
-                dbbc3 = DBBC3(config)
+		config.numCoreBoards = 4
+		config.host="192.168.0.60"
+		dbbc3 = DBBC3(config)
 		dbbc3.connect()
 
 		print "=== Disabling calibration loop"
 		dbbc3.disableloop()
-                
-                validate = DBBC3Validation(dbbc3, ignoreErrors = True)
+		
+		validate = DBBC3Validation(dbbc3, ignoreErrors = True)
 	
- 		validate.validateSamplerOffsets(0)
+		validate.validateSamplerOffsets(0)
 
 
 		validate.validateSynthesizerLock(0)
