@@ -172,13 +172,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.core3h_destination = types.MethodType (self.core3h_destination.im_func, clas)
         clas.core3h_vdif_userdata = types.MethodType (self.core3h_vdif_userdata.im_func, clas)
         clas._getVdifUserdata = types.MethodType (self._getVdifUserdata.im_func, clas)
+        clas.core3h_vdif_station = types.MethodType (self.core3h_vdif_station.im_func, clas)
+        clas.core3h_vdif_frame = types.MethodType (self.core3h_vdif_frame.im_func, clas)
         clas.core3h_vdif_enc = types.MethodType (self.core3h_vdif_enc.im_func, clas)
         clas.core3h_timesync = types.MethodType (self.core3h_timesync.im_func, clas)
         clas.core3h_time = types.MethodType (self.core3h_time.im_func, clas)
         clas.core3h_tvg_mode = types.MethodType (self.core3h_tvg_mode.im_func, clas)
         clas.core3h_splitmode = types.MethodType (self.core3h_splitmode.im_func, clas)
         clas.core3h_inputselect = types.MethodType (self.core3h_inputselect.im_func, clas)
-        clas.core3h_vsi_swap = types.MethodType (self.core3h_vsi_swap.im_func, clas)
+#       clas.core3h_vsi_swap = types.MethodType (self.core3h_vsi_swap.im_func, clas)
+        clas.core3h_vsi_bitmask = types.MethodType (self.core3h_vsi_bitmask.im_func, clas)
+        clas.core3h_vsi_samplerate = types.MethodType (self.core3h_vsi_samplerate.im_func, clas)
 
         clas.adb3l_reset = types.MethodType (self.adb3l_reset.im_func, clas)
         clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.im_func, clas)
@@ -190,6 +194,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_offset = types.MethodType (self.adb3l_offset.im_func, clas)
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.im_func, clas)
 
+# GENERAL DBBC3 commands
     def time(self):
         '''
         Reads time information from all boards. For each board a dict with the
@@ -200,7 +205,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         timestamp:
         timestampAsString:
         
-        Returns: array of dicts; one entry for each board (0=A)
+        Return:
+	List of dicts; one entry for each board (0=A)
         '''
 
         resp = []
@@ -230,6 +236,179 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 
         return(resp)
 
+        
+    def dbbcif(self, board, inputType=None, mode="agc",  target=None):
+        '''
+        Gets / sets the configuration of the GCoMo IF modules
+
+	If the IF is connected on the top pin of the GCoMo (bypassing the
+	downconversion) the inputType parameter should be set to 1.
+	If the IF has been downconverted by the GCoMo the inputType should
+	be set to 2. Selecting inputType=1 will disable the the synthesizer
+	tone.
+
+	if the inputType is not specified or set to None the current 
+	settings are reported.
+
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+	inputType: 1 = IF input without downconversion
+		   2 = IF input after downconversion
+	mode (optional): "agc" = automatic gain control (default if not specified)
+			 "man" = manual attenuation (retains last agc value)
+		          numeric value = attenuation step (0-63) in steps of 0.5 dB
+	target (optional): the target power level for the "agc" mode
+
+        Return:
+	dictionary holding the values reported by dbbcif with the following keys:
+	"inputType": see above
+	"attenuation": the current attenuation level
+	"mode":	the current agc mode 
+	"count": the current IF level
+	"target": the target IF level
+        '''
+
+        resp = {}
+        board = self.boardToChar(board).lower()
+	cmd = "dbbcif%s" % (board)
+
+	if (inputType):
+	    if inputType not in [1,2]:
+		raise ValueError("dbbcif: inputType must be 1 or 2")
+	    cmd += "=%d" % inputType
+
+	    agcStr = str(mode)
+	    if (agcStr not in ["agc", "man"]):
+		if  not agcStr.isdigit():
+		    raise ValueError("dbbcif: mode must be agc,man or 0-63")
+		elif (int(agcStr) not in range(64)):
+		    raise ValueError("dbbcif: attenuation must be in the range 0-63")
+	    cmd += ",%s" % agcStr
+
+	    if (target):
+		cmd += ",1,%d" % target
+
+        ret = self.sendCommand(cmd)
+
+        pattern = re.compile("dbbcif%s/\s(\d),(\d+),(.+),(\d),(\d+),(\d+)"%(board))
+
+        match = pattern.match(ret)
+        if match:
+
+                resp['input'] = int(match.group(1))
+                resp['attenuation'] = int(match.group(2))
+                resp['mode'] = match.group(3)
+                resp['filter'] = int(match.group(4))
+                resp['count'] = int(match.group(5))
+                resp['target'] = int(match.group(6))
+
+        return ( resp )
+
+    def checkphase(self):
+        '''
+        Checks wether all samplers are in sync
+
+        Returns True if all samplers are in sync
+        Returns False otherwise (get output with lastResponse() to find out which is not
+        '''
+        ret = self.sendCommand("checkphase")
+
+        if "out of sync" in ret:
+                return(False)
+        else:
+                return(True)
+
+    def synthLock(self, board):
+        '''
+        Gets the lock state of the GCoMo synthesizer serving the given core board
+        A state of 1 indicates lock
+        A state of 0 indicates unlock
+        A state of -1 indicates an error obtaining the lock state
+
+        Returns: an array holding the state
+        '''
+
+        resp = {}
+        board = self.boardToDigit(board)
+        
+        freq = -1
+
+        # Each synthesizer has two outputs (source=1 or 2)
+        # board A is served by synth 1 source 1
+        # board B is served by synth 1 source 2
+        # board C is served by synth 2 source 1
+        # etc.
+        synthNum = int(board / 2) +1
+        sourceNum = board % 2 + 1
+
+        locked = [-1,-1]
+        ret = self.sendCommand("synth=%d,lock" % synthNum)
+
+        lines = ret.split("\n")
+        for line in lines:
+                if line.startswith("S1 not locked"):
+                        locked[0]=0
+                elif line.startswith("S1 locked"):
+                        locked[0]=1
+                if line.startswith("S2 not locked"):
+                        locked[1]=0
+                elif line.startswith("S2 locked"):
+                        locked[1]=1
+        resp['locked'] = locked[sourceNum-1]
+
+
+        return resp
+
+    def synthFreq(self, board):
+        ''' 
+        Determines the frequency of the GCoMo synthesizer serving the given core board
+        board: core board identifier (numeric or char)
+
+        Returns the synthesizer frequency in MHz
+        # board B is served by synth 1 source 2
+        # board C is served by synth 2 source 1
+        # etc.
+        '''
+
+        resp = {}
+        boardNum = self.boardToDigit(board)
+        synthNum = int(boardNum / 2) +1
+        sourceNum = boardNum % 2 + 1
+
+        self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
+        ret = self.sendCommand("synth=%d,cw" % synthNum)
+
+        lines = ret.split("\n")
+        # output: ['cw\r', 'F 4524 MHz; // Act 4524 MHz\r', '\r-2->']
+        for line in lines:
+                if "MHz" in line:
+                        # F 4524 MHz; // Act 4524 MHz
+                        tok = line.split(" ")
+                        resp['target'] = int(tok[1]) * 2
+                        resp['actual'] = int(tok[5]) * 2
+
+        return(resp)
+
+    def enableloop(self):
+        '''
+        starts the automatic calibration loop
+        '''
+        return self.sendCommand("enableloop")
+
+    def disableloop(self):
+        '''
+        stops the automatic calibration loop
+        '''
+        return self.sendCommand("disableloop")
+
+    def enablecal(self, threshold="on", gain="off", offset="off"):
+        '''
+        Sets the threshold, gain and offset for the automatic calibration loop
+        The loop must be activated with the enableloop command
+        '''
+        return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
+
+    # CORE3H commands
 
     def core3h_regread(self, board, regNum, device="core3"):
         '''
@@ -345,140 +524,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(True)
 
-        
-    def dbbcif(self, board):
-        '''
-        Reads the IF power on the given board
-
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
-
-        Returns: dictionary holding the values reported by dbbcif
-        '''
-
-        resp = {}
-        board = self.boardToChar(board).lower()
-        ret = self.sendCommand("dbbcif%s" % (board))
-
-        pattern = re.compile("dbbcif%s/\s(\d),(\d+),(.+),(\d),(\d+),(\d+)"%(board))
-
-        match = pattern.match(ret)
-        if match:
-
-                resp['input'] = int(match.group(1))
-                resp['gain'] = int(match.group(2))
-                resp['mode'] = match.group(3)
-                resp['filter'] = int(match.group(4))
-                resp['count'] = int(match.group(5))
-                resp['target'] = int(match.group(6))
-
-        return ( resp )
-
-    def checkphase(self):
-        '''
-        Checks wether all samplers are in sync
-
-        Returns True if all samplers are in sync
-        Returns False otherwise (get output with lastResponse() to find out which is not
-        '''
-        ret = self.sendCommand("checkphase")
-
-        if "out of sync" in ret:
-                return(False)
-        else:
-                return(True)
-
-    def synthLock(self, board):
-        '''
-        Gets the lock state of the GCoMo synthesizer serving the given core board
-        A state of 1 indicates lock
-        A state of 0 indicates unlock
-        A state of -1 indicates an error obtaining the lock state
-
-        Returns: an array holding the state
-        '''
-
-        resp = {}
-        board = self.boardToDigit(board)
-        
-        freq = -1
-
-        # Each synthesizer has two outputs (source=1 or 2)
-        # board A is served by synth 1 source 1
-        # board B is served by synth 1 source 2
-        # board C is served by synth 2 source 1
-        # etc.
-        synthNum = int(board / 2) +1
-        sourceNum = board % 2 + 1
-
-        locked = [-1,-1]
-        ret = self.sendCommand("synth=%d,lock" % synthNum)
-
-        lines = ret.split("\n")
-        for line in lines:
-                if line.startswith("S1 not locked"):
-                        locked[0]=0
-                elif line.startswith("S1 locked"):
-                        locked[0]=1
-                if line.startswith("S2 not locked"):
-                        locked[1]=0
-                elif line.startswith("S2 locked"):
-                        locked[1]=1
-        resp['locked'] = locked[sourceNum-1]
-
-
-        return resp
-
-    def synthFreq(self, board):
-        ''' 
-        Determines the frequency of the GCoMo synthesizer serving the given core board
-        board: core board identifier (numeric or char)
-
-        Returns the synthesizer frequency in MHz
-        # board B is served by synth 1 source 2
-        # board C is served by synth 2 source 1
-        # etc.
-        '''
-
-        resp = {}
-        boardNum = self.boardToDigit(board)
-        synthNum = int(boardNum / 2) +1
-        sourceNum = boardNum % 2 + 1
-
-        self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
-        ret = self.sendCommand("synth=%d,cw" % synthNum)
-
-        lines = ret.split("\n")
-        # output: ['cw\r', 'F 4524 MHz; // Act 4524 MHz\r', '\r-2->']
-        for line in lines:
-                if "MHz" in line:
-                        # F 4524 MHz; // Act 4524 MHz
-                        tok = line.split(" ")
-                        resp['target'] = int(tok[1]) * 2
-                        resp['actual'] = int(tok[5]) * 2
-
-        return(resp)
-
-    def enableloop(self):
-        '''
-        starts the automatic calibration loop
-        '''
-        return self.sendCommand("enableloop")
-
-    def disableloop(self):
-        '''
-        stops the automatic calibration loop
-        '''
-        return self.sendCommand("disableloop")
-
-    def enablecal(self, threshold="on", gain="off", offset="off"):
-        '''
-        Sets the threshold, gain and offset for the automatic calibration loop
-        The loop must be activated with the enableloop command
-        '''
-        return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
-
-    # CORE3H commands
     def _getVdifUserdata(self, board):
 
         boardNum = self.boardToDigit(board)+1
@@ -494,10 +539,90 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(userdata)
         
-    def core3h_vsi_swap(self, board, firstVSI=None, secondVSI=None):
+    def core3h_vsi_samplerate(self, board, sampleRate=None, decimation=1):
+	'''
+	Gets /sets the VSI input sample rate for the specified Core3h board
+
+	All arguments are optional. If the command is called without the
+	sampleRate parameter the current VSI input sample rate is returned.
+
+	The decimation parameter decimates the input such that the resulting
+	sample rate is 1/decimation of the specified rate
+	
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+	sampleRate (optional): the input sampling rate in samples per second
+	decimation (optional): a divisor in the range 1..255; default=1
+
+	Return:
+	Dictionary with keys "sampleRate" and "decimation"
+    
+	Exception:
+	Exception: in case the sample rate could not be set
+	'''
 
         boardNum = self.boardToDigit(board)+1
 
+        cmd = "core3h=%d,vsi_samplerate" % (boardNum)
+        if sampleRate:
+            cmd += " %d %d" % (sampleRate, decimation)
+
+        ret = self.sendCommand(cmd)
+
+        if "Failed" in ret:
+            raise Exception("core3h_vsi_samplerate: Error setting vsi_samplerate (check lastResponse)" )
+
+	response = {} 
+        pattern = re.compile(".*:\s+(\d+)\s+Hz\s?\/?\s?(\d)?")
+        #VSI sample rate : 64000000 Hz
+        #VSI sample rate : 1280000 Hz / 2
+        for line in ret.split("\n"):
+            if "VSI sample rate" in line:
+                match =  pattern.match(line)
+                if match:
+		    if not match.group(2):
+			response["decimation"] = 1
+		    else:
+			response["decimation"] = int(match.group(2))
+		    response["sampleRate"] = int(match.group(1))
+
+        return(response)
+
+    def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
+        
+        boardNum = self.boardToDigit(board)+1
+
+        vsiStr = str(vsi)
+        if (not vsiStr.isdigit()):
+            ValueError("core3h_vsi_bitmask: vsi must be numeric")
+
+        if vsiStr and not mask:
+            ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
+
+        if not vsiStr and mask:
+            ValueError("core3h_vsi_bitmask: no vsi was specified")
+
+        valStr = self._valueToHex(bitmask)
+        if (int(valStr, 16) > 0xffffffff):
+            raise ValueError("core3h_vdif_bitmask: the supplied bitmask is longer than 32 bit")
+    
+        cmd = "core3h=%d,vsi_bitmask" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        #VSI input bitmask : 0xFFFFFFFF 0xFFFFFFFF
+        
+        return(ret)
+        
+    def core3h_vsi_swap(self, board, firstVSI=None, secondVSI=None):
+        '''
+        deprecated
+
+        Not fully implemented. Don't use.
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        mapping = {}
         vsiStr = ""
         count = 0
         if firstVSI:
@@ -512,6 +637,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             
         cmd = "core3h=%d,vsi_swap %s" % (boardNum, vsiStr)
         ret = self.sendCommand(cmd)
+
+        pattern = re.compile("\s*vsi(\d+):\s+VSI\s+input\s+(\d+)")
+
+        # vsi1: VSI input 2
+        #for line in ret.split("\n"):
+        #    match = pattern.match(line)
+        #    if match:
+                
 
         return(ret)
 
@@ -708,6 +841,134 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         print item
                 
         return (item)
+
+    def core3h_vdif_frame(self, board, channelWidth=None, numChannels=None, payloadSize=None):
+	'''
+	Gets / sets the VDIF frame properties for the specified Core3H board
+
+	If the command is called without the channelWidth parameter the current
+	properties will be returned.
+
+	If successful the command returns the resulting number of frames per second
+	and the number of data threads, according to the currently selected input
+	(see core3h_inputselect for details).
+	If the VDIF frame properties do not match the currently selected input the
+	"compatible" flag in the return dictionary is set to "False". The command
+	fails if the desired frame setup is not supported. The frame setup is not
+	changed in this case.
+
+	Parameters:
+	board: the board number (starting at 0=A) or board ID (e.g "A")
+	channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
+	numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
+	payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame
+
+	Return:
+	Dictionary with the following keys:
+	    "compatible"    (False in case an incomaptible setup was requested)
+	    "channelWidth"
+	    "numChannels"
+	    "payloadSize"
+	    "frameSize"
+	    "numThreads"      (optional)
+	    "framesPerSecond" (optional)
+	    "framesPerThread" (optional)
+	    
+	
+	Exception:
+	ValueError: in case channelWidth has been specified but no numChannels were set
+	'''
+
+	boardNum = self.boardToDigit(board)+1
+
+	cmd = "core3h=%d,vdif_frame" % (boardNum)
+	
+	if channelWidth:
+	    cmd += " %d" % (int(channelWidth))
+	    if numChannels:
+		cmd += " %d" % (int(numChannels))
+		if payloadSize:
+		    cmd += " %d" % (int(payloadSize))
+	    else:
+		raise ValueError("core3h_vdif_frame: missing numChannels parameter")
+
+	ret = self.sendCommand(cmd)
+	if "Failed" in ret:
+	    return(None)
+
+	# VDIF Frame properties:
+	# channel width (in bits)        : 2
+	# number of channels per frame   : 16
+	# payload size (in bytes)        : 8192
+	# => frame size (in bytes)       : 8224
+	# => number of frames per second : 27 (16bit@54000Hz)
+	# => number of data threads      : 1
+	# => number of frames per thread : 27 (16bit@54000Hz)
+	response = {}
+	response["compatible"] = True
+	for line in ret.split("\n"):
+
+	    if "WARNING: current frame setup is not compatible with selected input!" in line:
+		response["compatible"] = False
+
+	    tok = line.split(":")
+	    if len(tok) == 2:
+		if "channel width" in tok[0]:
+		    response["channelWidth"] = int(tok[1])
+		elif "number of channels" in tok[0]:
+                    response["numChannels"] = int(tok[1])
+		elif "payload size" in tok[0]:
+                    response["payloadSize"] = int(tok[1])
+		elif "frame size" in tok[0]:
+                    response["frameSize"] = int(tok[1])
+		elif "number of frames per second" in tok[0]:
+                    response["framesPerSecond"] = int(tok[1].strip().split(" ")[0])
+		elif "number of data threads" in tok[0]:
+                    response["numThreads"] = int(tok[1])
+		elif "number of frames per thread" in tok[0]:
+                    response["framesPerThreads"] = int(tok[1].strip().split(" ")[0])
+		    
+	return(response)
+
+    def core3h_vdif_station(self, board, stationId=None):
+	'''
+	Gets / sets the VDIF station ID for the specified Core3h board
+
+	Note: setting this value directly affects the header data of 
+	the VDIF data format
+
+	Parameters:
+	board: the board number (starting at 0=A) or board ID (e.g "A")
+	stationId (optional): The two-letter station code to set
+
+	Return:
+	String containing the two-letter station code; "unknown" if the
+	    code could not be determined
+
+	Exception:
+	ValueError: in case an illegal station code has been specified
+	
+	'''
+
+	boardNum = self.boardToDigit(board)+1
+
+
+	code = "unknown"
+
+        cmd = "core3h=%d,vdif_station" % (boardNum)
+	if stationId is not None:
+	    if len(stationId) > 2:
+		raise ValueError("core3h_vdif_station: stationId must be two-letter code")
+	    cmd += " " + stationId
+	    
+        ret = self.sendCommand(cmd)
+
+	#VDIF station ID : 'NA'
+	for line in ret.split("\n"):
+	    if "VDIF station ID" in line:
+		code = line.split(":")[1].replace("'","").strip()
+
+	return(code)
 
     def core3h_vdif_enc(self, board):
         '''
