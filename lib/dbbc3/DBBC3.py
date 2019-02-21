@@ -124,6 +124,34 @@ class DBBC3(object):
 
             return (hexVal)
 	
+        def _validateBBC(self, bbc):
+            ''' 
+            Checks whether the specified bbc number is valid
+            '''
+
+            if bbc not range(1, self.config.numBBCs+1):
+                raise ValueError("BBC must be in the range 1-%d" % (self.config.numBBCs))
+
+        def _validateBBCFreq(self, freq):
+            ''' 
+            Checks whether the specified bbc frequency is valid
+            '''
+
+            if (freq < 0.0 or freq > self.config.maxBBFreq):
+                raise ValueError("BBC freq must be in the range 0-%f" % (self.config.maxBBFreq))
+
+        def _validateTPInt(self, tpint):
+            '''
+            Checks whether the specified tpint is valid
+            '''
+
+            if (tpint < 1 or tpint > 60):
+                raise ValueError("tpint value must be in the range 1-60")
+
+        def _validateOnOff(self, mode):
+            if (mode not in ["on", "off"]:
+                raise ValueError("Mode must be either on or off")
+
         def boardToChar(self, board):
             '''
 	    Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)

@@ -1801,6 +1801,144 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return self.sendCommand(cmd)
 
+class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
+        '''
+        Implementation of the DBBC3 Commandset for the 
+        DDC_V mode version 123
+        '''
+
+    def __init__(self, clas):
+
+        DBBC3CommandsetDefault.__init__(self,clas)
+
+        clas.dbbc = types.MethodType (self.ddbc.im_func, clas)
+        clas.dbbcgain = types.MethodType (self.ddbcgain.im_func, clas)
+        clas.dbbcstat = types.MethodType (self.ddbcstat.im_func, clas)
+        clas.cont_cal = types.MethodType (self.cont_cal.im_func, clas)
+        clas.dbbctp = types.MethodType (self.dbbctp.im_func, clas)
+        clas.dsc_tp = types.MethodType (self.dsc_tp.im_func, clas)
+        clas.dsc_corr = types.MethodType (self.dsc_corr.im_func, clas)
+        clas.dsc_bstat = types.MethodType (self.dsc_bstat.im_func, clas)
+        clas.dsc_mag_thr = types.MethodType (self.dsc_mag_thr.im_func, clas)
+        clas.pps_sync = types.MethodType (self.pps_sync.im_func, clas)
+        clas.pps_delay = types.MethodType (self.pps_delay.im_func, clas)
+
+    def dbbc(self, bbc, freq=None, ifLabel="", tpint=1):
+        ''' 
+        Gets / sets the parameters of the specified BBC.
+
+        Parameters:
+        freq (optional): the BBC frequency. If not specified the current setting is returned
+        ifLabel (optional): the label to be used for the BBC (FS log)
+        tpint (optional): total power integration time in seconds (default = 1 second)
+
+        Return:
+        dictionary containting the settings of the specified BBC
+
+        Exception:
+        ValueError: in case an invalid BBC number has been specified
+        ValueError: in case an invalid BBC frequency has been specified
+        ValueError: in case an invalid tpint value has been specified
+        '''
+
+        self._validateBBC(bbc)
+
+        cmd = "dbbc{:02f}".format(str(bbc))
+        if freq:
+            self._validateBBCFreq(freq)
+            self._validateTPInt(tpint)
+            cmd += "=%f,%s,32,%d" % (freq, ifLabel,tpint)
+
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def dbbcgain(self, bbc,gainU=None, gainL=None):
+        self._validateBBC(bbc)
+
+        cmd = "dbbcgain=%d" % (bbc)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def dbbcstat(self, bbc):
+
+        self._validateBBC(bbc)
+
+        cmd = "dbbcstat=%d" % (bbc)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def cont_cal(self, mode, polarity, freq, option):
+
+        self._validateOnOff(mode)
+
+        cmd = "cont_cal=%s" % (mode)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def dbbctp(self, board):
+
+        board = self.boardToChar(board).lower()
+        cmd = "dbbctp%s" % (board)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def dsc_tp(self, board):
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "dsc_tp=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+        
+    def dsc_corr(self, board):
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "dsc_corr=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def dsc_bstat(self, board, sampler):
+
+        boardNum = self.boardToDigit(board)+1
+
+        self._validateSamplerNum(sampler)
+
+        cmd = "dsc_bstat=%d, %d" % (boardNum, sampler)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def mag_thr(self, bbc, value):
+
+        self._validateBBC(bbc)
+
+        cmd = "mag_thr=%d,%d" % (bbc, value)
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+
+    def pps_sync(self):
+
+        cmd = "pps_sync"
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+    
+    def pps_delay(self):
+
+        cmd = "pps_delay"
+        ret = self.sendCommand(cmd)
+
+        return(ret)
+    
 class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
     def __init__(self, clas):
@@ -1835,6 +1973,7 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
+            
 class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
     pass
 class DBBC3Commandset_DDC_S_010(DBBC3Commandset):
