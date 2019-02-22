@@ -38,7 +38,7 @@ class DBBC3Config(object):
         self._numCoreBoards = 0
         self.numSamplers = 4
         self.numCore3hOutputs = 4
-        self.numBBCs = 64
+        self.numBBCs = 128
         self.maxBBFreq = 4096.0
 
     @property
