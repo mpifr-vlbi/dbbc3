@@ -264,14 +264,14 @@ class DBBC3Validation(object):
 	delays = self.dbbc3.pps_delay()
 	for i in range(len(delays)):
 		if delays[i] == 0:
-			inactive.append(i)
+			inactive.append(self.dbbc3.boardToChar(i))
 		elif delays[i] > 200:
-			notSynced.append(i)
+			notSynced.append(self.dbbc3.boardToChar(i))
 
 	if len(inactive) > 0:
 		msg = "The following boards report pps_delay=0: %s" % str(inactive)
 		resolv = "Check if these boards have been disabled in the DBBC3 config file"
-                self.report (self.WARN, msg, resolv, exit=exitOnError)
+                self.report (self.WARN, msg, resolv, exit=False)
 	if len(notSynced) > 0:
 		msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
 		resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
