@@ -8,3 +8,8 @@ git clone https://github.com/mpifr-vlbi/dbbc3.git
 cd dbbc3/lib
 python setup.py install
 ```
+Alternatively you can do a local installation (current user only):
+```
+python setup.py install --user
+```
+
