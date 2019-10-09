@@ -255,6 +255,7 @@ class DBBC3Validation(object):
         else:
                 self.report(self.OK, "Freq=%d MHz" % freq['actual'])
 
+
     def validatePPS(self, exitOnError=True):
 
 	inactive = []
@@ -280,6 +281,22 @@ class DBBC3Validation(object):
 
 	if len(inactive) ==0 and len(notSynced) ==0:
 		self.report(self.OK, "PPS delays: %s" % delays)
+
+    def validatePPSDelay(self, board, exitOnError=False):
+
+        board = self.dbbc3.boardToChar(board)
+        print "\n=== Checking PPS delays of core board %s" % board.upper()
+        ret = self.dbbc3.pps_delay(board)
+
+        if ret[0] != ret[1]:
+            msg =   "PPS delays for 1st and 2nd block differ %s on core board %s" % (ret, board.upper())
+            resolv = "This is a bug. Contact the maintainer of the DBBC3 software"
+            self.report (self.ERROR, msg, resolv, exit=exitOnError)
+        else:
+            self.report(self.OK, "PPS delays (1st block / 2nd block)  %s ns" % ret)
+
+
+
 
     def validateTimesync(self, board, exitOnError=True):
 
@@ -321,6 +338,7 @@ if __name__ == "__main__":
 		
 		validate = DBBC3Validation(dbbc3, ignoreErrors = True)
 	
+		validate.validatePPS(0)
 		validate.validateSamplerOffsets(0)
 
 
