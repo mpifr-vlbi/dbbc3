@@ -48,6 +48,7 @@ try:
                 useBoards.append(dbbc3.boardToDigit(board)) 
 
         for board in useBoards:
+                val.validatePPSDelay(board)
                 val.validateTimesync(board)
                 val.validateSynthesizerLock(board)
                 val.validateSynthesizerFreq(board)
