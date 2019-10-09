@@ -1895,13 +1895,33 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         return(ret)
 
     def dsc_tp(self, board):
+        '''
+        Reads the DSC total power values for
+        all four samplers of the selected board
+
+        Parameters:
+        boardNum: the core3H board number (starts at 0)
+
+        Returns: an array holding the TP values for all four samplers
+        '''
 
         boardNum = self.boardToDigit(board)+1
 
         cmd = "dsc_tp=%d" % (boardNum)
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        values = []
+        #TP[2][0] = 69948
+	patStr = "TP\[%d\]\[[0123]\]\s+=\s+(\d+)" % (board+1)
+	pattern = re.compile(patStr)
+
+        for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                    values.append(int(match.group(1)))
+
+
+        return(values)
         
     def dsc_corr(self, board):
 
@@ -1959,6 +1979,49 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 				delays.append(int(match.group(2+i*2)))
 		
         return(delays)
+
+class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
+
+    def __init__(self, clas):
+
+        DBBC3Commandset_DDC_V_123.__init__(self,clas)
+
+    def pps_delay(self, board=None):
+
+        cmd = "pps_delay"
+
+        if (board is not None):
+            boardNum = self.boardToDigit(board)+1
+
+            cmd += "=%d" % boardNum;
+            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
+            patStr = "pps_delay\[%d\]/" % boardNum
+            numVals = 2
+            retVals = 2
+        else:
+            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+            patStr = "pps_delay/"
+            numVals = 8
+            retVals = self.config.numCoreBoards
+
+        ret = self.sendCommand(cmd)
+        #print ret
+
+        for i in range(numVals):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                        for i in range(retVals):
+                                delays.append(int(match.group(2+i*2)))
+                    
+        return(delays)
+
+
     
 class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
