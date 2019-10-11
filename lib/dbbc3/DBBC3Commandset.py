@@ -2,7 +2,6 @@
 '''
   This module is part of the DBBC3 package and implements the command sets
   of the DBBC3 for the various modes and versions
-  
 
   Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
   This program is free software: you can redistribute it and/or modify
@@ -24,6 +23,7 @@ __copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
+import DBBC3Util as d3util
 import types 
 import re
 import time
@@ -34,7 +34,7 @@ from datetime import datetime
 
 def getMatchingCommandset(mode, version):
     '''
-    Determines the Commandset sub-class to be used for the 
+    Determines the Commandset sub-class to be used for the
     given mode and version.
 
     All Subclasses should be derived from DBBC3CommandsetDefault and should
@@ -45,7 +45,7 @@ def getMatchingCommandset(mode, version):
     # parse all class names of this module
     current_module = sys.modules[__name__]
 
-    
+
     pattern = re.compile("DBBC3Commandset_%s_(.*)"%(mode))
 
     versions = []
@@ -73,38 +73,9 @@ def getMatchingCommandset(mode, version):
                 break
 
     ret = "DBBC3Commandset_%s_%s" % (mode,pickVer)
-    print "Selecting commandset version: %s" % ret   
+    print "Selecting commandset version: %s" % ret
 
     return(ret)
-
-def parseTimeResponse(response):
-
-    year = 0
-    doy = 0
-    hour = 0
-    minute = 0
-    second = 0
-
-    timestamp = None
-
-    for line in response.split("\n"):
-        line = line.strip()
-        tok = line.split("=")
-
-        if tok[0].strip() == "halfYearsSince2000":
-            year = int(tok[1]) /2 + 2000
-        elif tok[0].strip() == "seconds":
-            doy = int(int(tok[1]) / 86400)
-            remSecs = int(tok[1]) - doy * 86400
-            hour = remSecs / 3600
-            minute = (remSecs - hour*3600) / 60
-            second = (remSecs - hour*3600 - minute*60)
-
-    if year > 0:
-        timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy+1, hour, minute, second), "%Y %j %H %M %S %Z")
-
-    return(timestamp)
-
 
 class DBBC3Commandset(object):
     '''
@@ -124,6 +95,7 @@ class DBBC3Commandset(object):
         '''
         
         csClassName = getMatchingCommandset(mode, version )
+        print "Using commandset version: ", csClassName
     
         if (csClassName == ""):
             csClassName = "DBBC3CommandsetDefault"
@@ -133,6 +105,8 @@ class DBBC3Commandset(object):
 
 
 class DBBC3CommandsetDefault(DBBC3Commandset):
+    '''
+    '''
 
     def __init__(self, clas):
 
@@ -144,6 +118,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.synthLock = types.MethodType (self.synthLock.im_func, clas)
         clas.checkphase = types.MethodType (self.checkphase.im_func, clas)
         clas.time = types.MethodType (self.time.im_func, clas)
+        clas.version = types.MethodType (self.version.im_func, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.im_func, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.im_func, clas)
@@ -195,6 +170,32 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.im_func, clas)
 
 # GENERAL DBBC3 commands
+    def version(self):
+        '''
+        Reads the DBBC3 control software version
+
+        Returns:
+        dictionary holding the values reported by the version command with the following keys:
+        "mode": the current DBBC3 mode, e.g. DDC_V
+        "majorVersion": the major version of the current control software e.g. 124
+        '''
+
+        resp = {}
+        ret = self.sendCommand("version")
+
+        # version/ DDC_V,124,October 01 2019;
+        pattern = re.compile("version\/\s+(.+),(\d+),(.*);")
+
+        match = pattern.match(ret)
+        if match:
+            print "match", match.group(1)
+            resp["mode"] = match.group(1)
+            resp["majorVersion"] =  match.group(2)
+            resp["minorVersion"] = datetime.strptime(match.group(3), '%B %d %Y').strftime('%y%m%d')
+
+        return (resp)
+
+    
     def time(self):
         '''
         Reads time information from all boards. For each board a dict with the
@@ -841,7 +842,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
         if "succeeded" in ret:
-            timestamp = parseTimeResponse(ret)
+            timestamp = d3util.parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
             #print timestamp, datetime.now()
@@ -1489,6 +1490,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Displays the firmware version
 
+        TODO: Discuss with Sven the future format of the version output and implement parsing code
+
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
         '''
@@ -1499,10 +1502,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Displays information about the current status of the system and
         gives an overviewof the state of the most important user 
-        settings
+        settings.
+
+        TODO: add parsing code and return dictionary with values
 
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: The output of the sysstat command
         '''
         boardNum = self.boardToDigit(board)+1
         return self.sendCommand("core3h=%d,sysstat" % (boardNum))
@@ -1851,7 +1858,7 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         self._validateBBC(bbc)
 
         cmd = "dbbc{:02f}".format(str(bbc))
-        if freq:
+        if (freq):
             self._validateBBCFreq(freq)
             self._validateTPInt(tpint)
             cmd += "=%f,%s,32,%d" % (freq, ifLabel,tpint)
@@ -1860,13 +1867,110 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 
         return(ret)
 
-    def dbbcgain(self, bbc,gainU=None, gainL=None):
+    def dbbcgain(self, bbc, mode=None, target= None, gainU=None, gainL=None):
+        '''
+        Gets / sets the gain levels and gain control mode for a single BBC.
+
+        If the command is called with only the dbbc parameter set the current
+        settings will be returned.
+
+        If successful the command returns the resulting number of frames per second
+        and the number of data threads, according to the currently selected input
+        (see core3h_inputselect for details).
+        If the VDIF frame properties do not match the currently selected input the
+        "compatible" flag in the return dictionary is set to "False". The command
+        fails if the desired frame setup is not supported. The frame setup is not
+        changed in this case.
+
+        Parameters:
+        bbc: the BBC number (starts at 1) or "all" for all BBCs
+        mode (optional): the gain control mode. Can be "agc" (automatic gain control) or "man" to freeze the current gain settings.
+        target (optional): the target count level when running in "agc" mode
+        gainU (optional): the gain level for the USB
+
+        Return:
+        Dictionary with the following keys:
+            "compatible"    (False in case an incomaptible setup was requested)
+            "channelWidth"
+            "numChannels"
+            "payloadSize"
+            "frameSize"
+            "numThreads"      (optional)
+            "framesPerSecond" (optional)
+            "framesPerThread" (optional)
+
+
+        Exception:
+        ValueError: in case channelWidth has been specified but no numChannels were set
+        '''
         self._validateBBC(bbc)
 
+        resp = {}
+        validModes = ["agc","man"]
         cmd = "dbbcgain=%d" % (bbc)
-        ret = self.sendCommand(cmd)
 
-        return(ret)
+        if (target):
+            try:
+                target=int(target)
+            except:
+                raise ValueError("dbbcgain: target must be a positive integer")
+        if (gainU):
+            try:
+                gainU = int(gainU)
+            except:
+                raise ValueError("dbbcgain: gainU must be a positive integer")
+        if (gainL):
+            try:
+                gainL = int(gainL)
+            except:
+                raise ValueError("dbbcgain: gainL must be a positive integer")
+
+        if (mode):
+            mode = mode.strip()
+            if (mode not in validModes):
+                raise ValueError("dbbcgain: mode must be one of " + str(validModes))
+            cmd += ",%s" % (mode)
+
+            if (mode == "agc" and target):
+                cmd += ",%d" % target
+
+        else:
+            if (gainU):
+                cmd += ",%d" % int(gainU)
+                if (gainL):
+                    cmd += ",%d" % int(gainL)
+            else:
+                raise ValueError("dbbcgain: gainU must be given if no mode has been set.")
+
+        print cmd
+                
+
+            
+        ret = self.sendCommand(cmd)
+        print ret
+
+        # dbbcgain/ 1,83,74,man;
+        patStr = "dbbcgain\/\s+(.+),(\d+),(\d+),(.+)" 
+        if (mode == "agc"):
+            # dbbcgain/ 1,83,74,agc,15000;
+            patStr += ",(\d+)" 
+            
+            
+        pattern = re.compile(patStr)
+
+    
+        for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                    resp['bbc'] = int(match.group(1))
+                    resp['gainUSB'] = int(match.group(2))
+                    resp['gainLSB'] = int(match.group(3))
+                    resp['mode'] = match.group(4)
+                    if (mode == "agc"):
+                        resp['target'] = int(match.group(5))
+
+        print resp
+        return(resp)
 
     def dbbcstat(self, bbc):
 
