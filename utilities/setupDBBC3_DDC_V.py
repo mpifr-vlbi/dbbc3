@@ -37,7 +37,7 @@ try:
         dbbc3.connect()
         print "===Connected"
         
-        val.validatePPS()
+        #val.validatePPS()
 
         useBoards = []
         if args.boards:
@@ -46,6 +46,8 @@ try:
         else:
             for board in range(args.num_coreboards):
                 useBoards.append(dbbc3.boardToDigit(board)) 
+
+        print dbbc3.version()
 
         for board in useBoards:
                 val.validatePPSDelay(board)
