@@ -1871,43 +1871,42 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         '''
         Gets / sets the gain levels and gain control mode for a single BBC.
 
-        If the command is called with only the dbbc parameter set the current
+        If the command is called with only the bbc parameter set the current
         settings will be returned.
 
-        If successful the command returns the resulting number of frames per second
-        and the number of data threads, according to the currently selected input
-        (see core3h_inputselect for details).
-        If the VDIF frame properties do not match the currently selected input the
-        "compatible" flag in the return dictionary is set to "False". The command
-        fails if the desired frame setup is not supported. The frame setup is not
-        changed in this case.
+        If the command is being called with the mode=agc the automatic gain control is switched on. If the target parameter
+        is also set then the levels are automatically adjusted to reach the given target otherwise the target specified in the
+        DBBC configuration file is being used.
+
+        If the command is being called with mode=man the automatic gain control is switched off and the current gain levels are being frozen. In case
+        also the gainU and gainL parameters are set then these values will be used as the gain levels for the USB and LSB respectively.
 
         Parameters:
-        bbc: the BBC number (starts at 1) or "all" for all BBCs
+        bbc: the BBC number (starts at 1) 
         mode (optional): the gain control mode. Can be "agc" (automatic gain control) or "man" to freeze the current gain settings.
         target (optional): the target count level when running in "agc" mode
         gainU (optional): the gain level for the USB
+        
 
         Return:
         Dictionary with the following keys:
-            "compatible"    (False in case an incomaptible setup was requested)
-            "channelWidth"
-            "numChannels"
-            "payloadSize"
-            "frameSize"
-            "numThreads"      (optional)
-            "framesPerSecond" (optional)
-            "framesPerThread" (optional)
+            "bbc"         The currently selected BBC number (starts at 1)
+            "mode"        The currently selected mode 
+            "target"      The current target count level (only returned when mode=agc)
+            "gainUSB"     The gain level of the USB
+            "gainLSB"     The gain level of the LSB
 
 
-        Exception:
-        ValueError: in case channelWidth has been specified but no numChannels were set
         '''
-        self._validateBBC(bbc)
-
         resp = {}
         validModes = ["agc","man"]
-        cmd = "dbbcgain=%d" % (bbc)
+
+        if (bbc != "all"):
+            self._validateBBC(bbc)
+            cmd = "dbbcgain=%d" % (bbc)
+        else:
+            cmd = "dbbcgain=all"
+            raise ValueError("dbbcgain: bbc=all is currently not supported")
 
         if (target):
             try:
@@ -1929,35 +1928,29 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
             mode = mode.strip()
             if (mode not in validModes):
                 raise ValueError("dbbcgain: mode must be one of " + str(validModes))
-            cmd += ",%s" % (mode)
 
-            if (mode == "agc" and target):
-                cmd += ",%d" % target
+            if (mode == "agc"):
+                cmd += ",agc" 
+                if (target):
+                    cmd += ",%d" % target
+            elif (mode == "man"):
+                if (gainU):
+                    cmd += ",%d" % int(gainU)
+                    if (gainL):
+                     cmd += ",%d" % int(gainL)
+                else:
+                    cmd += ",man"
 
-        else:
-            if (gainU):
-                cmd += ",%d" % int(gainU)
-                if (gainL):
-                    cmd += ",%d" % int(gainL)
-            else:
-                raise ValueError("dbbcgain: gainU must be given if no mode has been set.")
-
-        print cmd
-                
-
-            
         ret = self.sendCommand(cmd)
-        print ret
 
-        # dbbcgain/ 1,83,74,man;
-        patStr = "dbbcgain\/\s+(.+),(\d+),(\d+),(.+)" 
-        if (mode == "agc"):
+        if ("agc" in ret):
             # dbbcgain/ 1,83,74,agc,15000;
-            patStr += ",(\d+)" 
-            
+            patStr = "dbbcgain\/\s+(.+),(\d+),(\d+),(.+),(\d+);" 
+        else:
+            # dbbcgain/ 1,83,74,man;
+            patStr = "dbbcgain\/\s+(.+),(\d+),(\d+),(.+);" 
             
         pattern = re.compile(patStr)
-
     
         for line in ret.split("\n"):
                 match = pattern.match(line)
@@ -1966,10 +1959,9 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
                     resp['gainUSB'] = int(match.group(2))
                     resp['gainLSB'] = int(match.group(3))
                     resp['mode'] = match.group(4)
-                    if (mode == "agc"):
+                    if (match.group(4) == "agc"):
                         resp['target'] = int(match.group(5))
 
-        print resp
         return(resp)
 
     def dbbcstat(self, bbc):
