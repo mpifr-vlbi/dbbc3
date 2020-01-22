@@ -10,7 +10,7 @@ import numpy as np
 
 from time import sleep
 
-parser = argparse.ArgumentParser("Setup and validate DBBC3 in DDC_V mode")
+parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in DDC_V mode")
 
 parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: 4000)")
 parser.add_argument("-n", "--num-coreboards", default=8, type=int, help="The number of activated core boards in the DBBC3 (default 8)")
@@ -33,9 +33,9 @@ try:
         dbbc3 = DBBC3(config, mode="DDC_V", version=args.ver)
         val = DBBC3Validation(dbbc3, ignoreErrors=args.ignore_errors)
         
-        print "===Trying to connect to %s:%d" % (config.host, config.port)
+        print ("===Trying to connect to %s:%d" % (config.host, config.port))
         dbbc3.connect()
-        print "===Connected"
+        print ("===Connected")
         
         #val.validatePPS()
 
@@ -47,7 +47,7 @@ try:
             for board in range(args.num_coreboards):
                 useBoards.append(dbbc3.boardToDigit(board)) 
 
-        print dbbc3.version()
+        print (dbbc3.version())
 
         for board in useBoards:
                 val.validatePPSDelay(board)
@@ -60,10 +60,10 @@ try:
         
 
         dbbc3.disconnect()
-        print "=== Done"
+        print ("=== Done")
 
 except Exception as e:
-        print e.message
+        print (e.message)
         dbbc3.disconnect()
         
 
