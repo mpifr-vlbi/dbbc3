@@ -30,10 +30,10 @@ class DBBC3Config(object):
     def __init__(self):
         '''
         Constructor
-	'''
+        '''
         self.coreBoards = []
-	self.host = ""
-        self.port = 4000	
+        self.host = ""
+        self.port = 4000        
 
         self._numCoreBoards = 0
         self.numSamplers = 4
