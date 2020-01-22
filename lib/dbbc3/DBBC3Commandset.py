@@ -73,7 +73,7 @@ def getMatchingCommandset(mode, version):
                 break
 
     ret = "DBBC3Commandset_%s_%s" % (mode,pickVer)
-    print "Selecting commandset version: %s" % ret
+    print ("Selecting commandset version: %s" % ret)
 
     return(ret)
 
@@ -95,7 +95,7 @@ class DBBC3Commandset(object):
         '''
         
         csClassName = getMatchingCommandset(mode, version )
-        print "Using commandset version: ", csClassName
+        print ("Using commandset version: ", csClassName)
     
         if (csClassName == ""):
             csClassName = "DBBC3CommandsetDefault"
@@ -110,64 +110,66 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def __init__(self, clas):
 
-        clas.dbbcif = types.MethodType (self.dbbcif.im_func, clas)
-        clas.enableloop = types.MethodType (self.enableloop.im_func, clas)
-        clas.disableloop = types.MethodType (self.disableloop.im_func, clas)
-        clas.enablecal = types.MethodType (self.enablecal.im_func, clas)
-        clas.synthFreq = types.MethodType (self.synthFreq.im_func, clas)
-        clas.synthLock = types.MethodType (self.synthLock.im_func, clas)
-        clas.checkphase = types.MethodType (self.checkphase.im_func, clas)
-        clas.time = types.MethodType (self.time.im_func, clas)
-        clas.version = types.MethodType (self.version.im_func, clas)
+        #clas.dbbcif = types.MethodType (self.dbbcif.__func__, clas)
+        #clas.enableloop = types.MethodType (self.enableloop.__func__, clas)
+        clas.dbbcif = types.MethodType (self.dbbcif.__func__, clas)
+        clas.enableloop = types.MethodType (self.enableloop.__func__, clas)
+        clas.disableloop = types.MethodType (self.disableloop.__func__, clas)
+        clas.enablecal = types.MethodType (self.enablecal.__func__, clas)
+        clas.synthFreq = types.MethodType (self.synthFreq.__func__, clas)
+        clas.synthLock = types.MethodType (self.synthLock.__func__, clas)
+        clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
+        clas.time = types.MethodType (self.time.__func__, clas)
+        clas.version = types.MethodType (self.version.__func__, clas)
 
-        clas.core3h_version = types.MethodType (self.core3h_version.im_func, clas)
-        clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.im_func, clas)
-        clas.core3h_sysstat_fs = types.MethodType (self.core3h_sysstat_fs.im_func, clas)
-        clas.core3h_mode_fs = types.MethodType (self.core3h_mode_fs.im_func, clas)
-        clas.core3h_status_fs = types.MethodType (self.core3h_status_fs.im_func, clas)
-        clas.core3h_devices = types.MethodType (self.core3h_devices.im_func, clas)
-        clas.core3h_regread = types.MethodType (self.core3h_regread.im_func, clas)
-        clas.core3h_regread_dec = types.MethodType (self.core3h_regread_dec.im_func, clas)
-        clas.core3h_regwrite = types.MethodType (self.core3h_regwrite.im_func, clas)
-        clas.core3h_regupdate = types.MethodType (self.core3h_regupdate.im_func, clas)
-        clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.im_func, clas)
-        clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.im_func, clas)
-        clas.core3h_core3_corr = types.MethodType (self.core3h_core3_corr.im_func, clas)
-        clas.core3h_core3_mode = types.MethodType (self.core3h_core3_mode.im_func, clas)
-        clas.core3h_core3_init = types.MethodType (self.core3h_core3_init.im_func, clas)
-        clas.core3h_reboot = types.MethodType (self.core3h_reboot.im_func, clas)
-        clas.core3h_reset = types.MethodType (self.core3h_reset.im_func, clas)
-        clas.core3h_output = types.MethodType (self.core3h_output.im_func, clas)
-        clas.core3h_start = types.MethodType (self.core3h_start.im_func, clas)
-        clas.core3h_stop = types.MethodType (self.core3h_stop.im_func, clas)
-        clas.core3h_arp = types.MethodType (self.core3h_arp.im_func, clas)
-        clas.core3h_tengbarp = types.MethodType (self.core3h_tengbarp.im_func, clas)
-        clas.core3h_tengbinfo = types.MethodType (self.core3h_tengbinfo.im_func, clas)
-        clas.core3h_tengbcfg = types.MethodType (self.core3h_tengbcfg.im_func, clas)
-        clas.core3h_destination = types.MethodType (self.core3h_destination.im_func, clas)
-        clas.core3h_vdif_userdata = types.MethodType (self.core3h_vdif_userdata.im_func, clas)
-        clas._getVdifUserdata = types.MethodType (self._getVdifUserdata.im_func, clas)
-        clas.core3h_vdif_station = types.MethodType (self.core3h_vdif_station.im_func, clas)
-        clas.core3h_vdif_frame = types.MethodType (self.core3h_vdif_frame.im_func, clas)
-        clas.core3h_vdif_enc = types.MethodType (self.core3h_vdif_enc.im_func, clas)
-        clas.core3h_timesync = types.MethodType (self.core3h_timesync.im_func, clas)
-        clas.core3h_time = types.MethodType (self.core3h_time.im_func, clas)
-        clas.core3h_tvg_mode = types.MethodType (self.core3h_tvg_mode.im_func, clas)
-        clas.core3h_splitmode = types.MethodType (self.core3h_splitmode.im_func, clas)
-        clas.core3h_inputselect = types.MethodType (self.core3h_inputselect.im_func, clas)
-#       clas.core3h_vsi_swap = types.MethodType (self.core3h_vsi_swap.im_func, clas)
-        clas.core3h_vsi_bitmask = types.MethodType (self.core3h_vsi_bitmask.im_func, clas)
-        clas.core3h_vsi_samplerate = types.MethodType (self.core3h_vsi_samplerate.im_func, clas)
+        clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
+        clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.__func__, clas)
+        clas.core3h_sysstat_fs = types.MethodType (self.core3h_sysstat_fs.__func__, clas)
+        clas.core3h_mode_fs = types.MethodType (self.core3h_mode_fs.__func__, clas)
+        clas.core3h_status_fs = types.MethodType (self.core3h_status_fs.__func__, clas)
+        clas.core3h_devices = types.MethodType (self.core3h_devices.__func__, clas)
+        clas.core3h_regread = types.MethodType (self.core3h_regread.__func__, clas)
+        clas.core3h_regread_dec = types.MethodType (self.core3h_regread_dec.__func__, clas)
+        clas.core3h_regwrite = types.MethodType (self.core3h_regwrite.__func__, clas)
+        clas.core3h_regupdate = types.MethodType (self.core3h_regupdate.__func__, clas)
+        clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
+        clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
+        clas.core3h_core3_corr = types.MethodType (self.core3h_core3_corr.__func__, clas)
+        clas.core3h_core3_mode = types.MethodType (self.core3h_core3_mode.__func__, clas)
+        clas.core3h_core3_init = types.MethodType (self.core3h_core3_init.__func__, clas)
+        clas.core3h_reboot = types.MethodType (self.core3h_reboot.__func__, clas)
+        clas.core3h_reset = types.MethodType (self.core3h_reset.__func__, clas)
+        clas.core3h_output = types.MethodType (self.core3h_output.__func__, clas)
+        clas.core3h_start = types.MethodType (self.core3h_start.__func__, clas)
+        clas.core3h_stop = types.MethodType (self.core3h_stop.__func__, clas)
+        clas.core3h_arp = types.MethodType (self.core3h_arp.__func__, clas)
+        clas.core3h_tengbarp = types.MethodType (self.core3h_tengbarp.__func__, clas)
+        clas.core3h_tengbinfo = types.MethodType (self.core3h_tengbinfo.__func__, clas)
+        clas.core3h_tengbcfg = types.MethodType (self.core3h_tengbcfg.__func__, clas)
+        clas.core3h_destination = types.MethodType (self.core3h_destination.__func__, clas)
+        clas.core3h_vdif_userdata = types.MethodType (self.core3h_vdif_userdata.__func__, clas)
+        clas._getVdifUserdata = types.MethodType (self._getVdifUserdata.__func__, clas)
+        clas.core3h_vdif_station = types.MethodType (self.core3h_vdif_station.__func__, clas)
+        clas.core3h_vdif_frame = types.MethodType (self.core3h_vdif_frame.__func__, clas)
+        clas.core3h_vdif_enc = types.MethodType (self.core3h_vdif_enc.__func__, clas)
+        clas.core3h_timesync = types.MethodType (self.core3h_timesync.__func__, clas)
+        clas.core3h_time = types.MethodType (self.core3h_time.__func__, clas)
+        clas.core3h_tvg_mode = types.MethodType (self.core3h_tvg_mode.__func__, clas)
+        clas.core3h_splitmode = types.MethodType (self.core3h_splitmode.__func__, clas)
+        clas.core3h_inputselect = types.MethodType (self.core3h_inputselect.__func__, clas)
+#       clas.core3h_vsi_swap = types.MethodType (self.core3h_vsi_swap.__func__, clas)
+        clas.core3h_vsi_bitmask = types.MethodType (self.core3h_vsi_bitmask.__func__, clas)
+        clas.core3h_vsi_samplerate = types.MethodType (self.core3h_vsi_samplerate.__func__, clas)
 
-        clas.adb3l_reset = types.MethodType (self.adb3l_reset.im_func, clas)
-        clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.im_func, clas)
-        clas.adb3l_resets = types.MethodType (self.adb3l_resets.im_func, clas)
-        clas.adb3l_biston = types.MethodType (self.adb3l_biston.im_func, clas)
-        clas.adb3l_bistoff = types.MethodType (self.adb3l_bistoff.im_func, clas)
-        clas.adb3l_SDA_on = types.MethodType (self.adb3l_SDA_on.im_func, clas)
-        clas.adb3l_delay = types.MethodType (self.adb3l_delay.im_func, clas)
-        clas.adb3l_offset = types.MethodType (self.adb3l_offset.im_func, clas)
-        clas.adb3l_gain = types.MethodType (self.adb3l_gain.im_func, clas)
+        clas.adb3l_reset = types.MethodType (self.adb3l_reset.__func__, clas)
+        clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.__func__, clas)
+        clas.adb3l_resets = types.MethodType (self.adb3l_resets.__func__, clas)
+        clas.adb3l_biston = types.MethodType (self.adb3l_biston.__func__, clas)
+        clas.adb3l_bistoff = types.MethodType (self.adb3l_bistoff.__func__, clas)
+        clas.adb3l_SDA_on = types.MethodType (self.adb3l_SDA_on.__func__, clas)
+        clas.adb3l_delay = types.MethodType (self.adb3l_delay.__func__, clas)
+        clas.adb3l_offset = types.MethodType (self.adb3l_offset.__func__, clas)
+        clas.adb3l_gain = types.MethodType (self.adb3l_gain.__func__, clas)
 
 # GENERAL DBBC3 commands
     def version(self):
@@ -188,7 +190,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         match = pattern.match(ret)
         if match:
-            print "match", match.group(1)
+            print ("match", match.group(1))
             resp["mode"] = match.group(1)
             resp["majorVersion"] =  match.group(2)
             resp["minorVersion"] = datetime.strptime(match.group(3), '%B %d %Y').strftime('%y%m%d')
@@ -207,7 +209,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         timestampAsString:
         
         Return:
-	List of dicts; one entry for each board (0=A)
+        List of dicts; one entry for each board (0=A)
         '''
 
         resp = []
@@ -242,52 +244,52 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Gets / sets the configuration of the GCoMo IF modules
 
-	If the IF is connected on the top pin of the GCoMo (bypassing the
-	downconversion) the inputType parameter should be set to 1.
-	If the IF has been downconverted by the GCoMo the inputType should
-	be set to 2. Selecting inputType=1 will disable the the synthesizer
-	tone.
+        If the IF is connected on the top pin of the GCoMo (bypassing the
+        downconversion) the inputType parameter should be set to 1.
+        If the IF has been downconverted by the GCoMo the inputType should
+        be set to 2. Selecting inputType=1 will disable the the synthesizer
+        tone.
 
-	if the inputType is not specified or set to None the current 
-	settings are reported.
+        if the inputType is not specified or set to None the current 
+        settings are reported.
 
         Parameters:
         board: can be given as a number (0 = board A) or as char e.g. A
-	inputType: 1 = IF input without downconversion
-		   2 = IF input after downconversion
-	mode (optional): "agc" = automatic gain control (default if not specified)
-			 "man" = manual attenuation (retains last agc value)
-		          numeric value = attenuation step (0-63) in steps of 0.5 dB
-	target (optional): the target power level for the "agc" mode
+        inputType: 1 = IF input without downconversion
+                   2 = IF input after downconversion
+        mode (optional): "agc" = automatic gain control (default if not specified)
+                         "man" = manual attenuation (retains last agc value)
+                          numeric value = attenuation step (0-63) in steps of 0.5 dB
+        target (optional): the target power level for the "agc" mode
 
         Return:
-	dictionary holding the values reported by dbbcif with the following keys:
-	"inputType": see above
-	"attenuation": the current attenuation level
-	"mode":	the current agc mode 
-	"count": the current IF level
-	"target": the target IF level
+        dictionary holding the values reported by dbbcif with the following keys:
+        "inputType": see above
+        "attenuation": the current attenuation level
+        "mode": the current agc mode 
+        "count": the current IF level
+        "target": the target IF level
         '''
 
         resp = {}
         board = self.boardToChar(board).lower()
-	cmd = "dbbcif%s" % (board)
+        cmd = "dbbcif%s" % (board)
 
-	if (inputType):
-	    if inputType not in [1,2]:
-		raise ValueError("dbbcif: inputType must be 1 or 2")
-	    cmd += "=%d" % inputType
+        if (inputType):
+            if inputType not in [1,2]:
+                raise ValueError("dbbcif: inputType must be 1 or 2")
+            cmd += "=%d" % inputType
 
-	    agcStr = str(mode)
-	    if (agcStr not in ["agc", "man"]):
-		if  not agcStr.isdigit():
-		    raise ValueError("dbbcif: mode must be agc,man or 0-63")
-		elif (int(agcStr) not in range(64)):
-		    raise ValueError("dbbcif: attenuation must be in the range 0-63")
-	    cmd += ",%s" % agcStr
+            agcStr = str(mode)
+            if (agcStr not in ["agc", "man"]):
+                if  not agcStr.isdigit():
+                    raise ValueError("dbbcif: mode must be agc,man or 0-63")
+                elif (int(agcStr) not in range(64)):
+                    raise ValueError("dbbcif: attenuation must be in the range 0-63")
+            cmd += ",%s" % agcStr
 
-	    if (target):
-		cmd += ",1,%d" % target
+            if (target):
+                cmd += ",1,%d" % target
 
         ret = self.sendCommand(cmd)
 
@@ -541,26 +543,26 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return(userdata)
         
     def core3h_vsi_samplerate(self, board, sampleRate=None, decimation=1):
-	'''
-	Gets /sets the VSI input sample rate for the specified Core3h board
+        '''
+        Gets /sets the VSI input sample rate for the specified Core3h board
 
-	All arguments are optional. If the command is called without the
-	sampleRate parameter the current VSI input sample rate is returned.
+        All arguments are optional. If the command is called without the
+        sampleRate parameter the current VSI input sample rate is returned.
 
-	The decimation parameter decimates the input such that the resulting
-	sample rate is 1/decimation of the specified rate
-	
+        The decimation parameter decimates the input such that the resulting
+        sample rate is 1/decimation of the specified rate
+        
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
-	sampleRate (optional): the input sampling rate in samples per second
-	decimation (optional): a divisor in the range 1..255; default=1
+        sampleRate (optional): the input sampling rate in samples per second
+        decimation (optional): a divisor in the range 1..255; default=1
 
-	Return:
-	Dictionary with keys "sampleRate" and "decimation"
+        Return:
+        Dictionary with keys "sampleRate" and "decimation"
     
-	Exception:
-	Exception: in case the sample rate could not be set
-	'''
+        Exception:
+        Exception: in case the sample rate could not be set
+        '''
 
         boardNum = self.boardToDigit(board)+1
 
@@ -573,7 +575,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if "Failed" in ret:
             raise Exception("core3h_vsi_samplerate: Error setting vsi_samplerate (check lastResponse)" )
 
-	response = {} 
+        response = {} 
         pattern = re.compile(".*:\s+(\d+)\s+Hz\s?\/?\s?(\d)?")
         #VSI sample rate : 64000000 Hz
         #VSI sample rate : 1280000 Hz / 2
@@ -581,11 +583,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             if "VSI sample rate" in line:
                 match =  pattern.match(line)
                 if match:
-		    if not match.group(2):
-			response["decimation"] = 1
-		    else:
-			response["decimation"] = int(match.group(2))
-		    response["sampleRate"] = int(match.group(1))
+                    if not match.group(2):
+                        response["decimation"] = 1
+                    else:
+                        response["decimation"] = int(match.group(2))
+                    response["sampleRate"] = int(match.group(1))
 
         return(response)
 
@@ -806,14 +808,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ret = self.sendCommand(cmd)
 
         timestamp = None
-    	# 2019-02-21T15:09:21
-	for line in ret.split("\n"):
-		try:
-			line = line.strip()
-			timestamp = datetime.strptime(line,"%Y-%m-%dT%H:%M:%S")
-			break
-		except ValueError:
-			continue
+        # 2019-02-21T15:09:21
+        for line in ret.split("\n"):
+                try:
+                        line = line.strip()
+                        timestamp = datetime.strptime(line,"%Y-%m-%dT%H:%M:%S")
+                        break
+                except ValueError:
+                        continue
 
         return(timestamp)
 
@@ -828,6 +830,12 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         boardNum = self.boardToDigit(board)+1
 
         cmd = "core3h=%d,timesync" % (boardNum)
+
+        if (timestamp):
+            datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+            cmd += "," + datetime
+
+
         ret = self.sendCommand(cmd)
 
         lines = ret.split("\n")
@@ -842,6 +850,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
         if "succeeded" in ret:
+            print (ret)
             timestamp = d3util.parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
@@ -851,132 +860,132 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return (item)
 
     def core3h_vdif_frame(self, board, channelWidth=None, numChannels=None, payloadSize=None):
-	'''
-	Gets / sets the VDIF frame properties for the specified Core3H board
+        '''
+        Gets / sets the VDIF frame properties for the specified Core3H board
 
-	If the command is called without the channelWidth parameter the current
-	properties will be returned.
+        If the command is called without the channelWidth parameter the current
+        properties will be returned.
 
-	If successful the command returns the resulting number of frames per second
-	and the number of data threads, according to the currently selected input
-	(see core3h_inputselect for details).
-	If the VDIF frame properties do not match the currently selected input the
-	"compatible" flag in the return dictionary is set to "False". The command
-	fails if the desired frame setup is not supported. The frame setup is not
-	changed in this case.
+        If successful the command returns the resulting number of frames per second
+        and the number of data threads, according to the currently selected input
+        (see core3h_inputselect for details).
+        If the VDIF frame properties do not match the currently selected input the
+        "compatible" flag in the return dictionary is set to "False". The command
+        fails if the desired frame setup is not supported. The frame setup is not
+        changed in this case.
 
-	Parameters:
-	board: the board number (starting at 0=A) or board ID (e.g "A")
-	channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
-	numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
-	payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
+        numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
+        payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame
 
-	Return:
-	Dictionary with the following keys:
-	    "compatible"    (False in case an incomaptible setup was requested)
-	    "channelWidth"
-	    "numChannels"
-	    "payloadSize"
-	    "frameSize"
-	    "numThreads"      (optional)
-	    "framesPerSecond" (optional)
-	    "framesPerThread" (optional)
-	    
-	
-	Exception:
-	ValueError: in case channelWidth has been specified but no numChannels were set
-	'''
+        Return:
+        Dictionary with the following keys:
+            "compatible"    (False in case an incomaptible setup was requested)
+            "channelWidth"
+            "numChannels"
+            "payloadSize"
+            "frameSize"
+            "numThreads"      (optional)
+            "framesPerSecond" (optional)
+            "framesPerThread" (optional)
+            
+        
+        Exception:
+        ValueError: in case channelWidth has been specified but no numChannels were set
+        '''
 
-	boardNum = self.boardToDigit(board)+1
+        boardNum = self.boardToDigit(board)+1
 
-	cmd = "core3h=%d,vdif_frame" % (boardNum)
-	
-	if channelWidth:
-	    cmd += " %d" % (int(channelWidth))
-	    if numChannels:
-		cmd += " %d" % (int(numChannels))
-		if payloadSize:
-		    cmd += " %d" % (int(payloadSize))
-	    else:
-		raise ValueError("core3h_vdif_frame: missing numChannels parameter")
+        cmd = "core3h=%d,vdif_frame" % (boardNum)
+        
+        if channelWidth:
+            cmd += " %d" % (int(channelWidth))
+            if numChannels:
+                cmd += " %d" % (int(numChannels))
+                if payloadSize:
+                    cmd += " %d" % (int(payloadSize))
+            else:
+                raise ValueError("core3h_vdif_frame: missing numChannels parameter")
 
-	ret = self.sendCommand(cmd)
-	if "Failed" in ret:
-	    return(None)
+        ret = self.sendCommand(cmd)
+        if "Failed" in ret:
+            return(None)
 
-	# VDIF Frame properties:
-	# channel width (in bits)        : 2
-	# number of channels per frame   : 16
-	# payload size (in bytes)        : 8192
-	# => frame size (in bytes)       : 8224
-	# => number of frames per second : 27 (16bit@54000Hz)
-	# => number of data threads      : 1
-	# => number of frames per thread : 27 (16bit@54000Hz)
-	response = {}
-	response["compatible"] = True
-	for line in ret.split("\n"):
+        # VDIF Frame properties:
+        # channel width (in bits)        : 2
+        # number of channels per frame   : 16
+        # payload size (in bytes)        : 8192
+        # => frame size (in bytes)       : 8224
+        # => number of frames per second : 27 (16bit@54000Hz)
+        # => number of data threads      : 1
+        # => number of frames per thread : 27 (16bit@54000Hz)
+        response = {}
+        response["compatible"] = True
+        for line in ret.split("\n"):
 
-	    if "WARNING: current frame setup is not compatible with selected input!" in line:
-		response["compatible"] = False
+            if "WARNING: current frame setup is not compatible with selected input!" in line:
+                response["compatible"] = False
 
-	    tok = line.split(":")
-	    if len(tok) == 2:
-		if "channel width" in tok[0]:
-		    response["channelWidth"] = int(tok[1])
-		elif "number of channels" in tok[0]:
+            tok = line.split(":")
+            if len(tok) == 2:
+                if "channel width" in tok[0]:
+                    response["channelWidth"] = int(tok[1])
+                elif "number of channels" in tok[0]:
                     response["numChannels"] = int(tok[1])
-		elif "payload size" in tok[0]:
+                elif "payload size" in tok[0]:
                     response["payloadSize"] = int(tok[1])
-		elif "frame size" in tok[0]:
+                elif "frame size" in tok[0]:
                     response["frameSize"] = int(tok[1])
-		elif "number of frames per second" in tok[0]:
+                elif "number of frames per second" in tok[0]:
                     response["framesPerSecond"] = int(tok[1].strip().split(" ")[0])
-		elif "number of data threads" in tok[0]:
+                elif "number of data threads" in tok[0]:
                     response["numThreads"] = int(tok[1])
-		elif "number of frames per thread" in tok[0]:
+                elif "number of frames per thread" in tok[0]:
                     response["framesPerThreads"] = int(tok[1].strip().split(" ")[0])
-		    
-	return(response)
+                    
+        return(response)
 
     def core3h_vdif_station(self, board, stationId=None):
-	'''
-	Gets / sets the VDIF station ID for the specified Core3h board
+        '''
+        Gets / sets the VDIF station ID for the specified Core3h board
 
-	Note: setting this value directly affects the header data of 
-	the VDIF data format
+        Note: setting this value directly affects the header data of 
+        the VDIF data format
 
-	Parameters:
-	board: the board number (starting at 0=A) or board ID (e.g "A")
-	stationId (optional): The two-letter station code to set
+        Parameters:
+        board: the board number (starting at 0=A) or board ID (e.g "A")
+        stationId (optional): The two-letter station code to set
 
-	Return:
-	String containing the two-letter station code; "unknown" if the
-	    code could not be determined
+        Return:
+        String containing the two-letter station code; "unknown" if the
+            code could not be determined
 
-	Exception:
-	ValueError: in case an illegal station code has been specified
-	
-	'''
+        Exception:
+        ValueError: in case an illegal station code has been specified
+        
+        '''
 
-	boardNum = self.boardToDigit(board)+1
+        boardNum = self.boardToDigit(board)+1
 
 
-	code = "unknown"
+        code = "unknown"
 
         cmd = "core3h=%d,vdif_station" % (boardNum)
-	if stationId is not None:
-	    if len(stationId) > 2:
-		raise ValueError("core3h_vdif_station: stationId must be two-letter code")
-	    cmd += " " + stationId
-	    
+        if stationId is not None:
+            if len(stationId) > 2:
+                raise ValueError("core3h_vdif_station: stationId must be two-letter code")
+            cmd += " " + stationId
+            
         ret = self.sendCommand(cmd)
 
-	#VDIF station ID : 'NA'
-	for line in ret.split("\n"):
-	    if "VDIF station ID" in line:
-		code = line.split(":")[1].replace("'","").strip()
+        #VDIF station ID : 'NA'
+        for line in ret.split("\n"):
+            if "VDIF station ID" in line:
+                code = line.split(":")[1].replace("'","").strip()
 
-	return(code)
+        return(code)
 
     def core3h_vdif_enc(self, board):
         '''
@@ -1170,8 +1179,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 continue
 
             # now parse arp table
-            # MAC		IP
-	    # BA:DC:AF:E4:BE:E2	192.168.1.0
+            # MAC               IP
+            # BA:DC:AF:E4:BE:E2 192.168.1.0
             match = pattern.match(line)
             if match:
                 entry = {}
@@ -1600,11 +1609,25 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if "not connected" in ret:
                 return(None)
 
+          #P("11") = 9.64% (6171370)
+          #P("10") = 41.70% (26691866)
+          #P("01") = 40.36% (25836378)
+          #P("00") = 8.28% (5300386)
+
+        pattern = re.compile("\s*P\(\"(\d\d)\"\)\s*=\s*(\d+\.\d+)%\s+\((\d+)\)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                bstats.append(int(match.group(3)))
+
         # evaluate the registers that contain the statistics
-        bstats.append(self.core3h_regread(boardNum-1, 5))
-        bstats.append(self.core3h_regread(boardNum-1, 6))
-        bstats.append(self.core3h_regread(boardNum-1, 7))
-        bstats.append(self.core3h_regread(boardNum-1, 8))
+        #bstats.append(self.core3h_regread(boardNum-1, 5))
+        #bstats.append(self.core3h_regread(boardNum-1, 6))
+        #bstats.append(self.core3h_regread(boardNum-1, 7))
+        #bstats.append(self.core3h_regread(boardNum-1, 8))
+        #print (bstats)
 
         return (bstats)
 
@@ -1628,10 +1651,23 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if "not connected" in ret:
                 return None
 
-        pow.append(self.core3h_regread(boardNum-1, 5))
-        pow.append(self.core3h_regread(boardNum-1, 6))
-        pow.append(self.core3h_regread(boardNum-1, 7))
-        pow.append(self.core3h_regread(boardNum-1, 8))
+        #CORE3 input bit statistics:
+        #Power at sampler 0 = 65053929
+        #Power at sampler 1 = 99624764
+        #Power at sampler 2 = 77772775
+        #Power at sampler 3 = 110169325
+        pattern = re.compile("\s*Power\s+at\s+sampler\s+(\d)\s+=\s+(\d+)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                pow.append(int(match.group(2)))
+
+        #pow.append(self.core3h_regread(boardNum-1, 5))
+        #pow.append(self.core3h_regread(boardNum-1, 6))
+        #pow.append(self.core3h_regread(boardNum-1, 7))
+        #pow.append(self.core3h_regread(boardNum-1, 8))
 
         return(pow)
 
@@ -1825,25 +1861,26 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
-        clas.dbbc = types.MethodType (self.dbbc.im_func, clas)
-        clas.dbbcgain = types.MethodType (self.dbbcgain.im_func, clas)
-        clas.dbbcstat = types.MethodType (self.dbbcstat.im_func, clas)
-        clas.cont_cal = types.MethodType (self.cont_cal.im_func, clas)
-        clas.dbbctp = types.MethodType (self.dbbctp.im_func, clas)
-        clas.dsc_tp = types.MethodType (self.dsc_tp.im_func, clas)
-        clas.dsc_corr = types.MethodType (self.dsc_corr.im_func, clas)
-        clas.dsc_bstat = types.MethodType (self.dsc_bstat.im_func, clas)
-        clas.mag_thr = types.MethodType (self.mag_thr.im_func, clas)
-        clas.pps_sync = types.MethodType (self.pps_sync.im_func, clas)
-        clas.pps_delay = types.MethodType (self.pps_delay.im_func, clas)
+        clas.dbbc = types.MethodType (self.dbbc.__func__, clas)
+        clas.dbbcgain = types.MethodType (self.dbbcgain.__func__, clas)
+        clas.dbbcstat = types.MethodType (self.dbbcstat.__func__, clas)
+        clas.cont_cal = types.MethodType (self.cont_cal.__func__, clas)
+        clas.dbbctp = types.MethodType (self.dbbctp.__func__, clas)
+        clas.dsc_tp = types.MethodType (self.dsc_tp.__func__, clas)
+        clas.dsc_corr = types.MethodType (self.dsc_corr.__func__, clas)
+        clas.dsc_bstat = types.MethodType (self.dsc_bstat.__func__, clas)
+        clas.mag_thr = types.MethodType (self.mag_thr.__func__, clas)
+        clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
+        clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
 
-    def dbbc(self, bbc, freq=None, ifLabel="", tpint=1):
+    def dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
         Gets / sets the parameters of the specified BBC.
 
         Parameters:
+        bbc the BBC number (starts at 1) 
         freq (optional): the BBC frequency. If not specified the current setting is returned
-        ifLabel (optional): the label to be used for the BBC (FS log)
+        ifLabel (optional): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.
         tpint (optional): total power integration time in seconds (default = 1 second)
 
         Return:
@@ -1857,9 +1894,17 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 
         self._validateBBC(bbc)
 
-        cmd = "dbbc{:02f}".format(str(bbc))
+        if (ifLabel):
+            ifLabel = ifLabel.lower()
+            if (ifLabel not in str("abcdefgh")):
+                raise ValueError("dbbc: ifLabel must be one of abcdefgh")
+
+        cmd = "dbbc{:02d}".format(bbc)
         if (freq):
             self._validateBBCFreq(freq)
+            cmd += "=%f,%s" %(freq, ifLabel)
+            
+        if (tpint):
             self._validateTPInt(tpint)
             cmd += "=%f,%s,32,%d" % (freq, ifLabel,tpint)
 
@@ -1896,6 +1941,8 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
             "gainUSB"     The gain level of the USB
             "gainLSB"     The gain level of the LSB
 
+        Exception:
+        ValueError: in case an invalid BBC number has been specified
 
         '''
         resp = {}
@@ -2008,8 +2055,8 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 
         values = []
         #TP[2][0] = 69948
-	patStr = "TP\[%d\]\[[0123]\]\s+=\s+(\d+)" % (board+1)
-	pattern = re.compile(patStr)
+        patStr = "TP\[%d\]\[[0123]\]\s+=\s+(\d+)" % (board+1)
+        pattern = re.compile(patStr)
 
         for line in ret.split("\n"):
                 match = pattern.match(line)
@@ -2060,20 +2107,20 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         cmd = "pps_delay"
         ret = self.sendCommand(cmd)
 
-	#pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-	patStr = "pps_delay/"
-	for i in range(8):
-		patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
-	patStr = patStr[:-1] + ";"
-	pattern = re.compile(patStr)
+        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+        patStr = "pps_delay/"
+        for i in range(8):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
 
-	delays = []
-	for line in ret.split("\n"):
-		match = pattern.match(line)
-		if match:
-			for i in range(self.config.numCoreBoards):
-				delays.append(int(match.group(2+i*2)))
-		
+        delays = []
+        for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                        for i in range(self.config.numCoreBoards):
+                                delays.append(int(match.group(2+i*2)))
+                
         return(delays)
 
 class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
@@ -2114,7 +2161,6 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
                 if match:
                         for i in range(retVals):
                                 delays.append(int(match.group(2+i*2)))
-                    
         return(delays)
 
 
@@ -2125,8 +2171,8 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
-        clas.tap = types.MethodType (self.tap.im_func, clas)
-        clas.tap2 = types.MethodType (self.tap2.im_func, clas)
+        clas.tap = types.MethodType (self.tap.__func__, clas)
+        clas.tap2 = types.MethodType (self.tap2.__func__, clas)
 
 
     def tap2(self, boardNum, filterFile, scaling=1):
@@ -2154,12 +2200,12 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
             
-class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
-    pass
+#class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
+#    pass
 class DBBC3Commandset_DDC_S_010(DBBC3Commandset):
     pass
-class DBBC3Commandset_OCT_D_150(DBBC3Commandset):
-    pass
-class DBBC3Commandset_OCT_D_220(DBBC3Commandset):
-    pass
+#class DBBC3Commandset_OCT_D_150(DBBC3Commandset):
+#   pass
+#class DBBC3Commandset_OCT_D_220(DBBC3Commandset):
+#    pass
 
