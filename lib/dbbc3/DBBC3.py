@@ -33,17 +33,18 @@ from time import sleep
 
 
 class DBBC3Exception(Exception):
-	pass
-	
+    def __init__(self, message):
+        self.message = message
+        
 class DBBC3(object):
         
         dataFormats = ["vdif","raw"]
         core3hModes = ["independent","half_merged", "merged", "pfb"]
 
-	''' Main class of the DBBC3 module.'''
+        ''' Main class of the DBBC3 module.'''
 
         def __init__(self, dbbc3Config, mode="", version=""):
-	    ''' Constructor '''
+            ''' Constructor '''
 
             self.config = dbbc3Config
             self.socket = None
@@ -51,42 +52,43 @@ class DBBC3(object):
             # attach command set
             DBBC3Commandset(self, mode, version)
 
-	def connect(self, timeout=120):
-	    '''
-	    open a socket connection to the DBBC3 control software
-	    
+        def connect(self, timeout=120):
+            '''
+            open a socket connection to the DBBC3 control software
+            
             timeout: the connection timeout in seconds (default 120)
-	    '''
+            '''
 
             try:
                 self.socket = socket.create_connection((self.config.host, self.config.port), timeout)
             except:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (self.config.host, self.config.port))
 
-	def disconnect(self):
+        def disconnect(self):
             if self.socket:
                     self.socket.shutdown(socket.SHUT_RDWR)
                     self.socket = None
 
 
-	def sendCommand(self, command):
-		'''
-		Method for sending generic commands to the DBBC3
-		
-		Returns the response
-		'''
+        def sendCommand(self, command):
+                '''
+                Method for sending generic commands to the DBBC3
+                
+                Returns the response
+                '''
 
-		try:
-			rv = self.socket.send(command + "\0")
-		except:
-			raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
-		
-		if rv <= 0:
-			raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
+                try:
+                        #rv = self.socket.send(command + "\0")
+                        rv = self.socket.send((command + "\0").encode())
+                except:
+                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
+                
+                if rv <= 0:
+                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
 
-		self.lastCommand = command
-		self.lastResponse = self.socket.recv(2048)	
-		return(self.lastResponse)
+                self.lastCommand = command
+                self.lastResponse = self.socket.recv(2048).decode('utf-8')
+                return(self.lastResponse)
 
 
         def _validateMAC(self, mac):
@@ -123,7 +125,7 @@ class DBBC3(object):
                 hexVal = hex(value)
 
             return (hexVal)
-	
+        
         def _validateBBC(self, bbc):
             ''' 
             Checks whether the specified bbc number is valid
@@ -154,7 +156,7 @@ class DBBC3(object):
 
         def boardToChar(self, board):
             '''
-	    Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
+            Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
             board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
             Returns the core board identifier as uppercase char e.g. A
             '''
@@ -173,7 +175,7 @@ class DBBC3(object):
 
         def boardToDigit(self, board):
             '''
-	    Converts the core board ID (e.g. A) into the board number (starting at 0)
+            Converts the core board ID (e.g. A) into the board number (starting at 0)
             board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
             Returns the core board identifier as integer (starting at 0 for board A)
             '''
@@ -190,7 +192,7 @@ class DBBC3(object):
                 board = ord(board) - 65
 
             return(board)
-		
+                
 
 if __name__ == "__main__":
 
@@ -204,34 +206,34 @@ if __name__ == "__main__":
 
     dbbc3.connect()
 
-    print dbbc3.time()
-    print dbbc3.core3_power(0)
-    print dbbc3.core3_power(1)
-    print dbbc3.core3_power(2)
-    print dbbc3.core3_power(3)
+    print( dbbc3.time())
+    print( dbbc3.core3_power(0))
+    print( dbbc3.core3_power(1))
+    print( dbbc3.core3_power(2))
+    print( dbbc3.core3_power(3))
 
-    print dbbc3.core3_bstat(0)
-    print dbbc3.core3_bstat(1)
-    print dbbc3.core3_bstat(2)
-    print dbbc3.core3_bstat(3)
+    print( dbbc3.core3_bstat(0))
+    print( dbbc3.core3_bstat(1))
+    print( dbbc3.core3_bstat(2))
+    print( dbbc3.core3_bstat(3))
 
-    print dbbc3.dbbcif(0)
-    print dbbc3.dbbcif(1)
-    print dbbc3.dbbcif(2)
-    print dbbc3.dbbcif('d')
+    print( dbbc3.dbbcif(0))
+    print( dbbc3.dbbcif(1))
+    print( dbbc3.dbbcif(2))
+    print( dbbc3.dbbcif('d'))
 
-    print dbbc3.synthLock(0)
-    print dbbc3.synthLock(1)
-    print dbbc3.synthLock(2)
-    print dbbc3.synthLock(3)
+    print( dbbc3.synthLock(0))
+    print( dbbc3.synthLock(1))
+    print( dbbc3.synthLock(2))
+    print( dbbc3.synthLock(3))
 
-    print dbbc3.synthFreq(0)
-    print dbbc3.synthFreq(1)
-    print dbbc3.synthFreq(2)
-    print dbbc3.synthFreq(3)
+    print( dbbc3.synthFreq(0))
+    print( dbbc3.synthFreq(1))
+    print( dbbc3.synthFreq(2))
+    print( dbbc3.synthFreq(3))
 
     ret =  dbbc3.checkphase()
     if not ret:
-        print dbbc3.lastResponse
+        print( dbbc3.lastResponse)
 
 
