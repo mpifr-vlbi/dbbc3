@@ -54,11 +54,11 @@ class DBBC3Validation(object):
         
         print("[%s] %s" % (level, message))
         if resolutionMsg != "":
-                print "[%s] \033[1;34m%s\033[0m" % (self.RESOLUTION, resolutionMsg)
+                print ("[%s] \033[1;34m%s\033[0m" % (self.RESOLUTION, resolutionMsg))
 
         if exit:
             if (self.ignoreErrors):
-                print "Continuing because ignoreErrors was enabled"
+                print ("Continuing because ignoreErrors was enabled")
             else:
                 sys.exit(1)
 
@@ -72,7 +72,7 @@ class DBBC3Validation(object):
         '''
         
         board = self.dbbc3.boardToChar(board)
-        print "\n=== Checking IF power level on core board %s" % board.upper()
+        print ("\n=== Checking IF power level on core board %s" % board.upper())
 
 
         errorCount = 0
@@ -98,7 +98,7 @@ class DBBC3Validation(object):
             self.report(self.OK, "count = %d" % (ret['count']))
 
     def validateSamplerPhases(self):
-        print "\n=== Checking sampler phases"
+        print ("\n=== Checking sampler phases")
 
         if (self.dbbc3.checkphase()):
                 self.report(self.OK, "OK")
@@ -114,7 +114,7 @@ class DBBC3Validation(object):
 
         errors = 0
         board = self.dbbc3.boardToChar(boardNum)
-        print "\n ===Checking sampler gains for board %s" % (board)
+        print ("\n ===Checking sampler gains for board %s" % (board))
 
         pow= self.dbbc3.core3h_core3_power(boardNum)
         if pow is None:
@@ -128,7 +128,7 @@ class DBBC3Validation(object):
 
                 self.report(self.ERROR, "Sampler powers are 0 for board %s" % board, resolv, exit=True)
         #if self.verbose:
-        #	print "power values=%s mean=%f" % (str(pow), mean)
+        #       print "power values=%s mean=%f" % (str(pow), mean)
 
         for power in pow:
                 dev = abs(1 - power/mean)
@@ -158,23 +158,23 @@ class DBBC3Validation(object):
 
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
-		errorCount = 0
-        	print "\n===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
-		bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
-		if bstats is None:
-			self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
+                errorCount = 0
+                print ("\n===Checking sampler offsets for board %s sampler %d" % (board, samplerNum))
+                bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
+                if bstats is None:
+                        self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
 
                 # Checking lower against upper half
-		try:
-                	dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
-		except ZeroDivisionError:
-			msg = "Sampler offsets of 0 found %s" % str(bstats)
+                try:
+                        dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
+                except ZeroDivisionError:
+                        msg = "Sampler offsets of 0 found %s" % str(bstats)
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
-	
+        
                         self.report(self.ERROR, msg, resolv, exit=True)
-			continue
+                        continue
 
-			
+                        
                 if dev > 0.10:
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100) 
@@ -192,8 +192,8 @@ class DBBC3Validation(object):
                 
                         self.report(self.WARN, msg, resolv, exit=False)
 
-		if errorCount == 0:
-			self.report(self.OK, "Asymmetry = %f%%" % dev)
+                if errorCount == 0:
+                        self.report(self.OK, "Asymmetry = %f%%" % dev)
 
 
     def _reportLock(self, board, value):
@@ -217,10 +217,11 @@ class DBBC3Validation(object):
 
         board = self.dbbc3.boardToChar(board)
         ret = self.dbbc3.synthLock(board)
+        print (ret)
 
         error = 0
 
-        print "\n===Checking synthesizer lock state of board %s" % (board)
+        print ("\n===Checking synthesizer lock state of board %s" % (board))
         self._reportLock(board, ret['locked'])
 
         #if error > 0 and exitOnError:
@@ -241,7 +242,7 @@ class DBBC3Validation(object):
         board = self.dbbc3.boardToChar(board)
         freq = self.dbbc3.synthFreq(board)
 
-        print "\n===Checking GCoMo synthesizer frequency of board %s" % (board)
+        print ("\n===Checking GCoMo synthesizer frequency of board %s" % (board))
         # verify that synth is tuned to the freq specified in the config
         if freq['actual'] != freq['target']:
                 msg = "Synthesizer of board %s is tuned to %d MHz but should be %d MHz" % (board, freq['actual'], targetFreq)
@@ -258,34 +259,34 @@ class DBBC3Validation(object):
 
     def validatePPS(self, exitOnError=True):
 
-	inactive = []
-	notSynced = []
+        inactive = []
+        notSynced = []
 
-        print "\n===Checking 1PPS synchronisation"
-	delays = self.dbbc3.pps_delay()
-	for i in range(len(delays)):
-		if delays[i] == 0:
-			inactive.append(self.dbbc3.boardToChar(i))
-		elif delays[i] > 200:
-			notSynced.append(self.dbbc3.boardToChar(i))
+        print ("\n===Checking 1PPS synchronisation")
+        delays = self.dbbc3.pps_delay()
+        for i in range(len(delays)):
+                if delays[i] == 0:
+                        inactive.append(self.dbbc3.boardToChar(i))
+                elif delays[i] > 200:
+                        notSynced.append(self.dbbc3.boardToChar(i))
 
-	if len(inactive) > 0:
-		msg = "The following boards report pps_delay=0: %s" % str(inactive)
-		resolv = "Check if these boards have been disabled in the DBBC3 config file"
+        if len(inactive) > 0:
+                msg = "The following boards report pps_delay=0: %s" % str(inactive)
+                resolv = "Check if these boards have been disabled in the DBBC3 config file"
                 self.report (self.WARN, msg, resolv, exit=False)
-	if len(notSynced) > 0:
-		msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
-		resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
-		resolv += "If the problem persists probably you have a hardware issue."
+        if len(notSynced) > 0:
+                msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
+                resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
+                resolv += "If the problem persists probably you have a hardware issue."
                 self.report (self.ERROR, msg, resolv, exit=exitOnError)
 
-	if len(inactive) ==0 and len(notSynced) ==0:
-		self.report(self.OK, "PPS delays: %s" % delays)
+        if len(inactive) ==0 and len(notSynced) ==0:
+                self.report(self.OK, "PPS delays: %s" % delays)
 
     def validatePPSDelay(self, board, exitOnError=False):
 
         board = self.dbbc3.boardToChar(board)
-        print "\n=== Checking PPS delays of core board %s" % board.upper()
+        print ("\n=== Checking PPS delays of core board %s" % board.upper())
         ret = self.dbbc3.pps_delay(board)
 
         if ret[0] != ret[1]:
@@ -301,86 +302,86 @@ class DBBC3Validation(object):
     def validateTimesync(self, board, exitOnError=True):
 
         board = self.dbbc3.boardToChar(board)
-        print "\n=== Checking time synchronisation of core board %s" % board.upper()
+        print ("\n=== Checking time synchronisation of core board %s" % board.upper())
 
-	ret = self.dbbc3.core3h_time( board)
-	if not ret:
-		msg = 	"No timestamp could be obtained for core board %s" % board.upper()
+        ret = self.dbbc3.core3h_time( board)
+        if not ret:
+                msg =   "No timestamp could be obtained for core board %s" % board.upper()
                 resolv = "Run core3h_timesync and re-check"
-		resolv += "Check that a GPS antenna is connected to the DBBC3"
+                resolv += "Check that a GPS antenna is connected to the DBBC3"
                 self.report (self.ERROR, msg, resolv, exit=exitOnError)
-	else:
-		delta = datetime.utcnow() - ret
-		if delta.seconds > 10:
-			msg =   "Difference between reported time and local NTP time > 10s for board %s" % board.upper()
-			resolv = "Run core3h_timesync and re-check"
-			resolv += "Check that the local computer is synchronised via NTP"
-			self.report (self.ERROR, msg, resolv, exit=exitOnError)
-		else:
-			self.report(self.OK, "Reported time: %s" % str(ret))
+        else:
+                delta = datetime.utcnow() - ret
+                if delta.seconds > 10:
+                        msg =   "Difference between reported time and local NTP time > 10s for board %s" % board.upper()
+                        resolv = "Run core3h_timesync and re-check"
+                        resolv += "Check that the local computer is synchronised via NTP"
+                        self.report (self.ERROR, msg, resolv, exit=exitOnError)
+                else:
+                        self.report(self.OK, "Reported time: %s" % str(ret))
 
 
 
 if __name__ == "__main__":
 
-	try:
-		from DBBC3Config import DBBC3Config
-		from DBBC3 import DBBC3
-		config = DBBC3Config()
+        try:
+                from DBBC3Config import DBBC3Config
+                from DBBC3 import DBBC3
+                config = DBBC3Config()
 
-		config.numCoreBoards = 4
-		config.host="192.168.0.60"
-		dbbc3 = DBBC3(config)
-		dbbc3.connect()
+                config.numCoreBoards = 4
+                config.host="192.168.0.60"
+                dbbc3 = DBBC3(config)
+                dbbc3.connect()
 
-		print "=== Disabling calibration loop"
-		dbbc3.disableloop()
-		
-		validate = DBBC3Validation(dbbc3, ignoreErrors = True)
-	
-		validate.validatePPS(0)
-		validate.validateSamplerOffsets(0)
+                print ("=== Disabling calibration loop")
+                dbbc3.disableloop()
+                
+                validate = DBBC3Validation(dbbc3, ignoreErrors = True)
+        
+                validate.validatePPS(0)
+                validate.validateSamplerOffsets(0)
 
 
-		validate.validateSynthesizerLock(0)
-		validate.validateSynthesizerLock(1)
-		validate.validateSynthesizerLock(2)
-		validate.validateSynthesizerLock(3)
+                validate.validateSynthesizerLock(0)
+                validate.validateSynthesizerLock(1)
+                validate.validateSynthesizerLock(2)
+                validate.validateSynthesizerLock(3)
 #
-		validate.validateSynthesizerFreq(0)
-		validate.validateSynthesizerFreq(1)
-		validate.validateSynthesizerFreq(2)
-		validate.validateSynthesizerFreq(3)
+                validate.validateSynthesizerFreq(0)
+                validate.validateSynthesizerFreq(1)
+                validate.validateSynthesizerFreq(2)
+                validate.validateSynthesizerFreq(3)
 
-		validate.validateIFLevel('a')
-		validate.validateIFLevel('b')
-		validate.validateIFLevel('c')
-		validate.validateIFLevel('d')
+                validate.validateIFLevel('a')
+                validate.validateIFLevel('b')
+                validate.validateIFLevel('c')
+                validate.validateIFLevel('d')
 
-		validate.validateSamplerPhases()
+                validate.validateSamplerPhases()
 
- 		validate.validateSamplerPower(0)
- 		validate.validateSamplerPower(1)
-		validate.validateSamplerPower('C')
-		validate.validateSamplerPower('D')
+                validate.validateSamplerPower(0)
+                validate.validateSamplerPower(1)
+                validate.validateSamplerPower('C')
+                validate.validateSamplerPower('D')
 
- 		validate.validateSamplerOffsets(0)
- 		validate.validateSamplerOffsets(1)
-		validate.validateSamplerOffsets('C')
-		validate.validateSamplerOffsets('D')
+                validate.validateSamplerOffsets(0)
+                validate.validateSamplerOffsets(1)
+                validate.validateSamplerOffsets('C')
+                validate.validateSamplerOffsets('D')
 
-		
-		print "=== Setting up calibration loop"
-		dbbc3.enablecal()
-		print "=== Enabling calibration loop"
-		dbbc3.enableloop()
+                
+                print ("=== Setting up calibration loop")
+                dbbc3.enablecal()
+                print ("=== Enabling calibration loop")
+                dbbc3.enableloop()
 
-		dbbc3.disconnect()
-		print "=== Done"
+                dbbc3.disconnect()
+                print ("=== Done")
 
- 	except Exception as e:
- 		print e.message
- 		dbbc3.disconnect()
-		
+        except Exception as e:
+                print (e.message)
+                dbbc3.disconnect()
+                
 
-	
+        
