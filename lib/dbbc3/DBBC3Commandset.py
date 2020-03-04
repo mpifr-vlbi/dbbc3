@@ -1693,11 +1693,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         for line in ret.split("\n"):
             if "0-1" in line:
-                corr[0] = line.split(":")[1].strip()
+                corr[0] = int(line.split(":")[1].strip())
             elif "1-2" in line:
-                corr[1] = line.split(":")[1].strip()
+                corr[1] = int(line.split(":")[1].strip())
             elif "2-3" in line:
-                corr[2] = line.split(":")[1].strip()
+                corr[2] = int(line.split(":")[1].strip())
 
         return(corr)
 
@@ -1712,7 +1712,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_reseth(self):
         '''
-        Resets all ADB3L boards, but does NOT changei/reset any register settings
+        Resets all ADB3L boards, but does NOT change/reset any register settings
         '''
         return self.sendCommand("adb3l=reseth")
 
