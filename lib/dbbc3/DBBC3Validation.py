@@ -164,9 +164,10 @@ class DBBC3Validation(object):
                 if bstats is None:
                         self.report (self.ERROR, self.dbbc3.lastResponse, exit=True)
 
-                # Checking lower against upper half
+                # Checking difference olower against upper half
                 try:
-                        dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
+                        #dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
+                        dev = abs((bstats[0] + bstats[1] - bstats[2] - bstats[3]) / (bstats[0] + bstats[1] + bstats[2] + bstats[3]))
                 except ZeroDivisionError:
                         msg = "Sampler offsets of 0 found %s" % str(bstats)
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
@@ -193,7 +194,7 @@ class DBBC3Validation(object):
                         self.report(self.WARN, msg, resolv, exit=False)
 
                 if errorCount == 0:
-                        self.report(self.OK, "Asymmetry = %f%%" % dev)
+                        self.report(self.OK, "Asymmetry = %f%%" % (dev*199))
 
 
     def _reportLock(self, board, value):
