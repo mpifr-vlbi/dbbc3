@@ -35,9 +35,9 @@ try:
         dbbc3 = DBBC3(config, mode="DDC_V", version=args.ver)
         val = DBBC3Validation(dbbc3, ignoreErrors=args.ignore_errors)
         
-        print "===Trying to connect to %s:%d" % (config.host, config.port)
+        print ("===Trying to connect to %s:%d" % (config.host, config.port))
         dbbc3.connect()
-        print "===Connected"
+        print ("===Connected")
         
 
         useBoards = []
@@ -53,21 +53,22 @@ try:
             line = str(datetime.now())
             for board in useBoards:
                     ret = dbbc3.pps_delay(board)
+                    #print (ret)
                     line += " %d %d " % (ret[0], ret[1])
 
-                    ret = dbbc3.dsc_tp(board)
-                    line += " %d %d %d %d" % (ret[0], ret[1], ret[2], ret[3])
+                    #ret = dbbc3.dsc_tp(board)
+                    #line += " %d %d %d %d" % (ret[0], ret[1], ret[2], ret[3])
             log.write (line +"\n")
-            print line
-            sleep(60)
+            print (line)
+            sleep(1)
             
 
 
         dbbc3.disconnect()
-        print "=== Done"
+        print ("=== Done")
 
 except Exception as e:
-        print e.message
+        print (e)
 finally:
         dbbc3.disconnect()
         if log:
