@@ -186,14 +186,18 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ret = self.sendCommand("version")
 
         # version/ DDC_V,124,October 01 2019;
-        pattern = re.compile("version\/\s+(.+),(\d+),(.*);")
+        # version/ OCT_D,110,July 03 2019
+        # version/ DDC_V,124,February 18th 2020;
+        pattern = re.compile("version\/\s+(.+),(\d+),(.+?\s+.+?\s+\d{4});{0,1}")
 
         match = pattern.match(ret)
         if match:
-            print ("match", match.group(1))
+            #print ("match", match.group(1))
+            # remove any st/nd/rd/th from the date string
+            amended = re.sub('\d+(st|nd|rd|th)', lambda m: m.group()[:-2].zfill(2), match.group(3))
             resp["mode"] = match.group(1)
             resp["majorVersion"] =  match.group(2)
-            resp["minorVersion"] = datetime.strptime(match.group(3), '%B %d %Y').strftime('%y%m%d')
+            resp["minorVersion"] = datetime.strptime(amended, '%B %d %Y').strftime('%y%m%d')
 
         return (resp)
 
