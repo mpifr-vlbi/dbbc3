@@ -194,7 +194,7 @@ class DBBC3Validation(object):
                         self.report(self.WARN, msg, resolv, exit=False)
 
                 if errorCount == 0:
-                        self.report(self.OK, "Asymmetry = %f%%" % (dev*199))
+                        self.report(self.OK, "Asymmetry = %f%%" % (dev*100))
 
 
     def _reportLock(self, board, value):
