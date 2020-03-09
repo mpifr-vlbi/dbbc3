@@ -43,35 +43,37 @@ class DBBC3(object):
 
         ''' Main class of the DBBC3 module.'''
 
-        def __init__(self, dbbc3Config, mode="", version=""):
+        def __init__(self, host, port=4000, numBoards=8, mode="", version=""):
             ''' Constructor '''
 
-            self.config = dbbc3Config
             self.socket = None
             self.mode = mode
             self.modeVersion = version
 
+            self._connect(host,port)
             # attach command set
             DBBC3Commandset(self, mode, version)
+
+            self._validateVersion()
+
+            self.config = DBBC3Config(mode, version)
+            self.config.host = host
+            self.config.port = port
+            self.config.numCoreBoards = numBoards
+
             self.lastCommand = ""
             self.lastResponse = ""
 
-
-
-        def connect(self, timeout=120):
+        def _connect (self, host, port, timeout=120):
             '''
             open a socket connection to the DBBC3 control software
             
             timeout: the connection timeout in seconds (default 120)
             '''
-
             try:
-                self.socket = socket.create_connection((self.config.host, self.config.port), timeout)
+                self.socket = socket.create_connection((host, port), timeout)
             except:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (self.config.host, self.config.port))
-
-            # 
-            self._validateVersion()
 
         def disconnect(self):
             if self.socket:
@@ -217,13 +219,13 @@ class DBBC3(object):
 if __name__ == "__main__":
 
             
-    config = DBBC3Config()
+#    config = DBBC3Config()
 
-    config.numCoreBoards = 4
-    config.host="192.168.0.60"
-    dbbc3 = DBBC3(config, mode="OCT_D", version="")
+#    config.numCoreBoards = 4
+#    config.host="192.168.0.60"
+    dbbc3 = DBBC3(host="192.168.0.60", mode="DDC_U", version="")
 
-    dbbc3.connect()
+#    dbbc3.connect()
 
     print( dbbc3.time())
     print( dbbc3.core3_power(0))
