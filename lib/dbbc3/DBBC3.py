@@ -48,9 +48,15 @@ class DBBC3(object):
 
             self.config = dbbc3Config
             self.socket = None
+            self.mode = mode
+            self.modeVersion = version
 
             # attach command set
             DBBC3Commandset(self, mode, version)
+            self.lastCommand = ""
+            self.lastResponse = ""
+
+
 
         def connect(self, timeout=120):
             '''
@@ -63,6 +69,9 @@ class DBBC3(object):
                 self.socket = socket.create_connection((self.config.host, self.config.port), timeout)
             except:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (self.config.host, self.config.port))
+
+            # 
+            self._validateVersion()
 
         def disconnect(self):
             if self.socket:
@@ -89,6 +98,17 @@ class DBBC3(object):
                 self.lastCommand = command
                 self.lastResponse = self.socket.recv(2048).decode('utf-8')
                 return(self.lastResponse)
+
+
+        def _validateVersion(self):
+            retVersion = self.version()
+
+            if (retVersion["mode"] != self.mode):
+                raise Exception("The requested mode (%s) does not match the loaded firmware (%s)" % (self.mode, retVersion["mode"]))
+
+            if (self.modeVersion != ""):
+                if (retVersion["majorVersion"] != self.modeVersion):
+                    raise Exception("The requested version (%s) does not match the version of the loaded firmware (%s)" % (self.modeVersion, retVersion["majorVersion"]))
 
 
         def _validateMAC(self, mac):
@@ -131,8 +151,8 @@ class DBBC3(object):
             Checks whether the specified bbc number is valid
             '''
 
-            if bbc not in range(1, self.config.numBBCs+1):
-                raise ValueError("BBC must be in the range 1-%d" % (self.config.numBBCs))
+            if bbc not in range(1, self.config.maxBBCs+1):
+                raise ValueError("BBC must be in the range 1-%d" % (self.config.maxBBCs))
 
         def _validateBBCFreq(self, freq):
             ''' 
@@ -202,7 +222,6 @@ if __name__ == "__main__":
     config.numCoreBoards = 4
     config.host="192.168.0.60"
     dbbc3 = DBBC3(config, mode="OCT_D", version="")
-
 
     dbbc3.connect()
 
