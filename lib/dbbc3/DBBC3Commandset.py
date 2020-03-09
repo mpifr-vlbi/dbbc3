@@ -2134,6 +2134,15 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
         DBBC3Commandset_DDC_V_123.__init__(self,clas)
 
     def pps_delay(self, board=None):
+        '''
+        Retrieves the delay of the internally generated vs. the external PPS signal for all core3H boards.
+
+        Parameters:
+        board: [optional] if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
+
+        Returns:
+        list holding the delays of the internal vs external PPS in nanoseconds for each core3H board
+        '''
 
         cmd = "pps_delay"
 
@@ -2143,8 +2152,8 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
             cmd += "=%d" % boardNum;
             # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
             patStr = "pps_delay\[%d\]/" % boardNum
-            numVals = 2
-            retVals = 2
+            numVals = int(self.config.maxBoardBBCs / 4)
+            retVals = numVals
         else:
             #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
             patStr = "pps_delay/"
@@ -2204,10 +2213,22 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
             
+class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_V_124):
+    '''
+    Implementation of the DBBC3 Commandset for the
+    DDC_U mode version 125
+    '''
+
+    def __init__(self, clas):
+        '''
+        For now use the DDC_V_124 commandset
+        '''
+
+        DBBC3Commandset_DDC_V_124.__init__(self,clas)
+
+
 #class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
 #    pass
-class DBBC3Commandset_DDC_S_010(DBBC3Commandset):
-    pass
 #class DBBC3Commandset_OCT_D_150(DBBC3Commandset):
 #   pass
 #class DBBC3Commandset_OCT_D_220(DBBC3Commandset):
