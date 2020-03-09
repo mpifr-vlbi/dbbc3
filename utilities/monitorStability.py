@@ -24,27 +24,16 @@ parser.add_argument('ipaddress', help="the IP address of the DBBC3 running the c
 
 args = parser.parse_args()
 log = None
+dbbc3 = None
 
 try:
 
-        config = DBBC3Config()
-
-        config.numCoreBoards = args.num_coreboards
-
-        config.host=args.ipaddress
-        config.port=args.port
-
-        dbbc3 = DBBC3(config, mode=args.mode, version=args.ver)
+        print ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
+        dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode=args.mode, numBoards=args.num_coreboards, version=args.ver)
         val = DBBC3Validation(dbbc3, ignoreErrors=args.ignore_errors)
         
-        print ("===Trying to connect to %s:%d" % (config.host, config.port))
-        dbbc3.connect()
         print ("===Connected")
         
-        version = dbbc3.version()
-        if (version["mode"] != args.mode):
-            raise Exception("You requested mode %s but current firmware loaded is %s" %(args.mode, version["mode"]))    
-
         useBoards = []
         if args.boards:
             for board in args.boards:
@@ -56,10 +45,14 @@ try:
 
         log = open("stability_%s_%s.log" % (args.mode, datetime.now().strftime("%Y%m%d_%H%M%S")), "w")
 
+        testPPS = False
+
         if (args.mode.startswith("DDC")):
-            dbbc3.pps_sync()
+            testPPS = True
 
        # dbbc3.disableloop()
+        if (testPPS):
+            dbbc3.pps_sync()
 
         ppsState = ""
         samplerState = ""
@@ -68,11 +61,11 @@ try:
             resetPPS = False
             resetAdb = False
             for board in useBoards:
-                    if (args.mode.startswith("DDC")):
+                    if (testPPS):
                         ret = dbbc3.pps_delay(board)
                         line += " %d %d " % (ret[0], ret[1])
                         ppsState = " PPS: OK "
-                        if  (ret[0] > 4000):
+                        if  (ret[0] > 2000):
                             resetPPS = True
                             ppsState = " PPS: FAIL "
     #
@@ -105,10 +98,11 @@ try:
         print ("=== Done")
 
 except Exception as e:
-        print (e)
+        print ("ERROR: ", e)
         
 finally:
-        dbbc3.disconnect()
+        if (dbbc3):
+            dbbc3.disconnect()
         if log:
             log.close()
         
