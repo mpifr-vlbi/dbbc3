@@ -121,6 +121,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
         clas.time = types.MethodType (self.time.__func__, clas)
         clas.version = types.MethodType (self.version.__func__, clas)
+        clas.reconfigure = types.MethodType (self.reconfigure.__func__, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.__func__, clas)
@@ -311,6 +312,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return ( resp )
 
+    def reconfigure(self):
+        '''
+        Reconfigures the core3h boards (reloads firmware), then reinitializes the ADB3L
+        and core3h and finally does a PPS sync.
+        '''
+
+        self.sendCommand("reconfigure")
+
     def checkphase(self):
         '''
         Checks wether all samplers are in sync
@@ -410,10 +419,36 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def enablecal(self, threshold="on", gain="off", offset="off"):
         '''
-        Sets the threshold, gain and offset for the automatic calibration loop
-        The loop must be activated with the enableloop command
+        Switches on/off  the threshold, gain and offset calibration for the automatic calibration loop
+        The loop must be activated with the enableloop command.
+        If called without the optional parameters the defaults will be used (see Parameters)
+
+        Parameters:
+        threshold (optional, default=on): switch threshold calibration [on/off]
+        gain (optional, default=off): switch gain calibration [on/off]
+        offset (optional, default=off): switch offset calibration [on/off]
+
+        Return:
+        If successful returns dictionary with keys "threshold", "gain", "offset"
         '''
-        return self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
+
+        #Calibration enabled:
+        #threshold=ON
+        #gain=OFF
+        #offset=OFF
+
+        resp = {}
+        ret = self.sendCommand("enablecal=%s,%s,%s" % (threshold.lower(),gain.lower(),offset.lower()))
+        for line in ret.split("\n"):
+            line = line.strip()
+            #if ('=' in line):
+            try:
+                (key,val) = line.split("=")
+                resp[key] = val
+            except:
+                pass
+                
+        return (resp)
 
     # CORE3H commands
 
@@ -727,7 +762,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         mode: "on" or "off"
 
         Return:
-        String containing the current split mode setting; "unknown" if the mode could not be determined
+        String containing the current split mode setting ("on"/"off"); "unknown" if the mode could not be determined
 
         Exception:
         ValueError: in case an unknown mode has been specified
