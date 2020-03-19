@@ -50,16 +50,17 @@ class DBBC3(object):
             self.mode = mode
             self.modeVersion = version
 
+            self.config = DBBC3Config(mode, version)
+            self.config.host = host
+            self.config.port = port
+            self.config.numCoreBoards = numBoards
+
             self._connect(host,port)
             # attach command set
             DBBC3Commandset(self, mode, version)
 
             self._validateVersion()
 
-            self.config = DBBC3Config(mode, version)
-            self.config.host = host
-            self.config.port = port
-            self.config.numCoreBoards = numBoards
 
             self.lastCommand = ""
             self.lastResponse = ""
