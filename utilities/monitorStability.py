@@ -7,6 +7,7 @@ from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Validation import DBBC3Validation
 import re
 import sys
+import traceback
 import numpy as np
 
 from datetime import datetime
@@ -32,6 +33,7 @@ def parseCommandLine():
     parser.add_argument("--on-sampler-error", dest='onSamplerError', choices=["reset","reload"], help="Action to execute on sampler error: reset will reset samplers, reload will reload the firmware")
     parser.add_argument("--on-pps-error", dest='onPpsError', default="resync", choices=["resync","ignore"], help="Action to execute on PPS error. (default %(default)s)")
     parser.add_argument("--reload-interval", dest='reloadInterval', type=int, help="The interval in seconds on which to automatically reload the firmware")
+    parser.add_argument("--sampler-threshold", dest='samplerThreshold', type=int, default=170000000, help="The threshold of the sampler correlation below which a sampler desynchronization will be assumed (default %(default)s)")
     parser.add_argument('ipaddress', help="the IP address of the DBBC3 running the control software")
 
     return(parser.parse_args())
@@ -75,7 +77,7 @@ def testSamplerSync(useBoards):
         ret = dbbc3.core3h_core3_corr(board)
 
         samplerState.append("OK")
-        if (ret[0] < 170000000) or (ret[1] < 170000000) or (ret[2] < 170000000):
+        if (ret[0] < args.samplerThreshold) or (ret[1] < args.samplerThreshold) or (ret[2] < args.samplerThreshold):
             resetAdb = True
             samplerState[board] = "FAIL"
 
@@ -174,7 +176,8 @@ def main():
             logger.info ("=== Done")
 
     except Exception as e:
-            print ("ERROR: ", e)
+            print ("ERROR: ", e.message)
+    #        traceback.print_exc(file=sys.stdout)
             
     finally:
             if (dbbc3):
