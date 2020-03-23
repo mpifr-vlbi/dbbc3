@@ -27,6 +27,7 @@ def parseCommandLine():
     parser.add_argument("-m", "--mode", required=True, help="The current DBBC3 mode, e.g. OCT_D or DDC_V")
     parser.add_argument("-n", "--num-coreboards", default=8, type=int, help="The number of activated core boards in the DBBC3 (default %(default)s)")
     parser.add_argument("-i", "--if", dest='boards', nargs="+", help="A list of core boards to be used for setup and validation. (e.g. -i A C E). If not specified will use all activated core boards.")
+    parser.add_argument("-d", "--description", default="", help="Add a description for this script execution which will be included in the log.")
     parser.add_argument("--interval", default=60, type=int, help="Cadence of monitoring in seconds (default: %(default)s)")
     parser.add_argument("--use-version", dest='ver', default= "", help="The version of the DBBC3 software.  Will assume the latest release version if not specified")
 #    parser.add_argument("--ignore-errors", action='store_true', help="Ignore any errors and continue with the validation")
@@ -74,8 +75,12 @@ def testSamplerSync(useBoards):
 
     samplerState = []
     for board in useBoards:
-        ret = dbbc3.core3h_core3_corr(board)
+        if (args.mode == "DDC_V"):
+            ret = dbbc3.dsc_corr(board)
+        else:
+            ret = dbbc3.core3h_core3_corr(board)
 
+        print (ret)
         samplerState.append("OK")
         if (ret[0] < args.samplerThreshold) or (ret[1] < args.samplerThreshold) or (ret[2] < args.samplerThreshold):
             resetAdb = True
@@ -115,7 +120,8 @@ def main():
             #val = DBBC3Validation(dbbc3, ignoreErrors=args.ignore_errors)
             
             logger.info ("=== Connected to %s:%d" % (args.ipaddress, args.port))
-            logger.info ("=== Test parameters: {}".format(args))
+            logger.info ("=== Description: %s" % (args.description))
+            logger.info ("=== Parameters: {}".format(args))
             
             useBoards = []
             if args.boards:
@@ -131,7 +137,7 @@ def main():
             if (args.mode.startswith("DDC")):
                 testPPS = True
 
-           # dbbc3.disableloop()
+            # do initial pps synchronization 
             if (testPPS):
                 dbbc3.pps_sync()
 
@@ -177,7 +183,7 @@ def main():
 
     except Exception as e:
             print ("ERROR: ", e.message)
-    #        traceback.print_exc(file=sys.stdout)
+            traceback.print_exc(file=sys.stdout)
             
     finally:
             if (dbbc3):
