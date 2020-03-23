@@ -322,7 +322,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def checkphase(self):
         '''
-        Checks wether all samplers are in sync
+        Checks whether all samplers are in sync
 
         Returns True if all samplers are in sync
         Returns False otherwise (get output with lastResponse() to find out which is not
@@ -2082,7 +2082,7 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         all four samplers of the selected board
 
         Parameters:
-        boardNum: the core3H board number (starts at 0)
+        board: can be given as a number (0 = board A) or as char e.g. A
 
         Returns: an array holding the TP values for all four samplers
         '''
@@ -2106,15 +2106,66 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         return(values)
         
     def dsc_corr(self, board):
+        '''
+        Performs cross-correlation between the samplers of the given board. Correlation
+        products are between these samplers:
+        1) 0-1
+        2) 1-2
+        3) 2-3
+        The values can be used to check if the samplers are in the correct phase (=synchronized).
+        Note: The absolute numbers returned depend on the input power and IF bandwidth. However the
+        values of one board should not deviate by more than 10%.
+
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+        List containing the three cross-correlations in the order described above
+        '''
 
         boardNum = self.boardToDigit(board)+1
 
         cmd = "dsc_corr=%d" % (boardNum)
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        corr = [0] * 3
+        # Correlation board 1:
+        # [0-1]: 157322344
+        # [1-2]: 155710069
+        # [2-3]: 158944035;
+        for line in ret.split("\n"):
+            if "0-1" in line:
+                corr[0] = int(line.split(":")[1].strip())
+            elif "1-2" in line:
+                corr[1] = int(line.split(":")[1].strip())
+            elif "2-3" in line:
+                corr[2] = int(line.split(":")[1].strip().replace(";",""))
+
+        return(corr)
 
     def dsc_bstat(self, board, sampler):
+        '''
+        Determines DSC statistics of the given board and sampler
+
+        Parameters:
+        board: can be given as a number (0 = board A) or as char e.g. A
+        sampler: the sampler number (0-3)
+
+        Returns:
+        list of dictionaries with the following keys:
+        count:  count for the given state
+        perc:   percentage for the given state
+
+        the list indices are
+        0: ++ state
+        1: + state
+        2: - state
+        3: -- state
+
+        return example:
+        [{'count': 1413, 'perc': 9}, {'count': 6358, 'perc': 40}, {'count': 6392, 'perc': 40}, {'count': 1459, 'perc': 9}]
+        
+        '''
 
         boardNum = self.boardToDigit(board)+1
 
@@ -2123,7 +2174,30 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         cmd = "dsc_bstat=%d, %d" % (boardNum, sampler)
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        pattern = re.compile("\[(\d\d)\]\s*=\s*(\d+),\s*(\d+)\%")
+        # dsc_bstat/
+        # Bstat[1][1]:
+        # [11] =   1454,   9%
+        # [10] =   6386,  40%
+        # [01] =   6364,  40%
+        # [00] =   1420,   9%;
+
+        stat = [0] * 4
+        for line in ret.split("\n"):
+            line = line.strip().replace(";","")
+            match = pattern.match(line)
+            if (match):
+                print (line)
+                if (match.group(1) == "11"):
+                    stat[0] = {"count":int(match.group(2)), "perc":int(match.group(3))}
+                elif (match.group(1) == "10"):
+                    stat[1] = {"count":int(match.group(2)), "perc":int(match.group(3))}
+                elif (match.group(1) == "01"):
+                    stat[2] = {"count":int(match.group(2)), "perc":int(match.group(3))}
+                elif (match.group(1) == "00"):
+                    stat[3] = {"count":int(match.group(2)), "perc":int(match.group(3))}
+
+        return(stat)
 
     def mag_thr(self, bbc, value):
 
