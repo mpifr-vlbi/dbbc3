@@ -220,42 +220,38 @@ class DBBC3(object):
 if __name__ == "__main__":
 
             
-#    config = DBBC3Config()
+    dbbc3 = DBBC3(host="134.104.30.223", mode="DDC_V")
+    
+    print (dbbc3.dsc_bstat(0,1))
 
-#    config.numCoreBoards = 4
-#    config.host="192.168.0.60"
-    dbbc3 = DBBC3(host="192.168.0.60", mode="DDC_U", version="")
-
-#    dbbc3.connect()
-
-    print( dbbc3.time())
-    print( dbbc3.core3_power(0))
-    print( dbbc3.core3_power(1))
-    print( dbbc3.core3_power(2))
-    print( dbbc3.core3_power(3))
-
-    print( dbbc3.core3_bstat(0))
-    print( dbbc3.core3_bstat(1))
-    print( dbbc3.core3_bstat(2))
-    print( dbbc3.core3_bstat(3))
-
-    print( dbbc3.dbbcif(0))
-    print( dbbc3.dbbcif(1))
-    print( dbbc3.dbbcif(2))
-    print( dbbc3.dbbcif('d'))
-
-    print( dbbc3.synthLock(0))
-    print( dbbc3.synthLock(1))
-    print( dbbc3.synthLock(2))
-    print( dbbc3.synthLock(3))
-
-    print( dbbc3.synthFreq(0))
-    print( dbbc3.synthFreq(1))
-    print( dbbc3.synthFreq(2))
-    print( dbbc3.synthFreq(3))
-
-    ret =  dbbc3.checkphase()
-    if not ret:
-        print( dbbc3.lastResponse)
+    #print( dbbc3.time())
+    #print( dbbc3.core3_power(0))
+    #print( dbbc3.core3_power(1))
+    #print( dbbc3.core3_power(2))
+    #print( dbbc3.core3_power(3))
+#
+#    print( dbbc3.core3_bstat(0))
+#    print( dbbc3.core3_bstat(1))
+#    print( dbbc3.core3_bstat(2))
+#    print( dbbc3.core3_bstat(3))
+#
+#    print( dbbc3.dbbcif(0))
+#    print( dbbc3.dbbcif(1))
+#    print( dbbc3.dbbcif(2))
+#    print( dbbc3.dbbcif('d'))
+#
+#    print( dbbc3.synthLock(0))
+#    print( dbbc3.synthLock(1))
+#    print( dbbc3.synthLock(2))
+#    print( dbbc3.synthLock(3))
+#
+#    print( dbbc3.synthFreq(0))
+#    print( dbbc3.synthFreq(1))
+#    print( dbbc3.synthFreq(2))
+#    print( dbbc3.synthFreq(3))
+#
+#    ret =  dbbc3.checkphase()
+#    if not ret:
+#        print( dbbc3.lastResponse)
 
 
