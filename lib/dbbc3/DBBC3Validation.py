@@ -218,9 +218,6 @@ class DBBC3Validation(object):
 
         board = self.dbbc3.boardToChar(board)
         ret = self.dbbc3.synthLock(board)
-        print (ret)
-
-        error = 0
 
         print ("\n===Checking synthesizer lock state of board %s" % (board))
         self._reportLock(board, ret['locked'])
