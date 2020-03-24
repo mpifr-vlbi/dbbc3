@@ -54,18 +54,18 @@ def main():
     try:
 
             logger.debug ("=== Trying to connect to %s:%d" % (args.ipaddress, args.port))
-            dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode=args.mode, numBoards=args.num_coreboards, version=args.ver)
+            dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode=args.mode, version=args.ver)
             
             logger.info ("=== Connected to %s:%d" % (args.ipaddress, args.port))
             logger.info ("=== Parameters: {}".format(args))
             
-            useBoards = []
-            if args.boards:
-                for board in args.boards:
-                    useBoards.append(dbbc3.boardToDigit(board))
-            else:
-                for board in range(args.num_coreboards):
-                    useBoards.append(dbbc3.boardToDigit(board)) 
+            #useBoards = []
+            #if args.boards:
+            #    for board in args.boards:
+            #        useBoards.append(dbbc3.boardToDigit(board))
+            #else:
+            #    for board in range(args.num_coreboards):
+            #        useBoards.append(dbbc3.boardToDigit(board)) 
 
             count = 1
             logger.info("checking if samplers are in sync")
