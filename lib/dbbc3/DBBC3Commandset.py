@@ -341,7 +341,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         A state of 0 indicates unlock
         A state of -1 indicates an error obtaining the lock state
 
-        Returns: an array holding the state
+        Returns:
+	        an dictionary with the following keys:
+		'locked':  contains the state of the synthesizer lock
         '''
 
         resp = {}
@@ -408,12 +410,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def enableloop(self):
         '''
         starts the automatic calibration loop
+	
+	Returns:
+        	Response message by the control software
         '''
         return self.sendCommand("enableloop")
 
     def disableloop(self):
         '''
         stops the automatic calibration loop
+	Returns:
+        Response message by the control software
         '''
         return self.sendCommand("disableloop")
 
@@ -631,6 +638,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return(response)
 
     def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
+	 '''
+         TODO: parse output from command
+         '''
         
         boardNum = self.boardToDigit(board)+1
 
