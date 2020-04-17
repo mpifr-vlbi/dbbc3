@@ -2008,23 +2008,27 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
 
-    def dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
+    def dbbc(self, bbc, freq=None, ifLabel=None, tpint=None):
         ''' 
         Gets / sets the parameters of the specified BBC.
 
-        Parameters:
-        bbc the BBC number (starts at 1) 
-        freq (optional): the BBC frequency. If not specified the current setting is returned
-        ifLabel (optional): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.
-        tpint (optional): total power integration time in seconds (default = 1 second)
+        If called without setting the freq parameter the current settings are returned as a dictionary.
 
-        Return:
-        dictionary containting the settings of the specified BBC
+        The frequency must be specified in units of MHz. The bandwidth for the DDC_V mode is fixed at 32MHz.
 
-        Exception:
-        ValueError: in case an invalid BBC number has been specified
-        ValueError: in case an invalid BBC frequency has been specified
-        ValueError: in case an invalid tpint value has been specified
+        Args:
+            bbc (int): the BBC number (starts at 1) 
+            freq (optional, float): the BBC frequency. If not specified the current setting is returned
+            ifLabel (optional, str): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.
+            tpint (optional,int): total power integration time in seconds (default = 1 second)
+
+        Returns:
+            settings (dict): dictionary containting the settings of the specified BBC
+
+        Raises:
+            ValueError: in case an invalid BBC number has been specified
+            ValueError: in case an invalid BBC frequency has been specified
+            ValueError: in case an invalid tpint value has been specified
         '''
 
         self._validateBBC(bbc)
