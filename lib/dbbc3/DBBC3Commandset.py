@@ -174,13 +174,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 # GENERAL DBBC3 commands
     def version(self):
-        '''
-        Reads the DBBC3 control software version
+        ''' Returns the DBBC3 control software version
 
         Returns:
-        dictionary holding the values reported by the version command with the following keys:
-        "mode": the current DBBC3 mode, e.g. DDC_V
-        "majorVersion": the major version of the current control software e.g. 124
+            a dictionary holding the values reported by the version command with the following keys:
+                "mode": the current DBBC3 mode, e.g. DDC_V
+                "majorVersion": the major version, e.g. 124
+                "minorVersion": the minor version (format YYYYMMDD) e.g. 20200113
         '''
 
         resp = {}
@@ -638,9 +638,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return(response)
 
     def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
-	 '''
-         TODO: parse output from command
-         '''
+	'''
+        TODO: parse output from command
+        '''
         
         boardNum = self.boardToDigit(board)+1
 
@@ -1190,19 +1190,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
     def core3h_tengbinfo(self, board, device):
-        '''
-        Retrieve the current parameters of the specified 10Gb ethernet device
+        ''' Retrieve the current parameters of the specified 10Gb ethernet device
         
         Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        device: the ethernet device name, e.g. eth0
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            device (str): the ethernet device name, e.g. eth0
 
         Return:
-        a dictionary containing all configuration parameters as key/value pairs. The arp_cache
-             key contains a list of arp entries ("mac","ip")
+            (dict of str: str): a dictionary containing all configuration parameters as key/value pairs. The arp_cache key contains a list of arp entries ("mac","ip")
 
-        Exception:
-        ValueError: in case an unknown ethernet device has been given
+        Raises:
+            ValueError: in case an unknown ethernet device has been given
         '''
 
         response = {} 
