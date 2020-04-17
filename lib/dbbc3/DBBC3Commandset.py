@@ -390,7 +390,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         synthNum = int(board / 2) +1
         sourceNum = board % 2 + 1
 
-        locked = [-1,-1]
+        locked = [-1,-1,-1,-1]
         ret = self.sendCommand("synth=%d,lock" % synthNum)
 
         lines = ret.split("\n")
@@ -403,7 +403,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                         locked[1]=False
                 elif line.startswith("S2 locked"):
                         locked[1]=True
-        #resp['locked'] = locked[sourceNum-1]
+                if line.startswith("S3 not locked"):
+                        locked[2]=False
+                elif line.startswith("S3 locked"):
+                        locked[2]=True
+                if line.startswith("S4 not locked"):
+                        locked[3]=False
+                elif line.startswith("S4 locked"):
+                        locked[3]=True
+        if (locked[sourceNum-1] == -1):
+            raise DBBC3Exception("Cannot determine synthesizer lock state of board %d" % (board))
 
 
         return locked[sourceNum-1]
