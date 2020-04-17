@@ -85,7 +85,7 @@ def testSamplerSync(useBoards):
         if (ret[0] < args.samplerThreshold) or (ret[1] < args.samplerThreshold) or (ret[2] < args.samplerThreshold):
             resetAdb = True
             samplerState[board] = "FAIL"
-	    #print (dbbc3.lastResponse)
+            #print (dbbc3.lastResponse)
 
         line = "sampler corr on board %d: %s %s %s %s" % (board, ret[0], ret[1], ret[2], samplerState[board])
         logger.debug(line)
@@ -141,9 +141,9 @@ def main():
             # do initial pps synchronization 
             if (testPPS):
                 dbbc3.pps_sync()
-	
-	    #enable  calibration loop
-	    dbbc3.enableloop()
+        
+            #enable  calibration loop
+            dbbc3.enableloop()
 
             reloadStart = datetime.now()
 

@@ -89,9 +89,9 @@ class DBBC3Commandset(object):
         if mode is not given the default command set is loaded
         if version is not given the latest version will be used
 
-        Parameters:
-        mode: the dbbc3 mode (e.g. OCT_D)
-        version: the command set version
+        Args:
+            mode (str): the dbbc3 mode (e.g. OCT_D)
+            version (str): the command set version
         '''
         
         csClassName = getMatchingCommandset(mode, version )
@@ -342,8 +342,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         A state of -1 indicates an error obtaining the lock state
 
         Returns:
-	        an dictionary with the following keys:
-		'locked':  contains the state of the synthesizer lock
+                an dictionary with the following keys:
+                'locked':  contains the state of the synthesizer lock
         '''
 
         resp = {}
@@ -410,16 +410,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def enableloop(self):
         '''
         starts the automatic calibration loop
-	
-	Returns:
-        	Response message by the control software
+        
+        Returns:
+                Response message by the control software
         '''
         return self.sendCommand("enableloop")
 
     def disableloop(self):
         '''
         stops the automatic calibration loop
-	Returns:
+        Returns:
         Response message by the control software
         '''
         return self.sendCommand("disableloop")
@@ -638,7 +638,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return(response)
 
     def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
-	'''
+        '''
         TODO: parse output from command
         '''
         
@@ -1752,8 +1752,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     # ADB3L commands
     def adb3l_reset(self):
-        '''
-        Resets all ADB3L boards and sets the registers to default values
+        ''' Resets all ADB3L boards and sets the registers to default values
+
+        Args:
+            test (str): Description of test
+
+        Returns:
+            str: empty string
         '''
         return self.sendCommand("adb3l=reset")
 

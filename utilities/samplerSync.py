@@ -23,6 +23,7 @@ def parseCommandLine():
 
     parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: %(default)s)")
     parser.add_argument("-m", "--mode", required=True, help="The current DBBC3 mode, e.g. OCT_D or DDC_V")
+    parser.add_argument("-v", "--verbose", action='store_true', default=False, help="Enable verbose output")
     parser.add_argument("--use-version", dest='ver', default= "", help="The version of the DBBC3 software.  Will assume the latest release version if not specified")
 #    parser.add_argument("--ignore-errors", action='store_true', help="Ignore any errors and continue with the validation")
     parser.add_argument('ipaddress', help="the IP address of the DBBC3 running the control software")
@@ -70,6 +71,8 @@ def main():
             count = 1
             logger.info("checking if samplers are in sync")
             while (dbbc3.checkphase() == False):
+                if (args.verbose):
+                    logger.debug("Response: %s" % dbbc3.lastResponse)
                 logger.info ("checkphase: failed. Attempt %d" % count)
                 logger.info ("resetting samplers")
                 dbbc3.adb3l_reseth()
