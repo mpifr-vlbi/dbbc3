@@ -31,6 +31,7 @@ import importlib
 import inspect
 import sys
 from datetime import datetime
+from DBBC3Exception import DBBC3Exception
 
 def getMatchingCommandset(mode, version):
     '''
