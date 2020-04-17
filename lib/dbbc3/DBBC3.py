@@ -25,6 +25,7 @@ __license__ = "GPLv3"
 
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Commandset import DBBC3Commandset
+from dbbc3.DBBC3Exception import DBBC3Exception
 import socket
 import atexit
 import re
@@ -32,9 +33,6 @@ import sys
 from time import sleep
 
 
-class DBBC3Exception(Exception):
-    def __init__(self, message):
-        self.message = message
         
 class DBBC3(object):
         
