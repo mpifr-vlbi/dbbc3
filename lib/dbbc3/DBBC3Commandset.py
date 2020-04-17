@@ -34,12 +34,19 @@ from datetime import datetime
 
 def getMatchingCommandset(mode, version):
     '''
-    Determines the Commandset sub-class to be used for the
-    given mode and version.
+    Determines the command set sub-class to be used for the given mode and version.
 
-    All Subclasses should be derived from DBBC3CommandsetDefault and should
-    follow the naming convention: DBBC3Commandset_MODE_VERSION
-    e.g. DBBC3Commandset_OCT_D_110
+    if mode is not given the default command set class (DBBC3CommandsetDefault) is selected
+    if version is not given the latest implemented version for the activated mode will be used.
+
+    Args:
+        mode (str): the dbbc3 mode (e.g. OCT_D)
+        version (str): the command set version
+
+    Returns:
+        str: The class name that implements the command set for the given mode and version
+    
+
     '''
 
     # parse all class names of this module
@@ -80,22 +87,23 @@ def getMatchingCommandset(mode, version):
 class DBBC3Commandset(object):
     '''
     Base class for all DBBC3 commandset implementations
+
+    Upon construction the appropriate sub-class implementing the command set for the given version and mode is determined 
+    and dynamically attached.
+
+    if mode is not given the default command set (DBBC3CommandsetDefault) is loaded.
+    if version is not given the latest implemented version for the activated mode will be used.
+
+    Args:
+        mode (str): the dbbc3 mode (e.g. OCT_D)
+        version (str): the command set version
+
     '''
 
     def __init__(self,clas, mode="", version=""):
-        '''
-        Constructor
-        Determines the approriate class implementing the command set for the given version and mode.
-        if mode is not given the default command set is loaded
-        if version is not given the latest version will be used
-
-        Args:
-            mode (str): the dbbc3 mode (e.g. OCT_D)
-            version (str): the command set version
-        '''
         
         csClassName = getMatchingCommandset(mode, version )
-        print ("Using commandset version: ", csClassName)
+        #print ("Using commandset version: ", csClassName)
     
         if (csClassName == ""):
             csClassName = "DBBC3CommandsetDefault"
@@ -106,6 +114,12 @@ class DBBC3Commandset(object):
 
 class DBBC3CommandsetDefault(DBBC3Commandset):
     '''
+    The basic class implementing all commands common to all DBBC modes and versions.
+
+    All sub-classes implementing commands that are special to a specific mode or version 
+    should be derived from DBBC3CommandsetDefault and should follow the class naming
+    convention: DBBC3Commandset_MODE_VERSION
+    e.g. DBBC3Commandset_OCT_D_110
     '''
 
     def __init__(self, clas):
@@ -174,10 +188,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 # GENERAL DBBC3 commands
     def version(self):
-        ''' Returns the DBBC3 control software version
+        ''' Returns the DBBC3 control software version.
 
         Returns:
-            a dictionary holding the values reported by the version command with the following keys:
+            a dictionary containing the version information of the DBBC3 control software::
+
                 "mode": the current DBBC3 mode, e.g. DDC_V
                 "majorVersion": the major version, e.g. 124
                 "minorVersion": the minor version (format YYYYMMDD) e.g. 20200113
@@ -193,7 +208,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         match = pattern.match(ret)
         if match:
-            #print ("match", match.group(1))
             # remove any st/nd/rd/th from the date string
             amended = re.sub('\d+(st|nd|rd|th)', lambda m: m.group()[:-2].zfill(2), match.group(3))
             resp["mode"] = match.group(1)
@@ -205,16 +219,21 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     
     def time(self):
         '''
-        Reads time information from all boards. For each board a dict with the
-        following keys is obtained:
-        seconds:
-        halfYearsSince2000:
-        daysSince2000:
-        timestamp:
-        timestampAsString:
-        
-        Return:
-        List of dicts; one entry for each board (0=A)
+        Obtains the time information from all boards.
+
+        For each board a dict with the following structure is obtained::
+
+            'timestamp' (time.struct_time): the timestamp
+            'timestampAsString' (str): the timestamp in string representation %Y-%m-%dT%H:%M:%S
+
+        In the OCT mode the dict contains the following additional fields::
+
+            'seconds'(int): seconds since the beginning of the current year
+            'halfYearsSince2000' (int): number of half years since the year 2000
+            'daysSince2000' (int): number of days since the year 2000
+
+        Returns:
+            List of dicts; one entry for each board (0=A)
         '''
 
         resp = []
@@ -251,6 +270,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         If the IF is connected on the top pin of the GCoMo (bypassing the
         downconversion) the inputType parameter should be set to 1.
+
         If the IF has been downconverted by the GCoMo the inputType should
         be set to 2. Selecting inputType=1 will disable the the synthesizer
         tone.
@@ -258,22 +278,27 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if the inputType is not specified or set to None the current 
         settings are reported.
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
-        inputType: 1 = IF input without downconversion
-                   2 = IF input after downconversion
-        mode (optional): "agc" = automatic gain control (default if not specified)
-                         "man" = manual attenuation (retains last agc value)
-                          numeric value = attenuation step (0-63) in steps of 0.5 dB
-        target (optional): the target power level for the "agc" mode
+        Args:
+            board: can be given as a number (0 = board A) or as char e.g. A
+            inputType: 1 = IF input without downconversion; 
+                       2 = IF input after downconversion
+            mode (optional): "agc" = automatic gain control (default if not specified); 
+                             "man" = manual attenuation (retains last agc value);
+                              numeric value = attenuation step (0-63) in steps of 0.5 dB
+            target (optional): the target power level for the "agc" mode
 
-        Return:
-        dictionary holding the values reported by dbbcif with the following keys:
-        "inputType": see above
-        "attenuation": the current attenuation level
-        "mode": the current agc mode 
-        "count": the current IF level
-        "target": the target IF level
+        Returns:
+            dictionary holding the values reported by dbbcif with the following structure::
+
+            "input" (int): see above
+            "attenuation" (int): the current attenuation level
+            "mode" (str): the current agc mode 
+            "count" (int): the current IF level
+            "target" (int): the target IF level
+
+        Raises:
+            ValueError: in case any arguments exceeds the valid range
+
         '''
 
         resp = {}
@@ -306,7 +331,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 resp['input'] = int(match.group(1))
                 resp['attenuation'] = int(match.group(2))
                 resp['mode'] = match.group(3)
-                resp['filter'] = int(match.group(4))
+            #    resp['filter'] = int(match.group(4))   # no function for the DBBC3 do not return
                 resp['count'] = int(match.group(5))
                 resp['target'] = int(match.group(6))
 
@@ -314,18 +339,21 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def reconfigure(self):
         '''
-        Reconfigures the core3h boards (reloads firmware), then reinitializes the ADB3L
-        and core3h and finally does a PPS sync.
+        Reconfigures the core3h boards 
+
+        Reloads the firmware, then reinitializes the ADB3L and core3h and finally does a PPS sync.
         '''
 
         self.sendCommand("reconfigure")
 
     def checkphase(self):
         '''
-        Checks whether all samplers are in sync
+        Checks whether all samplers of all core boards are in sync
 
-        Returns True if all samplers are in sync
-        Returns False otherwise (get output with lastResponse() to find out which is not
+        In case one or more samplers are not in sync query the lastResponse statement to receive information on the failed board(s)
+
+        Returns:
+            bool: True if all samplers are in sync, False otherwise
         '''
         ret = self.sendCommand("checkphase")
 
@@ -337,16 +365,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def synthLock(self, board):
         '''
         Gets the lock state of the GCoMo synthesizer serving the given core board
-        A state of 1 indicates lock
-        A state of 0 indicates unlock
-        A state of -1 indicates an error obtaining the lock state
 
         Returns:
-                an dictionary with the following keys:
-                'locked':  contains the state of the synthesizer lock
+            boolean: True if the synthesizer is locked; False otherwise
+
+        Raises:
+            DBBC3Exception: in case the lock state of the synthesizer cannot be obtained
+
+        ToDo:
+            * Needs to be verified for systems with 8 boards (probably parsing code is incomplete)
+            
         '''
 
-        resp = {}
+        #resp = {}
         board = self.boardToDigit(board)
         
         freq = -1
@@ -365,17 +396,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         lines = ret.split("\n")
         for line in lines:
                 if line.startswith("S1 not locked"):
-                        locked[0]=0
+                        locked[0]=False
                 elif line.startswith("S1 locked"):
-                        locked[0]=1
+                        locked[0]=True
                 if line.startswith("S2 not locked"):
-                        locked[1]=0
+                        locked[1]=False
                 elif line.startswith("S2 locked"):
-                        locked[1]=1
-        resp['locked'] = locked[sourceNum-1]
+                        locked[1]=True
+        #resp['locked'] = locked[sourceNum-1]
 
 
-        return resp
+        return locked[sourceNum-1]
 
     def synthFreq(self, board):
         ''' 
