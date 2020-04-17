@@ -236,6 +236,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Returns:
             time_list (:obj:`list` of :obj:`dict`): The list of time information dicts. One list element for every board (0=A).
 
+        Raises:
+            DBBC3Exception: in case no time information could be obtained
+
 
         '''
 
@@ -253,6 +256,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                     value = int(value)
                 entry[tok[0].strip()] = value
             elif "FiLa10G" in line: # new board entry
+                if not entry:
+                    raise DBBC3Exception("time: did not receive any time information for a board")
                 resp.append(entry)
                 entry =  {}
             else:
@@ -264,6 +269,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 except:
                     continue
                 
+        if not resp:
+            raise DBBC3Exception("time: Did not receive any time information")
         return(resp)
 
         
