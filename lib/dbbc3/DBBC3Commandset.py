@@ -222,7 +222,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Obtains the time information from all boards.
 
-        For each board a dict with the following structure is obtained::
+        For each board a dict with the following structure is returned::
 
             'timestamp' (time.struct_time): the timestamp
             'timestampAsString' (str): the timestamp in string representation %Y-%m-%dT%H:%M:%S
@@ -234,7 +234,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             'daysSince2000' (int): number of days since the year 2000
 
         Returns:
-            List of dicts; one entry for each board (0=A)
+            time_list (:obj:`list` of :obj:`dict`): The list of time information dicts. One list element for every board (0=A).
+
+
         '''
 
         resp = []
@@ -250,7 +252,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 if (value.isdigit()):
                     value = int(value)
                 entry[tok[0].strip()] = value
-            elif "FiLa10G" in line:
+            elif "FiLa10G" in line: # new board entry
                 resp.append(entry)
                 entry =  {}
             else:
@@ -520,14 +522,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 pass
         
         if not resp:
-            raise DBBC3Exception("The settings for the calibration loop could not be determined")
+            raise DBBC3Exception("enablecal: the settings for the calibration loop could not be determined")
 
         if threshold != resp["threshold"]:
-            raise DBBC3Exception("Requested threshold=%s, but received threshold=%s" % (threshold, resp["threshold"]))
+            raise DBBC3Exception("enablecal: requested threshold=%s, but received threshold=%s" % (threshold, resp["threshold"]))
         if gain != resp["gain"]:
-            raise DBBC3Exception("Requested gain=%s, but received gain=%s" % (gain, resp["gain"]))
+            raise DBBC3Exception("enablecal: requested gain=%s, but received gain=%s" % (gain, resp["gain"]))
         if offset != resp["offset"]:
-            raise DBBC3Exception("Requested offset=%s, but received offset=%s" % (offset, resp["offset"]))
+            raise DBBC3Exception("enablecal: requested offset=%s, but received offset=%s" % (offset, resp["offset"]))
                 
         return (resp)
 
@@ -1270,7 +1272,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
 
-        Return:
+        Returns:
             (dict of str: str): a dictionary containing all configuration parameters as key/value pairs. The arp_cache key contains a list of arp entries ("mac","ip")
 
         Raises:
