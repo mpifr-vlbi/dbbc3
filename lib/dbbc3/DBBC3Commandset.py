@@ -367,6 +367,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Gets the lock state of the GCoMo synthesizer serving the given core board
 
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
         Returns:
             boolean: True if the synthesizer is locked; False otherwise
 
@@ -375,13 +377,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         ToDo:
             * Needs to be verified for systems with 8 boards (probably parsing code is incomplete)
+            * The corresponding validation code must be changed due to different return type
             
         '''
 
-        #resp = {}
         board = self.boardToDigit(board)
-        
-        freq = -1
 
         # Each synthesizer has two outputs (source=1 or 2)
         # board A is served by synth 1 source 1
@@ -411,26 +411,36 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 if line.startswith("S4 not locked"):
                         locked[3]=False
                 elif line.startswith("S4 locked"):
-                        locked[3]=True
+                        "locked[3]=True
         if (locked[sourceNum-1] == -1):
             raise DBBC3Exception("Cannot determine synthesizer lock state of board %d" % (board))
-
 
         return locked[sourceNum-1]
 
     def synthFreq(self, board):
         ''' 
-        Determines the frequency of the GCoMo synthesizer serving the given core board
-        board: core board identifier (numeric or char)
+        Determines the frequency in MHz of the synthesizer serving the given core board
 
-        Returns the synthesizer frequency in MHz
-        # board B is served by synth 1 source 2
-        # board C is served by synth 2 source 1
-        # etc.
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            dict: A dictionary with the following structure::
+
+                "target" (int): the target frequency in MHz
+                "actual" (int): the actual frequency in MHz
+
+        Raises:
+            DBBC3Exception: In case the frequency could not be determined
         '''
 
         resp = {}
         boardNum = self.boardToDigit(board)
+
+        # board A is served by synth 1 source 1
+        # board B is served by synth 1 source 2
+        # board C is served by synth 2 source 1
+        # etc.
         synthNum = int(boardNum / 2) +1
         sourceNum = boardNum % 2 + 1
 
@@ -445,6 +455,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                         tok = line.split(" ")
                         resp['target'] = int(tok[1]) * 2
                         resp['actual'] = int(tok[5]) * 2
+        if not resp:
+            raise DBBC3Exception("The synthesizer frequency for board %d could not be determined" % (board))
 
         return(resp)
 
@@ -1233,7 +1245,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def core3h_tengbinfo(self, board, device):
         ''' Retrieve the current parameters of the specified 10Gb ethernet device
         
-        Parameters:
+        Args:
             board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
 
