@@ -281,17 +281,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Args:
             board: can be given as a number (0 = board A) or as char e.g. A
-            inputType: 1 = IF input without downconversion; 
+            inputType (int): 1 = IF input without downconversion; 
                        2 = IF input after downconversion
-            mode (optional): "agc" = automatic gain control (default if not specified); 
-                             "man" = manual attenuation (retains last agc value);
-                              numeric value = attenuation step (0-63) in steps of 0.5 dB
-            target (optional): the target power level for the "agc" mode
+            mode (str/int): "agc" = automatic gain control (default if not specified); "man" = manual attenuation (retains last agc value); numeric value = attenuation step (0-63) in steps of 0.5 dB
+            target (int): the target power level for the "agc" mode
 
         Returns:
             dictionary holding the values reported by dbbcif with the following structure::
 
-            "input" (int): see above
+            "inputType" (int): see parameter description for meaning of returned value
             "attenuation" (int): the current attenuation level
             "mode" (str): the current agc mode 
             "count" (int): the current IF level
@@ -329,7 +327,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         match = pattern.match(ret)
         if match:
 
-                resp['input'] = int(match.group(1))
+                resp['inputType'] = int(match.group(1))
                 resp['attenuation'] = int(match.group(2))
                 resp['mode'] = match.group(3)
             #    resp['filter'] = int(match.group(4))   # no function for the DBBC3 do not return
@@ -411,7 +409,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 if line.startswith("S4 not locked"):
                         locked[3]=False
                 elif line.startswith("S4 locked"):
-                        "locked[3]=True
+                        locked[3]=True
         if (locked[sourceNum-1] == -1):
             raise DBBC3Exception("Cannot determine synthesizer lock state of board %d" % (board))
 
@@ -462,51 +460,74 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def enableloop(self):
         '''
-        starts the automatic calibration loop
+        Starts the automatic calibration loop
+
+        For changing the parameters of the calibration loop use the :py:func:`enablecal` method
         
         Returns:
-                Response message by the control software
+            str: Response message from the control software
         '''
         return self.sendCommand("enableloop")
 
     def disableloop(self):
         '''
-        stops the automatic calibration loop
+        Stops the automatic calibration loop
+
         Returns:
-        Response message by the control software
+            str: Response message from the control software
         '''
         return self.sendCommand("disableloop")
 
     def enablecal(self, threshold="on", gain="off", offset="off"):
         '''
         Switches on/off  the threshold, gain and offset calibration for the automatic calibration loop
-        The loop must be activated with the enableloop command.
-        If called without the optional parameters the defaults will be used (see Parameters)
 
-        Parameters:
-        threshold (optional, default=on): switch threshold calibration [on/off]
-        gain (optional, default=off): switch gain calibration [on/off]
-        offset (optional, default=off): switch offset calibration [on/off]
+        The loop must be activated with the :py:func:`enableloop` command.
+        If called without the optional parameters the defaults will be used (see below)
 
-        Return:
-        If successful returns dictionary with keys "threshold", "gain", "offset"
+        Args:
+            threshold (optional, default=on): switch threshold calibration [on/off]
+            gain (optional, default=off): switch gain calibration [on/off]
+            offset (optional, default=off): switch offset calibration [on/off]
+
+        Returns:
+            dict: a dictionary with the following structure::
+
+                "threshold":
+                "gain":
+                "offset":
+        Raises:
+            DBBC3Exception: * if the state of the calibration loop could not be queried * if the reported state differs from what was requested
+
         '''
 
         #Calibration enabled:
         #threshold=ON
         #gain=OFF
         #offset=OFF
+        threshold = threshold.lower()
+        gain = gain.lower()
+        offset = offset.lower()
 
         resp = {}
-        ret = self.sendCommand("enablecal=%s,%s,%s" % (threshold.lower(),gain.lower(),offset.lower()))
+        ret = self.sendCommand("enablecal=%s,%s,%s" % (threshold,gain,offset))
         for line in ret.split("\n"):
             line = line.strip()
-            #if ('=' in line):
             try:
                 (key,val) = line.split("=")
-                resp[key] = val
+                resp[key] = val.lower()
             except:
                 pass
+        
+        if not resp:
+            raise DBBC3Exception("The settings for the calibration loop could not be determined")
+
+        if threshold != resp["threshold"]:
+            raise DBBC3Exception("Requested threshold=%s, but received threshold=%s" % (threshold, resp["threshold"]))
+        if gain != resp["gain"]:
+            raise DBBC3Exception("Requested gain=%s, but received gain=%s" % (gain, resp["gain"]))
+        if offset != resp["offset"]:
+            raise DBBC3Exception("Requested offset=%s, but received offset=%s" % (offset, resp["offset"]))
                 
         return (resp)
 
