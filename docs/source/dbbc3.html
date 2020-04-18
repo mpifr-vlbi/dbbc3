@@ -391,20 +391,43 @@ dictionary (key=devicename, value=memory address range)</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect">
 <tt class="descname">core3h_inputselect</tt><big>(</big><em>board</em>, <em>source</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Selects one of the available input data sources.</p>
-<p>The command implictely resets the VSI bitmask, input width and VSI swap settings to their
+<p>The command implicitly resets the VSI bitmask, input width and VSI swap settings to their
 respective defaults.</p>
-<p>TODO: update the documentation</p>
 <dl class="docutils">
-<dt>Note: it is recommended to execute core3h_reset (with ot without keepsync option) after</dt>
-<dd>changing the input source</dd>
+<dt>The input width is reset to:</dt>
+<dd><ul class="first last simple">
+<li>32bit for tvg, vsi1 and vsi2</li>
+<li>64bit for vsi1-2</li>
+<li>128bit for vsi1-2-3-4</li>
+</ul>
+</dd>
 </dl>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-source: one of &#8220;tvg&#8221;,&#8221;vsi1&#8221;,&#8221;vsi2&#8221;,&#8221;vsi1-2&#8221;,&#8221;vsi1-2-3-4&#8221;,&#8221;vsi1-2-3-4-5-6-7-8&#8221;</p>
-<p>Return:
-String containing the current split mode setting; &#8220;unknown&#8221; if the mode could not be determined</p>
-<p>Exception:
-ValueError: in case an unknown mode has been specified</p>
+<p>TODO: update the documentation
+TODO: Find out about &#8220;vsi1-2-3-4-5-6-7-8&#8221;</p>
+<p>Note: it is recommended to execute <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reset" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reset"><tt class="xref py py-func docutils literal"><span class="pre">core3h_reset()</span></tt></a>
+(with or without the keepsync option) after changing the input source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>source</strong> (<em>str</em>) &#8211; one of &#8220;tvg&#8221;,&#8221;vsi1&#8221;,&#8221;vsi2&#8221;,&#8221;vsi1-2&#8221;,&#8221;vsi1-2-3-4&#8221;,&#8221;vsi1-2-3-4-5-6-7-8&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the current split mode setting; &#8220;unknown&#8221; if the mode could not be determined</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">str</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an unknown mode has been specified</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -445,26 +468,60 @@ False: otherwise</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread">
 <tt class="descname">core3h_regread</tt><big>(</big><em>board</em>, <em>regNum</em>, <em>device='core3'</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads the value of the device register</p>
-<p>Note: not all devices have readbale registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-regNum: the index of the device register to read
-device: the name of the device (as returned by the core3h_devices command); default = core3</p>
-<p>Return:
-The value of the device register</p>
+<p>Note: not all devices have readable registers. See the DBBC3 documentation for the core3h &#8220;devices&#8221; command.
+The list of available devices can be obtained with the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>regNum</strong> (<em>int</em>) &#8211; the index of the device register to read</li>
+<li><strong>device</strong> (<em>str</em>) &#8211; the name of the device (as returned by the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command). default = core3</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>tuple</strong> &#8211;
+tuple containing:</p>
+<div class="highlight-python"><pre>register value in hexadecimal string format
+register value in binary string format
+register value in decimal format (signed 32-bit)</pre>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str,str,int</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread_dec">
 <tt class="descname">core3h_regread_dec</tt><big>(</big><em>board</em>, <em>regNum</em>, <em>device='core3'</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread_dec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads the value of the device register (in machine readable form)</p>
-<p>Note: not all devices have readbale registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-regNum: the index of the device register to read
-device: the name of the device (as returned by the core3h_devices command); default = core3</p>
-<p>Return:
-The value of the device register</p>
+<dd><p>Reads the decimal value of the device register</p>
+<p>Note: not all devices have readbale registers. See DBBC3 documentation for the core3h &#8220;devices&#8221; command.
+The list of available devices can be obtained with the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>regNum</strong> (<em>int</em>) &#8211; the index of the device register to read</li>
+<li><strong>device</strong> (<em>str</em>) &#8211; the name of the device (as returned by the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command). default = core3</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The decimal value of the device register</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -472,16 +529,36 @@ The value of the device register</p>
 <tt class="descname">core3h_regupdate</tt><big>(</big><em>board</em>, <em>device</em>, <em>regNum</em>, <em>value</em>, <em>bitmask</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regupdate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates only certain bits of the value of a device register</p>
 <p>Note: not all devices have writable registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-device: the name of the device (as returned by the core3h_devices command)
-regNum: the index of the device register to read
-value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304
-bitmask: the bitmask specifying which bits are overwritten (1) and which remain unchanged (0)</p>
-<p>Return:
-True: if value was changed; False otherwise</p>
-<p>Exceptions:
-throws ValueError in case the supplied value is not in hex format</p>
+<p>The bitmask must be in hexadecimal format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>device</strong> (<em>str</em>) &#8211; the name of the device (as returned by the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command). default = core3</li>
+<li><strong>regNum</strong> (<em>int</em>) &#8211; the index of the device register to read</li>
+<li><strong>value</strong> (<em>hex</em>) &#8211; the register value to write; must be 32-bit hexadecimal string, e.g. 0x01020304</li>
+<li><strong>bitmask</strong> (<em>hex</em>) &#8211; the 32-bit hexadecimal bitmask; 1=overwrite 0=leave unchanged</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if value was changed; False otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">boolean</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><ul class="first last simple">
+<li><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case the supplied value is not in hex format</li>
+<li><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case the supplied bitmask is not in hex format</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -489,15 +566,30 @@ throws ValueError in case the supplied value is not in hex format</p>
 <tt class="descname">core3h_regwrite</tt><big>(</big><em>board</em>, <em>device</em>, <em>regNum</em>, <em>value</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regwrite" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes a value into the device register</p>
 <p>Note: not all devices have writable registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-device: the name of the device (as returned by the core3h_devices command)
-regNum: the index of the device register to read
-value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304</p>
-<p>Return:
-True: if value was changed; False otherwise</p>
-<p>Exceptions:
-throws ValueError in case the supplied value is not in hex format</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>device</strong> (<em>str</em>) &#8211; the name of the device (as returned by the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices"><tt class="xref py py-func docutils literal"><span class="pre">core3h_devices()</span></tt></a> command). default = core3</li>
+<li><strong>regNum</strong> (<em>int</em>) &#8211; the index of the device register to read</li>
+<li><strong>value</strong> (<em>hex</em>) &#8211; the register value to write; must be a 32-bit hexadecimal string, e.g. 0x01020304</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if value was changed; False otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">boolean</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case the supplied value is not in hex format</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -530,24 +622,36 @@ processed as if they were independent input streams, The lower half
 (by bit position) is output at output0 the higher half is output as
 output1.</p>
 <p>Split mode requires an input width of at least 2 bit.</p>
-<dl class="docutils">
-<dt>Note: raw and vdif format can be applied independently to each split</dt>
-<dd>stream with the heklp of the core3h_start 1+2+3+4 command syntax</dd>
-<dt>Note: in order to specify a correct VDIF frame setup you have to take</dt>
-<dd>into account that the effective input width is halved when the
-split mode is enabled.</dd>
-<dt>Note: A restriction of the split mode is that only output0 is capable</dt>
-<dd>of producing multi-threaded VDIF data. At output1 the data will
-always be forced to be single-threaded, regardless of the chosen
-frame setup.</dd>
-</dl>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-mode: &#8220;on&#8221; or &#8220;off&#8221;</p>
-<p>Return:
-String containing the current split mode setting (&#8220;on&#8221;/&#8221;off&#8221;); &#8220;unknown&#8221; if the mode could not be determined</p>
-<p>Exception:
-ValueError: in case an unknown mode has been specified</p>
+<p>Note: raw and vdif format can be applied independently to each split
+stream with the heklp of the core3h_start 1+2+3+4 command syntax</p>
+<p>Note: in order to specify a correct VDIF frame setup you have to take
+into account that the effective input width is halved when the
+split mode is enabled.</p>
+<p>Note: A restriction of the split mode is that only output0 is capable
+of producing multi-threaded VDIF data. At output1 the data will
+always be forced to be single-threaded, regardless of the chosen frame setup.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>mode</strong> (<em>str</em>) &#8211; &#8220;on&#8221; or &#8220;off&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the current split mode setting (&#8220;on&#8221;/&#8221;off&#8221;); &#8220;unknown&#8221; if the mode could not be determined</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">str</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an unknown mode has been specified</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -678,10 +782,18 @@ in case an unknown ethernet device has been given</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_time">
 <tt class="descname">core3h_time</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays the current time of the active 1pps source</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
-<p>Return:
-Datetime containing the current UTC timestamp of the active 1PPS source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the current UTC timestamp of the active 1PPS source</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">datetime</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -696,19 +808,39 @@ TODO Discuss with Sven 3 sec offset between reported seconds and GPS time</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tvg_mode">
 <tt class="descname">core3h_tvg_mode</tt><big>(</big><em>board</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tvg_mode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets / sets the test vector generator mode for the given board.</p>
-<p>mode can be one of:
-all-0:  all bits = 0
-all-1:  all bits = 1
-vsi-h:  VSI-H test vector pattern
-cnt:    pattern with four 8-bit counters
-If called without the mode parameter the current setting is returned.</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-mode: the tvg mode identifier (see above)</p>
-<p>Return:
-String containing the current tvg mode; &#8220;unknown&#8221; if the mode could not be determined</p>
-<p>Exception:
-ValueError: in case an unknown mode has been specified</p>
+<dl class="docutils">
+<dt>mode can be one of:</dt>
+<dd><ul class="first last simple">
+<li>all-0:  all bits = 0</li>
+<li>all-1:  all bits = 1</li>
+<li>vsi-h:  VSI-H test vector pattern</li>
+<li>cnt:    pattern with four 8-bit counters</li>
+</ul>
+</dd>
+</dl>
+<p>If called without the mode parameter the current setting is returned.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>mode</strong> (<em>str</em>) &#8211; the tvg mode identifier (see above)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the current tvg mode; &#8220;unknown&#8221; if the mode could not be determined</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">str</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an unknown mode has been specified</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -733,29 +865,45 @@ unknown: in case the encoding setting could not be determined</p>
 properties will be returned.</p>
 <p>If successful the command returns the resulting number of frames per second
 and the number of data threads, according to the currently selected input
-(see core3h_inputselect for details).
-If the VDIF frame properties do not match the currently selected input the
+(see <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect"><tt class="xref py py-func docutils literal"><span class="pre">core3h_inputselect()</span></tt></a> for details).</p>
+<p>If the VDIF frame properties do not match the currently selected input the
 &#8220;compatible&#8221; flag in the return dictionary is set to &#8220;False&#8221;. The command
 fails if the desired frame setup is not supported. The frame setup is not
 changed in this case.</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
-numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
-payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame</p>
-<p>Return:
-Dictionary with the following keys:</p>
-<blockquote>
-<div>&#8220;compatible&#8221;    (False in case an incomaptible setup was requested)
-&#8220;channelWidth&#8221;
-&#8220;numChannels&#8221;
-&#8220;payloadSize&#8221;
-&#8220;frameSize&#8221;
-&#8220;numThreads&#8221;      (optional)
-&#8220;framesPerSecond&#8221; (optional)
-&#8220;framesPerThread&#8221; (optional)</div></blockquote>
-<p>Exception:
-ValueError: in case channelWidth has been specified but no numChannels were set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>channelWidth</strong> (<em>int, optional</em>) &#8211; the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)</li>
+<li><strong>numChannels</strong> (<em>int, optional</em>) &#8211; number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)</li>
+<li><strong>payloadSize</strong> (<em>int, optional</em>) &#8211; the total payload size in bytes (=frame size without header) of the VDIF frame</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>dictionary with the following structure:</p>
+<div class="highlight-python"><pre>&quot;compatible&quot; (boolean): False in case an incompatible setup was requested, True otherwise
+&quot;channelWidth&quot; (int): the size of each channel in bits
+&quot;numChannels&quot; (int): number of channels per VDIF frame
+&quot;payloadSize&quot; (int): the total payload size in bytes
+&quot;frameSize&quot; (int): the size of the VDIF frame in bytes
+&quot;numThreads&quot; (int, optional): the number of threads
+&quot;framesPerSecond&quot; (int, optional): the number of frames per second
+&quot;framesPerThread&quot; (int, optional): the number of frames per thread</pre>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case channelWidth has been specified but no numChannels were set</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -808,7 +956,7 @@ board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 <dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_bitmask">
 <tt class="descname">core3h_vsi_bitmask</tt><big>(</big><em>board</em>, <em>vsi=None</em>, <em>mask=None</em>, <em>reset=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_bitmask" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO: parse output from command</p>
+<dd><p>ToDo: parse output from command</p>
 </dd></dl>
 
 <dl class="method">
@@ -819,14 +967,33 @@ board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 sampleRate parameter the current VSI input sample rate is returned.</p>
 <p>The decimation parameter decimates the input such that the resulting
 sample rate is 1/decimation of the specified rate</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
-sampleRate (optional): the input sampling rate in samples per second
-decimation (optional): a divisor in the range 1..255; default=1</p>
-<p>Return:
-Dictionary with keys &#8220;sampleRate&#8221; and &#8220;decimation&#8221;</p>
-<p>Exception:
-Exception: in case the sample rate could not be set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>boardi</strong> (<em>int</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>sampleRate</strong> (<em>int, optional</em>) &#8211; the input sampling rate in samples per second</li>
+<li><strong>decimation</strong> (<em>int, optional</em>) &#8211; a divisor in the range 1..255; default=1</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>dictionary with the following structure:</p>
+<div class="highlight-python"><pre>&quot;sampleRate&quot; (int): sample rate in Hz
+&quot;decimation&quot; (int): decimation factor</pre>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">DBBC3Exception</span></tt> &#8211;
+in case the sample rate could not be set</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1077,8 +1244,10 @@ DDC_V mode version 123</p>
 
 <dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbc">
-<tt class="descname">dbbc</tt><big>(</big><em>bbc</em>, <em>freq=None</em>, <em>bw=None</em>, <em>ifLabel=None</em>, <em>tpint=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbc" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">dbbc</tt><big>(</big><em>bbc</em>, <em>freq=None</em>, <em>ifLabel=None</em>, <em>tpint=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets / sets the parameters of the specified BBC.</p>
+<p>If called without setting the freq parameter the current settings are returned as a dictionary.</p>
+<p>The frequency must be specified in units of MHz. The bandwidth for the DDC_V mode is fixed at 32MHz.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
