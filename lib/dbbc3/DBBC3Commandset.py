@@ -546,38 +546,43 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Reads the value of the device register
 
-        Note: not all devices have readbale registers. See DBBC3 documentation for "devices" command
+        Note: not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
+        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        regNum: the index of the device register to read
-        device: the name of the device (as returned by the core3h_devices command); default = core3
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            regNum (int): the index of the device register to read
+            device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
 
-        Return:
-        The value of the device register
+        Returns:
+            int: The value of the device register
         '''
 
         boardNum = self.boardToDigit(board) +1
 
         ret = self.sendCommand("core3h=%d,regread %s %d" % (boardNum, device, regNum))
-        lines = ret.split("\n")
-        fields = lines[2].split("/")
 
-        return int(fields[2].strip())
+        # 0xBFBFBFBF / 0b10111111101111111011111110111111 / -1077952577
+        lines = ret.split("\n")
+        for line in lines:
+            fields = line.split("/")
+            if len(fields) == 3:
+                return hex(int(fields[0], 16)), bin(int(fields[1],2)), int(fields[2])
 
     def core3h_regread_dec(self, board, regNum, device="core3"):
         '''
-        Reads the value of the device register (in machine readable form)
+        Reads the decimal value of the device register
 
-        Note: not all devices have readbale registers. See DBBC3 documentation for "devices" command
+        Note: not all devices have readbale registers. See DBBC3 documentation for the core3h "devices" command.
+        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        regNum: the index of the device register to read
-        device: the name of the device (as returned by the core3h_devices command); default = core3
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            regNum (int): the index of the device register to read
+            device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
 
-        Return:
-        The value of the device register
+        Returns:
+            int: The decimal value of the device register
         '''
 
         boardNum = self.boardToDigit(board) +1
