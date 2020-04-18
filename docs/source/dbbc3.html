@@ -1,0 +1,1509 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>dbbc3 Package &mdash; dbbc3 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="dbbc3 0.1 documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">dbbc3 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dbbc3-package">
+<h1>dbbc3 Package<a class="headerlink" href="#dbbc3-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">dbbc3</span></tt> Package<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-dbbc3.__init__"></span></div>
+<div class="section" id="module-dbbc3.DBBC3">
+<span id="dbbc3-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3" title="Permalink to this headline">¶</a></h2>
+<p>module for monitoring and control of the DBBC3 VLBI backend</p>
+<p>Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="class">
+<dt id="dbbc3.DBBC3.DBBC3">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3.</tt><tt class="descname">DBBC3</tt><big>(</big><em>host</em>, <em>port=4000</em>, <em>numBoards=8</em>, <em>mode=''</em>, <em>version=''</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="method">
+<dt id="dbbc3.DBBC3.DBBC3.boardToChar">
+<tt class="descname">boardToChar</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.boardToChar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
+board: board identifier; can be numeric e.g. 0, or char e.g. &#8216;A&#8217;
+Returns the core board identifier as uppercase char e.g. A</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3.DBBC3.boardToDigit">
+<tt class="descname">boardToDigit</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.boardToDigit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the core board ID (e.g. A) into the board number (starting at 0)
+board: board identifier; can be numeric e.g. 0, or char e.g. &#8216;A&#8217;
+Returns the core board identifier as integer (starting at 0 for board A)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3.DBBC3.core3hModes">
+<tt class="descname">core3hModes</tt><em class="property"> = ['independent', 'half_merged', 'merged', 'pfb']</em><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.core3hModes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main class of the DBBC3 module.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3.DBBC3.dataFormats">
+<tt class="descname">dataFormats</tt><em class="property"> = ['vdif', 'raw']</em><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.dataFormats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3.DBBC3.disconnect">
+<tt class="descname">disconnect</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3.DBBC3.sendCommand">
+<tt class="descname">sendCommand</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.sendCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for sending generic commands to the DBBC3</p>
+<p>Returns the response</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dbbc3.DBBC3Commandset">
+<span id="dbbc3commandset-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Commandset</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Commandset" title="Permalink to this headline">¶</a></h2>
+<p>This module is part of the DBBC3 package and implements the command sets
+of the DBBC3 for the various modes and versions</p>
+<p>Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3Commandset</tt><big>(</big><em>clas</em>, <em>mode=''</em>, <em>version=''</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Base class for all DBBC3 commandset implementations</p>
+<p>Upon construction the appropriate sub-class implementing the command set for the given version and mode is determined
+and dynamically attached.</p>
+<p>if mode is not given the default command set (DBBC3CommandsetDefault) is loaded.
+if version is not given the latest implemented version for the activated mode will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mode</strong> (<em>str</em>) &#8211; the dbbc3 mode (e.g. OCT_D)</li>
+<li><strong>version</strong> (<em>str</em>) &#8211; the command set version</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3CommandsetDefault</tt><big>(</big><em>clas</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3Commandset" title="dbbc3.DBBC3Commandset.DBBC3Commandset"><tt class="xref py py-class docutils literal"><span class="pre">dbbc3.DBBC3Commandset.DBBC3Commandset</span></tt></a></p>
+<p>The basic class implementing all commands common to all DBBC modes and versions.</p>
+<p>All sub-classes implementing commands that are special to a specific mode or version
+should be derived from DBBC3CommandsetDefault and should follow the class naming
+convention: DBBC3Commandset_MODE_VERSION
+e.g. DBBC3Commandset_OCT_D_110</p>
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_SDA_on">
+<tt class="descname">adb3l_SDA_on</tt><big>(</big><em>board</em>, <em>sampler</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_SDA_on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns on SDA Mode (Sampler Delay Adjust) for the specified board and sampler.
+Has to be used before adjusting the delay of a sampler with the delay command.
+Introduces a delay offset of 60ps.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampler: sampler number (0-3)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_bistoff">
+<tt class="descname">adb3l_bistoff</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_bistoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns off BIST-mode for all samplers on the specified board.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_biston">
+<tt class="descname">adb3l_biston</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_biston" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns on BIST-mode for all samplers on the specified board.
+Note: after setting BIST-mode a &#8220;reseth&#8221; command must be executed</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_delay">
+<tt class="descname">adb3l_delay</tt><big>(</big><em>board</em>, <em>sampler</em>, <em>value=512</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the sampler delay for the specified board and sampler.
+The allowed range is 0-1023 which corresponds to -60ps to +60ps with a stepping size of 120fs.
+The default is 512 = 0ps.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampler: sampler number (0-3)
+value (default=512): the delay value in steps of 120fs</p>
+<p>Exceptions:
+Throws ValueError in case an illegal value was passed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_gain">
+<tt class="descname">adb3l_gain</tt><big>(</big><em>board</em>, <em>sampler</em>, <em>value=512</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_gain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the sampler gain value for the specified board and sampler.
+The allowed range is 0-255 which corresponds to -0.5dB to +0.5dB with a stepping size of 0.004dB.
+The default is 128 = 0dB.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampler: sampler number (0-3)
+value (default=128): the sampler offset in steps of 0.004dB.</p>
+<p>Exceptions:
+Throws ValueError in case an illegal value was passed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_offset">
+<tt class="descname">adb3l_offset</tt><big>(</big><em>board</em>, <em>sampler</em>, <em>value=512</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the sampler offset value for the specified board and sampler.
+The allowed range is 0-255 which corresponds to -20mV to +20mV with a stepping size of 156microV.
+The default is 128 = 0mV.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampler: sampler number (0-3)
+value (default=128): the sampler offset in steps of 156microV.</p>
+<p>Exceptions:
+Throws ValueError in case an illegal value was passed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_reset">
+<tt class="descname">adb3l_reset</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets all ADB3L boards and sets the registers to default values</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>test</strong> (<em>str</em>) &#8211; Description of test</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">empty string</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_reseth">
+<tt class="descname">adb3l_reseth</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_reseth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets all ADB3L boards, but does NOT change/reset any register settings</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_resets">
+<tt class="descname">adb3l_resets</tt><big>(</big><em>board</em>, <em>sampler=-1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.adb3l_resets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the ADB3L registers to default values for the specified board and
+for the specified sampler (optiona1)</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampler (optional): sampler number (0-3)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.checkphase">
+<tt class="descname">checkphase</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.checkphase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether all samplers of all core boards are in sync</p>
+<p>In case one or more samplers are not in sync query the lastResponse statement to receive information on the failed board(s)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if all samplers are in sync, False otherwise</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_arp">
+<tt class="descname">core3h_arp</tt><big>(</big><em>board</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_arp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables or disables ARP queries on all ethernet cores.</p>
+<p>If called without the mode parameter the current setting is reported</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+mode (optional): Can be &#8220;on&#8221; or &#8220;off&#8221;.</p>
+<p>Return:
+String containing the current ARP mode (&#8220;on&#8221; / &#8220;off&#8221;)</p>
+<p>Exception:
+ValueError: in case an illegal mode has been requested</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_bstat">
+<tt class="descname">core3h_core3_bstat</tt><big>(</big><em>board</em>, <em>sampler</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_bstat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the 2-bit sampler statistics for the given core board
+and sampler.</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A
+sampler: the sampler number (starting at 0)</p>
+<p>Returns:
+List containing the 4 levels
+None: if the core board is not connected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_corr">
+<tt class="descname">core3h_core3_corr</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_corr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs cross-correlation between the samplers of the given board. Correlation
+products are between these samplers:
+1) 0-1
+2) 1-2
+3) 2-3</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A</p>
+<p>Return:
+List containing the three cross-correlations in the order described above</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_init">
+<tt class="descname">core3h_core3_init</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the given core3h board and sets parameters as specified in
+the control file.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Return:
+True if successful
+False otherwise</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_mode">
+<tt class="descname">core3h_core3_mode</tt><big>(</big><em>board</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets or sets the Core3h mode.
+If the optional mode parameter is ommited the currently set mode is returned.
+If given, mode must be a valid Core3h mode (as listed in DBBC3Config.core3hModes)</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+mode (optional): if ommited gets the currently active mode</p>
+<p>Return:
+A string containing the currently set mode</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_power">
+<tt class="descname">core3h_core3_power</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_core3_power" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the gains of all 4 samplers of the given board</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A</p>
+<p>Return:
+List containing the gains for all samplers (a[0] = sampler1 etc.)
+None:  in case the core3 board is not connected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_destination">
+<tt class="descname">core3h_destination</tt><big>(</big><em>board</em>, <em>outputId</em>, <em>ip=''</em>, <em>port=46227</em>, <em>threadId=-1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_destination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets / gets the output destination address and port for the given board and outputId.</p>
+<p>If called without specifying only the outputId the current destination settings are returned.</p>
+<p>When the ip parameters is set to None the respective output is disabled and no frames will be sent.</p>
+<p>When specifying a threadId only frames from that thread are addressed to the given destination.
+Other threads will not be affected. This is useful when using multi-threaded VDIF. Likewise
+a single thread can be disabled by setting ip=None and specifying a threadID.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+outputId: the index of the Core3h output (starting at 0)
+ip: the destination IP address
+port (optional): the destination IP port number (default = 46227)
+threadId: the id of the tread for which to set the destination</p>
+<p>Return:
+Dictionary containing keys: &#8220;ip&#8221;,&#8221;port&#8221;,&#8221;output&#8221;.
+In case thread destinations have been set additional keys exist: e.g. &#8220;thread_0&#8221; holding a dict with ip and port information</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices">
+<tt class="descname">core3h_devices</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_devices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists all devices of the the current system and their
+corresponding memory address ranges</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Return:
+dictionary (key=devicename, value=memory address range)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect">
+<tt class="descname">core3h_inputselect</tt><big>(</big><em>board</em>, <em>source</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_inputselect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects one of the available input data sources.</p>
+<p>The command implictely resets the VSI bitmask, input width and VSI swap settings to their
+respective defaults.</p>
+<p>TODO: update the documentation</p>
+<dl class="docutils">
+<dt>Note: it is recommended to execute core3h_reset (with ot without keepsync option) after</dt>
+<dd>changing the input source</dd>
+</dl>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+source: one of &#8220;tvg&#8221;,&#8221;vsi1&#8221;,&#8221;vsi2&#8221;,&#8221;vsi1-2&#8221;,&#8221;vsi1-2-3-4&#8221;,&#8221;vsi1-2-3-4-5-6-7-8&#8221;</p>
+<p>Return:
+String containing the current split mode setting; &#8220;unknown&#8221; if the mode could not be determined</p>
+<p>Exception:
+ValueError: in case an unknown mode has been specified</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_mode_fs">
+<tt class="descname">core3h_mode_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_mode_fs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns mode information in a machine-readble form (field-system)</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_output">
+<tt class="descname">core3h_output</tt><big>(</big><em>board</em>, <em>outputIdx=0</em>, <em>frameId=0</em>, <em>duration=1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays output debug information.</p>
+<p>The command displays the first 16 words of the first frame that was sent
+within the current second interval. The frame is recorded at the output
+with the given outputIndex. 1PPS/frame-header/end-of-frame/frame-drop bits
+attached to the stream are displayed together with the data.
+If duration is given, a new frame is displayed every second. The debug sequence
+can be cancelled by pressing &lt;space&gt; or &lt;enter&gt;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reboot">
+<tt class="descname">core3h_reboot</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reboot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reboots the system. The FiLa10G hardware and software for the given board is reset to
+its initial state, i.e. as it was directly after the programming of the FPGA and
+lets the FiLa10G system boot again.
+Warning: all previously configured settings and states are lost when rebooting!</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Return:
+True: if successful
+False: otherwise</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread">
+<tt class="descname">core3h_regread</tt><big>(</big><em>board</em>, <em>regNum</em>, <em>device='core3'</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the value of the device register</p>
+<p>Note: not all devices have readbale registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+regNum: the index of the device register to read
+device: the name of the device (as returned by the core3h_devices command); default = core3</p>
+<p>Return:
+The value of the device register</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread_dec">
+<tt class="descname">core3h_regread_dec</tt><big>(</big><em>board</em>, <em>regNum</em>, <em>device='core3'</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regread_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the value of the device register (in machine readable form)</p>
+<p>Note: not all devices have readbale registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+regNum: the index of the device register to read
+device: the name of the device (as returned by the core3h_devices command); default = core3</p>
+<p>Return:
+The value of the device register</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regupdate">
+<tt class="descname">core3h_regupdate</tt><big>(</big><em>board</em>, <em>device</em>, <em>regNum</em>, <em>value</em>, <em>bitmask</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regupdate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates only certain bits of the value of a device register</p>
+<p>Note: not all devices have writable registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+device: the name of the device (as returned by the core3h_devices command)
+regNum: the index of the device register to read
+value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304
+bitmask: the bitmask specifying which bits are overwritten (1) and which remain unchanged (0)</p>
+<p>Return:
+True: if value was changed; False otherwise</p>
+<p>Exceptions:
+throws ValueError in case the supplied value is not in hex format</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regwrite">
+<tt class="descname">core3h_regwrite</tt><big>(</big><em>board</em>, <em>device</em>, <em>regNum</em>, <em>value</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_regwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a value into the device register</p>
+<p>Note: not all devices have writable registers. See DBBC3 documentation for &#8220;devices&#8221; command</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+device: the name of the device (as returned by the core3h_devices command)
+regNum: the index of the device register to read
+value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304</p>
+<p>Return:
+True: if value was changed; False otherwise</p>
+<p>Exceptions:
+throws ValueError in case the supplied value is not in hex format</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reset">
+<tt class="descname">core3h_reset</tt><big>(</big><em>board</em>, <em>keepsync=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets FiLa10G datapathand erases the syncronized time (optional)</p>
+<p>If called without arguments the complete datapath is reset and time
+synchonization is lost.
+If called with keepsync=True, FiLa10G tries to maintain the current
+time synchronization. For this to work the input stage of the data path
+and the timers are not reset.
+Warning:  Time synchronization will not be correct
+anymore in the rare but possible case that a data sample with a 1PPS
+flag is lost during the reset process.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+keepsync (optional): keeps the time synchronization if set to True. Default=False</p>
+<p>Return:
+True: if successful
+False: otherwise</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_splitmode">
+<tt class="descname">core3h_splitmode</tt><big>(</big><em>board</em>, <em>mode</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_splitmode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables / Disables the split mode</p>
+<p>When split mode is enabled the selected and bitmasked input data is
+split into two halves exactly in the middle. The two halves will be
+processed as if they were independent input streams, The lower half
+(by bit position) is output at output0 the higher half is output as
+output1.</p>
+<p>Split mode requires an input width of at least 2 bit.</p>
+<dl class="docutils">
+<dt>Note: raw and vdif format can be applied independently to each split</dt>
+<dd>stream with the heklp of the core3h_start 1+2+3+4 command syntax</dd>
+<dt>Note: in order to specify a correct VDIF frame setup you have to take</dt>
+<dd>into account that the effective input width is halved when the
+split mode is enabled.</dd>
+<dt>Note: A restriction of the split mode is that only output0 is capable</dt>
+<dd>of producing multi-threaded VDIF data. At output1 the data will
+always be forced to be single-threaded, regardless of the chosen
+frame setup.</dd>
+</dl>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+mode: &#8220;on&#8221; or &#8220;off&#8221;</p>
+<p>Return:
+String containing the current split mode setting (&#8220;on&#8221;/&#8221;off&#8221;); &#8220;unknown&#8221; if the mode could not be determined</p>
+<p>Exception:
+ValueError: in case an unknown mode has been specified</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_start">
+<tt class="descname">core3h_start</tt><big>(</big><em>board</em>, <em>format='vdif'</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts/restart sending of formatted output data</p>
+<p>The output data format can be either:
+vdif:   VDIF format
+raw:    unformatted</p>
+<p>In case a single output format is given, this will be used for all outputs.
+Formats can be set for each of the outputs individually by separating
+the format specifiers by &#8220;+&#8221; e.g. vdif+raw+vdif+raw
+if not explictely specified &#8220;vdif&#8221; will be used for all outputs.</p>
+<p>Raw format requires no time synchronization whereas vdif format requires
+the respective timer to be synchronized (see core3h_timesync)</p>
+<p>For fast testing: set the force parameter to True to automatically synchronize the
+timer to &#8220;zero&#8221; time(=&#8216;2000-01-01T00:00:00&#8217;). Provided that a valid 1PPS signal
+is available this will always be successful.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+format (optional): a single format specifier or several concatenated by +. Default is &#8220;vdif&#8221;
+force (optional): if set to True synchronize time to &#8216;2000-01-01T00:00:00&#8217;. Default is False</p>
+<p>Return:
+List containing the format specifiers for all outputs</p>
+<p>Exceptions:
+ValueError: in case the number of format specifiers exceed the number of available outputs
+ValueError: in case an unkown format specifier was given</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_status_fs">
+<tt class="descname">core3h_status_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_status_fs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns time sync information in a machine-readble form (field-system)</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_stop">
+<tt class="descname">core3h_stop</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops sending of output data</p>
+<p>The opposite of core3h_start</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_sysstat">
+<tt class="descname">core3h_sysstat</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_sysstat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays information about the current status of the system and
+gives an overviewof the state of the most important user
+settings.</p>
+<p>TODO: add parsing code and return dictionary with values</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Returns: The output of the sysstat command</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_sysstat_fs">
+<tt class="descname">core3h_sysstat_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_sysstat_fs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identical to core3h_sysstat but returns machine (fields-system)
+readable output</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbarp">
+<tt class="descname">core3h_tengbarp</tt><big>(</big><em>board</em>, <em>device</em>, <em>arpId</em>, <em>mac</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbarp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets one ARP entry for a 10Gb ethernet device</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+device: the ethernet device name, e.g. eth0
+arpId: index of the ARP table entry to be modified
+mac: MAC address to be set</p>
+<p>Return:
+True</p>
+<p>Exception:
+ValueError in case an invalid MAC address was given</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbcfg">
+<tt class="descname">core3h_tengbcfg</tt><big>(</big><em>board</em>, <em>device</em>, <em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbcfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a parameter of the 10Gb ethernet device.</p>
+<p>valid parameters are:
+ip: IP address
+mac: MAC address
+nm: netmask
+port:  UDP port
+gateway: IP adress of gateway</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+device: the ethernet device name, e.g. eth0
+key: the name of the parameter to set
+value: the new parameter value</p>
+<p>Return:
+True</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbinfo">
+<tt class="descname">core3h_tengbinfo</tt><big>(</big><em>board</em>, <em>device</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tengbinfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the current parameters of the specified 10Gb ethernet device</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>device</strong> (<em>str</em>) &#8211; the ethernet device name, e.g. eth0</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(dict of str: str): a dictionary containing all configuration parameters as key/value pairs. The arp_cache key contains a list of arp entries (&#8220;mac&#8221;,&#8221;ip&#8221;)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an unknown ethernet device has been given</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_time">
+<tt class="descname">core3h_time</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the current time of the active 1pps source</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Return:
+Datetime containing the current UTC timestamp of the active 1PPS source</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_timesync">
+<tt class="descname">core3h_timesync</tt><big>(</big><em>board</em>, <em>timestamp=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_timesync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs time synchronization for the given core board.</p>
+<p>TODO: Finish method with code for manual setting of time
+TODO Discuss with Sven 3 sec offset between reported seconds and GPS time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tvg_mode">
+<tt class="descname">core3h_tvg_mode</tt><big>(</big><em>board</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_tvg_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the test vector generator mode for the given board.</p>
+<p>mode can be one of:
+all-0:  all bits = 0
+all-1:  all bits = 1
+vsi-h:  VSI-H test vector pattern
+cnt:    pattern with four 8-bit counters
+If called without the mode parameter the current setting is returned.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+mode: the tvg mode identifier (see above)</p>
+<p>Return:
+String containing the current tvg mode; &#8220;unknown&#8221; if the mode could not be determined</p>
+<p>Exception:
+ValueError: in case an unknown mode has been specified</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_enc">
+<tt class="descname">core3h_vdif_enc</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_enc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the setting of the VDIF encoding switch.</p>
+<p>If enabled the VSI input data is encoded as mandated by the VDIF standard.
+If disabled the input data remains unmodified.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<p>Return:
+on: if VDIF encoding is enabled
+off : if VDIF encoding is disabled
+unknown: in case the encoding setting could not be determined</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_frame">
+<tt class="descname">core3h_vdif_frame</tt><big>(</big><em>board</em>, <em>channelWidth=None</em>, <em>numChannels=None</em>, <em>payloadSize=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the VDIF frame properties for the specified Core3H board</p>
+<p>If the command is called without the channelWidth parameter the current
+properties will be returned.</p>
+<p>If successful the command returns the resulting number of frames per second
+and the number of data threads, according to the currently selected input
+(see core3h_inputselect for details).
+If the VDIF frame properties do not match the currently selected input the
+&#8220;compatible&#8221; flag in the return dictionary is set to &#8220;False&#8221;. The command
+fails if the desired frame setup is not supported. The frame setup is not
+changed in this case.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
+numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
+payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame</p>
+<p>Return:
+Dictionary with the following keys:</p>
+<blockquote>
+<div>&#8220;compatible&#8221;    (False in case an incomaptible setup was requested)
+&#8220;channelWidth&#8221;
+&#8220;numChannels&#8221;
+&#8220;payloadSize&#8221;
+&#8220;frameSize&#8221;
+&#8220;numThreads&#8221;      (optional)
+&#8220;framesPerSecond&#8221; (optional)
+&#8220;framesPerThread&#8221; (optional)</div></blockquote>
+<p>Exception:
+ValueError: in case channelWidth has been specified but no numChannels were set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_station">
+<tt class="descname">core3h_vdif_station</tt><big>(</big><em>board</em>, <em>stationId=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_station" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the VDIF station ID for the specified Core3h board</p>
+<p>Note: setting this value directly affects the header data of
+the VDIF data format</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+stationId (optional): The two-letter station code to set</p>
+<p>Return:
+String containing the two-letter station code; &#8220;unknown&#8221; if the</p>
+<blockquote>
+<div>code could not be determined</div></blockquote>
+<p>Exception:
+ValueError: in case an illegal station code has been specified</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_userdata">
+<tt class="descname">core3h_vdif_userdata</tt><big>(</big><em>board</em>, <em>d0=None</em>, <em>d1=None</em>, <em>d2=None</em>, <em>d3=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vdif_userdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets/sets the user data fields in the extended VDIF frame header</p>
+<p>The user data fields are 32bit values. Note that bits 24-31 of the
+first user data field contain the Extended Data Version (EDV) number.
+See: <a class="reference external" href="https://vlbi.org/vdif/">https://vlbi.org/vdif/</a> for details</p>
+<p>d0 - d3 are optional. If not specified the current value of the field is kept.</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+d0 (optional): the value of the first user data field
+d1 (optional): the value of the second user data field
+d2 (optional): the value of the third user data field
+d3 (optional): the value of the fourth user data field</p>
+<p>Return:
+List containing the current content of all 4 user data fields</p>
+<p>Exception:
+ValueError: in case the supplied value cannot be represented as hexadecimal
+ValueError: in case the length of the supplied value exceeds 32 bit</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_version">
+<tt class="descname">core3h_version</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the firmware version</p>
+<p>TODO: Discuss with Sven the future format of the version output and implement parsing code</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_bitmask">
+<tt class="descname">core3h_vsi_bitmask</tt><big>(</big><em>board</em>, <em>vsi=None</em>, <em>mask=None</em>, <em>reset=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_bitmask" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: parse output from command</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_samplerate">
+<tt class="descname">core3h_vsi_samplerate</tt><big>(</big><em>board</em>, <em>sampleRate=None</em>, <em>decimation=1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_samplerate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets /sets the VSI input sample rate for the specified Core3h board</p>
+<p>All arguments are optional. If the command is called without the
+sampleRate parameter the current VSI input sample rate is returned.</p>
+<p>The decimation parameter decimates the input such that the resulting
+sample rate is 1/decimation of the specified rate</p>
+<p>Parameters:
+board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)
+sampleRate (optional): the input sampling rate in samples per second
+decimation (optional): a divisor in the range 1..255; default=1</p>
+<p>Return:
+Dictionary with keys &#8220;sampleRate&#8221; and &#8220;decimation&#8221;</p>
+<p>Exception:
+Exception: in case the sample rate could not be set</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_swap">
+<tt class="descname">core3h_vsi_swap</tt><big>(</big><em>board</em>, <em>firstVSI=None</em>, <em>secondVSI=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.core3h_vsi_swap" title="Permalink to this definition">¶</a></dt>
+<dd><p>deprecated</p>
+<p>Not fully implemented. Don&#8217;t use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.dbbcif">
+<tt class="descname">dbbcif</tt><big>(</big><em>board</em>, <em>inputType=None</em>, <em>mode='agc'</em>, <em>target=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.dbbcif" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the configuration of the GCoMo IF modules</p>
+<p>If the IF is connected on the top pin of the GCoMo (bypassing the
+downconversion) the inputType parameter should be set to 1.</p>
+<p>If the IF has been downconverted by the GCoMo the inputType should
+be set to 2. Selecting inputType=1 will disable the the synthesizer
+tone.</p>
+<p>if the inputType is not specified or set to None the current
+settings are reported.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> &#8211; can be given as a number (0 = board A) or as char e.g. A</li>
+<li><strong>inputType</strong> (<em>int</em>) &#8211; 1 = IF input without downconversion;
+2 = IF input after downconversion</li>
+<li><strong>mode</strong> (<em>str/int</em>) &#8211; &#8220;agc&#8221; = automatic gain control (default if not specified); &#8220;man&#8221; = manual attenuation (retains last agc value); numeric value = attenuation step (0-63) in steps of 0.5 dB</li>
+<li><strong>target</strong> (<em>int</em>) &#8211; the target power level for the &#8220;agc&#8221; mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>dictionary holding the values reported by dbbcif with the following structure:</p>
+<div class="highlight-python"><pre>&quot;inputType&quot; (int): see parameter description for meaning of returned value
+&quot;attenuation&quot; (int): the current attenuation level
+&quot;mode&quot; (str): the current agc mode
+&quot;count&quot; (int): the current IF level
+&quot;target&quot; (int): the target IF level</pre>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case any arguments exceeds the valid range</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.disableloop">
+<tt class="descname">disableloop</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.disableloop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the automatic calibration loop</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Response message from the control software</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enablecal">
+<tt class="descname">enablecal</tt><big>(</big><em>threshold='on'</em>, <em>gain='off'</em>, <em>offset='off'</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enablecal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches on/off  the threshold, gain and offset calibration for the automatic calibration loop</p>
+<p>The loop must be activated with the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enableloop" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enableloop"><tt class="xref py py-func docutils literal"><span class="pre">enableloop()</span></tt></a> command.
+If called without the optional parameters the defaults will be used (see below)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>threshold</strong> (<em>optional, default=on</em>) &#8211; switch threshold calibration [on/off]</li>
+<li><strong>gain</strong> (<em>optional, default=off</em>) &#8211; switch gain calibration [on/off]</li>
+<li><strong>offset</strong> (<em>optional, default=off</em>) &#8211; switch offset calibration [on/off]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>a dictionary with the following structure:</p>
+<div class="highlight-python"><pre>&quot;threshold&quot;:
+&quot;gain&quot;:
+&quot;offset&quot;:</pre>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">DBBC3Exception</span></tt> &#8211;
+* if the state of the calibration loop could not be queried * if the reported state differs from what was requested</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enableloop">
+<tt class="descname">enableloop</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enableloop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the automatic calibration loop</p>
+<p>For changing the parameters of the calibration loop use the <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enablecal" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.enablecal"><tt class="xref py py-func docutils literal"><span class="pre">enablecal()</span></tt></a> method</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Response message from the control software</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.reconfigure">
+<tt class="descname">reconfigure</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.reconfigure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconfigures the core3h boards</p>
+<p>Reloads the firmware, then reinitializes the ADB3L and core3h and finally does a PPS sync.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.synthFreq">
+<tt class="descname">synthFreq</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.synthFreq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the frequency in MHz of the synthesizer serving the given core board</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with the following structure:<div class="highlight-python"><pre>&quot;target&quot; (int): the target frequency in MHz
+&quot;actual&quot; (int): the actual frequency in MHz</pre>
+</div>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><tt class="xref py py-exc docutils literal"><span class="pre">DBBC3Exception</span></tt> &#8211;
+In case the frequency could not be determined</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.synthLock">
+<tt class="descname">synthLock</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.synthLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the lock state of the GCoMo synthesizer serving the given core board</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> (<em>int/str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the synthesizer is locked; False otherwise</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><tt class="xref py py-exc docutils literal"><span class="pre">DBBC3Exception</span></tt> &#8211;
+in case the lock state of the synthesizer cannot be obtained</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>ToDo:</dt>
+<dd><ul class="first last simple">
+<li>Needs to be verified for systems with 8 boards (probably parsing code is incomplete)</li>
+<li>The corresponding validation code must be changed due to different return type</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.time">
+<tt class="descname">time</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the time information from all boards.</p>
+<p>For each board a dict with the following structure is returned:</p>
+<div class="highlight-python"><pre>&#x27;timestamp&#x27; (time.struct_time): the timestamp
+&#x27;timestampAsString&#x27; (str): the timestamp in string representation %Y-%m-%dT%H:%M:%S</pre>
+</div>
+<p>In the OCT mode the dict contains the following additional fields:</p>
+<div class="highlight-python"><pre>&#x27;seconds&#x27;(int): seconds since the beginning of the current year
+&#x27;halfYearsSince2000&#x27; (int): number of half years since the year 2000
+&#x27;daysSince2000&#x27; (int): number of days since the year 2000</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>time_list</strong> &#8211;
+The list of time information dicts. One list element for every board (0=A).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref py py-obj docutils literal"><span class="pre">list</span></tt> of <tt class="xref py py-obj docutils literal"><span class="pre">dict</span></tt></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><tt class="xref py py-exc docutils literal"><span class="pre">DBBC3Exception</span></tt> &#8211;
+in case no time information could be obtained</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.version">
+<tt class="descname">version</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the DBBC3 control software version.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary containing the version information of the DBBC3 control software:<div class="highlight-python"><pre>&quot;mode&quot;: the current DBBC3 mode, e.g. DDC_V
+&quot;majorVersion&quot;: the major version, e.g. 124
+&quot;minorVersion&quot;: the minor version (format YYYYMMDD) e.g. 20200113</pre>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3Commandset_DDC_U_125</tt><big>(</big><em>clas</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124" title="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124"><tt class="xref py py-class docutils literal"><span class="pre">dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124</span></tt></a></p>
+<p>Implementation of the DBBC3 Commandset for the
+DDC_U mode version 125</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3Commandset_DDC_V_123</tt><big>(</big><em>clas</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault"><tt class="xref py py-class docutils literal"><span class="pre">dbbc3.DBBC3Commandset.DBBC3CommandsetDefault</span></tt></a></p>
+<p>Implementation of the DBBC3 Commandset for the
+DDC_V mode version 123</p>
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.cont_cal">
+<tt class="descname">cont_cal</tt><big>(</big><em>mode</em>, <em>polarity</em>, <em>freq</em>, <em>option</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.cont_cal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbc">
+<tt class="descname">dbbc</tt><big>(</big><em>bbc</em>, <em>freq=None</em>, <em>bw=None</em>, <em>ifLabel=None</em>, <em>tpint=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the parameters of the specified BBC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bbc</strong> (<em>int</em>) &#8211; the BBC number (starts at 1)</li>
+<li><strong>freq</strong> (<em>optional, float</em>) &#8211; the BBC frequency. If not specified the current setting is returned</li>
+<li><strong>ifLabel</strong> (<em>optional, str</em>) &#8211; the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.</li>
+<li><strong>tpint</strong> (<em>optional,int</em>) &#8211; total power integration time in seconds (default = 1 second)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>settings</strong> &#8211;
+dictionary containting the settings of the specified BBC</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><ul class="first last simple">
+<li><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an invalid BBC number has been specified</li>
+<li><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an invalid BBC frequency has been specified</li>
+<li><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+in case an invalid tpint value has been specified</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbcgain">
+<tt class="descname">dbbcgain</tt><big>(</big><em>bbc</em>, <em>mode=None</em>, <em>target=None</em>, <em>gainU=None</em>, <em>gainL=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbcgain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets / sets the gain levels and gain control mode for a single BBC.</p>
+<p>If the command is called with only the bbc parameter set the current
+settings will be returned.</p>
+<p>If the command is being called with the mode=agc the automatic gain control is switched on. If the target parameter
+is also set then the levels are automatically adjusted to reach the given target otherwise the target specified in the
+DBBC configuration file is being used.</p>
+<p>If the command is being called with mode=man the automatic gain control is switched off and the current gain levels are being frozen. In case
+also the gainU and gainL parameters are set then these values will be used as the gain levels for the USB and LSB respectively.</p>
+<p>Parameters:
+bbc: the BBC number (starts at 1)
+mode (optional): the gain control mode. Can be &#8220;agc&#8221; (automatic gain control) or &#8220;man&#8221; to freeze the current gain settings.
+target (optional): the target count level when running in &#8220;agc&#8221; mode
+gainU (optional): the gain level for the USB</p>
+<p>Return:
+Dictionary with the following keys:</p>
+<blockquote>
+<div>&#8220;bbc&#8221;         The currently selected BBC number (starts at 1)
+&#8220;mode&#8221;        The currently selected mode
+&#8220;target&#8221;      The current target count level (only returned when mode=agc)
+&#8220;gainUSB&#8221;     The gain level of the USB
+&#8220;gainLSB&#8221;     The gain level of the LSB</div></blockquote>
+<p>Exception:
+ValueError: in case an invalid BBC number has been specified</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbcstat">
+<tt class="descname">dbbcstat</tt><big>(</big><em>bbc</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbcstat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbctp">
+<tt class="descname">dbbctp</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dbbctp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_bstat">
+<tt class="descname">dsc_bstat</tt><big>(</big><em>board</em>, <em>sampler</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_bstat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines DSC statistics of the given board and sampler</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A
+sampler: the sampler number (0-3)</p>
+<p>Returns:
+list of dictionaries with the following keys:
+count:  count for the given state
+perc:   percentage for the given state</p>
+<p>the list indices are
+0: ++ state
+1: + state
+2: - state
+3: &#8211; state</p>
+<p>return example:
+[{&#8216;count&#8217;: 1413, &#8216;perc&#8217;: 9}, {&#8216;count&#8217;: 6358, &#8216;perc&#8217;: 40}, {&#8216;count&#8217;: 6392, &#8216;perc&#8217;: 40}, {&#8216;count&#8217;: 1459, &#8216;perc&#8217;: 9}]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_corr">
+<tt class="descname">dsc_corr</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_corr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs cross-correlation between the samplers of the given board. Correlation
+products are between these samplers:
+1) 0-1
+2) 1-2
+3) 2-3
+The values can be used to check if the samplers are in the correct phase (=synchronized).
+Note: The absolute numbers returned depend on the input power and IF bandwidth. However the
+values of one board should not deviate by more than 10%.</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A</p>
+<p>Returns:
+List containing the three cross-correlations in the order described above</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_tp">
+<tt class="descname">dsc_tp</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.dsc_tp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the DSC total power values for
+all four samplers of the selected board</p>
+<p>Parameters:
+board: can be given as a number (0 = board A) or as char e.g. A</p>
+<p>Returns: an array holding the TP values for all four samplers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.mag_thr">
+<tt class="descname">mag_thr</tt><big>(</big><em>bbc</em>, <em>value</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.mag_thr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.pps_delay">
+<tt class="descname">pps_delay</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.pps_delay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.pps_sync">
+<tt class="descname">pps_sync</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123.pps_sync" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3Commandset_DDC_V_124</tt><big>(</big><em>clas</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123" title="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123"><tt class="xref py py-class docutils literal"><span class="pre">dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_123</span></tt></a></p>
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124.pps_delay">
+<tt class="descname">pps_delay</tt><big>(</big><em>board=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124.pps_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the delay of the internally generated vs. the external PPS signal for all core3H boards.</p>
+<p>Parameters:
+board: [optional] if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board</p>
+<p>Returns:
+list holding the delays of the internal vs external PPS in nanoseconds for each core3H board</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">DBBC3Commandset_OCT_D_110</tt><big>(</big><em>clas</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3CommandsetDefault" title="dbbc3.DBBC3Commandset.DBBC3CommandsetDefault"><tt class="xref py py-class docutils literal"><span class="pre">dbbc3.DBBC3Commandset.DBBC3CommandsetDefault</span></tt></a></p>
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110.tap">
+<tt class="descname">tap</tt><big>(</big><em>boardNum</em>, <em>filterFile</em>, <em>scaling=1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110.tap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the first tap filter when in OCT mode</p>
+<p>Parameters:
+boardNum:
+filterFile:
+scaling: should always be one (default =1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110.tap2">
+<tt class="descname">tap2</tt><big>(</big><em>boardNum</em>, <em>filterFile</em>, <em>scaling=1</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110.tap2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the second tap filter when in OCT mode</p>
+<p>Parameters:
+boardNum:
+filterFile:
+scaling: should always be one (default =1)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="dbbc3.DBBC3Commandset.getMatchingCommandset">
+<tt class="descclassname">dbbc3.DBBC3Commandset.</tt><tt class="descname">getMatchingCommandset</tt><big>(</big><em>mode</em>, <em>version</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.getMatchingCommandset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the command set sub-class to be used for the given mode and version.</p>
+<p>if mode is not given the default command set class (DBBC3CommandsetDefault) is selected
+if version is not given the latest implemented version for the activated mode will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> (<em>str</em>) &#8211; the dbbc3 mode (e.g. OCT_D)</li>
+<li><strong>version</strong> (<em>str</em>) &#8211; the command set version</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The class name that implements the command set for the given mode and version</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-dbbc3.DBBC3Config">
+<span id="dbbc3config-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Config</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Config" title="Permalink to this headline">¶</a></h2>
+<p>This module is part of the DBBC3 package. It contains code for handling the DBBC3 configuration</p>
+<p>Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="class">
+<dt id="dbbc3.DBBC3Config.DBBC3Config">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Config.</tt><tt class="descname">DBBC3Config</tt><big>(</big><em>mode</em>, <em>version</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Config.DBBC3Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Class for storing and handling of the DBBC3 configuration</p>
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Config.DBBC3Config.numCoreBoards">
+<tt class="descname">numCoreBoards</tt><a class="headerlink" href="#dbbc3.DBBC3Config.DBBC3Config.numCoreBoards" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of CORE3H boards installed in the DBBC3</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dbbc3.DBBC3Util">
+<span id="dbbc3util-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Util</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Util" title="Permalink to this headline">¶</a></h2>
+<p>This module is part of the DBBC3 package and implements the command sets
+of the DBBC3 for the various modes and versions</p>
+<p>Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="function">
+<dt id="dbbc3.DBBC3Util.parseTimeResponse">
+<tt class="descclassname">dbbc3.DBBC3Util.</tt><tt class="descname">parseTimeResponse</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Util.parseTimeResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-dbbc3.DBBC3Validation">
+<span id="dbbc3validation-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Validation</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Validation" title="Permalink to this headline">¶</a></h2>
+<p>This module is part of the DBBC3 package and implements higher
+level validation methods for verification of the proper
+initialization and configuration of the DBBC3 VLBI backend</p>
+<p>Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="class">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Validation.</tt><tt class="descname">DBBC3Validation</tt><big>(</big><em>dbbc3</em>, <em>ignoreErrors=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.ERROR">
+<tt class="descname">ERROR</tt><em class="property"> = '\x1b[1;31mERROR\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.INFO">
+<tt class="descname">INFO</tt><em class="property"> = '\x1b[1;34mINFO\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.INFO" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.OK">
+<tt class="descname">OK</tt><em class="property"> = '\x1b[1;32mOK\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.OK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.RESOLUTION">
+<tt class="descname">RESOLUTION</tt><em class="property"> = '\x1b[1;34mRESOLUTION\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.RESOLUTION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.WARN">
+<tt class="descname">WARN</tt><em class="property"> = '\x1b[1;35mWARN\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.WARN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.report">
+<tt class="descname">report</tt><big>(</big><em>level</em>, <em>message</em>, <em>resolutionMsg=''</em>, <em>exit=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default method for reporting the outcome of validation actions.
+Should be overriding for customization</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.setIgnoreErrors">
+<tt class="descname">setIgnoreErrors</tt><big>(</big><em>ignoreErrors</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.setIgnoreErrors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateIFLevel">
+<tt class="descname">validateIFLevel</tt><big>(</big><em>board</em>, <em>downConversion=True</em>, <em>agc=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateIFLevel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs various validations of the IF power settings as obtained from trhe dbbcif command
+1) IF power should be within 1000 counts of the target value
+2) The attenuation setting should be within 20-40
+3) AGC should be switched on (unless check is  disabled with the agc parameter)
+4) input should be set to 2 (unless check is disabled with the downConversion parameter)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validatePPS">
+<tt class="descname">validatePPS</tt><big>(</big><em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validatePPS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validatePPSDelay">
+<tt class="descname">validatePPSDelay</tt><big>(</big><em>board</em>, <em>exitOnError=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validatePPSDelay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerOffsets">
+<tt class="descname">validateSamplerOffsets</tt><big>(</big><em>boardNum</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerOffsets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPhases">
+<tt class="descname">validateSamplerPhases</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPhases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPower">
+<tt class="descname">validateSamplerPower</tt><big>(</big><em>boardNum</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPower" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerFreq">
+<tt class="descname">validateSynthesizerFreq</tt><big>(</big><em>board</em>, <em>targetFreq=0</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerFreq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validates the actual tuning frequency of the GCoMo synthesizer serving the given board against
+the target value specified in the DBBC3 configuration file.</p>
+<p>If the parameter targetFreq is set to a value &gt; 0 an additional check is performed against that frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerLock">
+<tt class="descname">validateSynthesizerLock</tt><big>(</big><em>board</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if synthesizer serving the given board is locked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateTimesync">
+<tt class="descname">validateTimesync</tt><big>(</big><em>board</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateTimesync" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">dbbc3 Package</a><ul>
+<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">dbbc3</span></tt> Package</a></li>
+<li><a class="reference internal" href="#module-dbbc3.DBBC3"><tt class="docutils literal"><span class="pre">DBBC3</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-dbbc3.DBBC3Commandset"><tt class="docutils literal"><span class="pre">DBBC3Commandset</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-dbbc3.DBBC3Config"><tt class="docutils literal"><span class="pre">DBBC3Config</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-dbbc3.DBBC3Util"><tt class="docutils literal"><span class="pre">DBBC3Util</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-dbbc3.DBBC3Validation"><tt class="docutils literal"><span class="pre">DBBC3Validation</span></tt> Module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/source/dbbc3.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">dbbc3 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2020, Helge Rottmann.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
