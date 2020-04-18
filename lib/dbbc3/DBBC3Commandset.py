@@ -555,7 +555,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
 
         Returns:
-            int: The value of the device register
+            tuple (str,str,int): tuple containing::
+
+                register value in hexadecimal string format
+                register value in binary string format
+                register value in decimal format (signed 32-bit)
         '''
 
         boardNum = self.boardToDigit(board) +1
@@ -598,17 +602,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        device: the name of the device (as returned by the core3h_devices command)
-        regNum: the index of the device register to read
-        value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
+            regNum (int): the index of the device register to read
+            value (hex): the register value to write; must be a 32-bit hexadecimal string, e.g. 0x01020304
 
-        Return:
-        True: if value was changed; False otherwise
+        Returns:
+            boolean: True if value was changed; False otherwise
 
-        Exceptions:
-        throws ValueError in case the supplied value is not in hex format
+        Raises:
+            ValueError: in case the supplied value is not in hex format
         '''
         boardNum = self.boardToDigit(board) +1
 
@@ -629,18 +633,21 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        device: the name of the device (as returned by the core3h_devices command)
-        regNum: the index of the device register to read
-        value: the register value to write; must be hexadecimal number or string, e.g. 0x01020304
-        bitmask: the bitmask specifying which bits are overwritten (1) and which remain unchanged (0)
+        The bitmask must be in hexadecimal format.
 
-        Return:
-        True: if value was changed; False otherwise
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
+            regNum (int): the index of the device register to read
+            value (hex): the register value to write; must be 32-bit hexadecimal string, e.g. 0x01020304
+            bitmask (hex): the 32-bit hexadecimal bitmask; 1=overwrite 0=leave unchanged
 
-        Exceptions:
-        throws ValueError in case the supplied value is not in hex format
+        Returns:
+            boolean: True if value was changed; False otherwise
+
+        Raises:
+            ValueError: in case the supplied value is not in hex format
+            ValueError: in case the supplied bitmask is not in hex format
         '''
         boardNum = self.boardToDigit(board) +1
 
@@ -686,16 +693,20 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The decimation parameter decimates the input such that the resulting
         sample rate is 1/decimation of the specified rate
         
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampleRate (optional): the input sampling rate in samples per second
-        decimation (optional): a divisor in the range 1..255; default=1
+        Args:
+            boardi (int): the board number (starting at 0=A) or board ID (e.g "A")
+            sampleRate (int, optional): the input sampling rate in samples per second
+            decimation (int, optional): a divisor in the range 1..255; default=1
 
-        Return:
-        Dictionary with keys "sampleRate" and "decimation"
+        Returns:
+            dict: dictionary with the following structure:: 
+
+                "sampleRate" (int): sample rate in Hz
+                "decimation" (int): decimation factor
+
     
-        Exception:
-        Exception: in case the sample rate could not be set
+        Raises:
+            DBBC3Exception: in case the sample rate could not be set
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -707,7 +718,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ret = self.sendCommand(cmd)
 
         if "Failed" in ret:
-            raise Exception("core3h_vsi_samplerate: Error setting vsi_samplerate (check lastResponse)" )
+            raise DBBC3Exception("core3h_vsi_samplerate: Error setting vsi_samplerate (check lastResponse)" )
 
         response = {} 
         pattern = re.compile(".*:\s+(\d+)\s+Hz\s?\/?\s?(\d)?")
@@ -727,7 +738,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
         '''
-        TODO: parse output from command
+        ToDo: parse output from command
         '''
         
         boardNum = self.boardToDigit(board)+1
@@ -792,23 +803,29 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Selects one of the available input data sources.
 
-        The command implictely resets the VSI bitmask, input width and VSI swap settings to their
-        respective defaults. 
+        The command implicitly resets the VSI bitmask, input width and VSI swap settings to their
+        respective defaults.
+
+        The input width is reset to:
+            * 32bit for tvg, vsi1 and vsi2  
+            * 64bit for vsi1-2
+            * 128bit for vsi1-2-3-4
 
         TODO: update the documentation
+        TODO: Find out about "vsi1-2-3-4-5-6-7-8"
 
-        Note: it is recommended to execute core3h_reset (with ot without keepsync option) after
-             changing the input source
+        Note: it is recommended to execute :py:func:`core3h_reset`
+        (with or without the keepsync option) after changing the input source
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        source: one of "tvg","vsi1","vsi2","vsi1-2","vsi1-2-3-4","vsi1-2-3-4-5-6-7-8"
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            source (str): one of "tvg","vsi1","vsi2","vsi1-2","vsi1-2-3-4","vsi1-2-3-4-5-6-7-8"
 
-        Return:
-        String containing the current split mode setting; "unknown" if the mode could not be determined
+        Returns:
+            str: the current split mode setting; "unknown" if the mode could not be determined
 
-        Exception:
-        ValueError: in case an unknown mode has been specified
+        Raises:
+            ValueError: in case an unknown mode has been specified
         
         '''
 
@@ -844,26 +861,25 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Split mode requires an input width of at least 2 bit.
 
         Note: raw and vdif format can be applied independently to each split
-            stream with the heklp of the core3h_start 1+2+3+4 command syntax
+        stream with the heklp of the core3h_start 1+2+3+4 command syntax
 
         Note: in order to specify a correct VDIF frame setup you have to take
-            into account that the effective input width is halved when the 
-            split mode is enabled.
+        into account that the effective input width is halved when the 
+        split mode is enabled.
 
         Note: A restriction of the split mode is that only output0 is capable
-            of producing multi-threaded VDIF data. At output1 the data will 
-            always be forced to be single-threaded, regardless of the chosen
-            frame setup.
+        of producing multi-threaded VDIF data. At output1 the data will 
+        always be forced to be single-threaded, regardless of the chosen frame setup.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        mode: "on" or "off"
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            mode (str): "on" or "off"
 
-        Return:
-        String containing the current split mode setting ("on"/"off"); "unknown" if the mode could not be determined
+        Returns:
+            str: the current split mode setting ("on"/"off"); "unknown" if the mode could not be determined
 
-        Exception:
-        ValueError: in case an unknown mode has been specified
+        Raises:
+            ValueError: in case an unknown mode has been specified
 
         '''
 
@@ -888,21 +904,21 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Gets / sets the test vector generator mode for the given board.
 
         mode can be one of:
-        all-0:  all bits = 0
-        all-1:  all bits = 1
-        vsi-h:  VSI-H test vector pattern
-        cnt:    pattern with four 8-bit counters
+            * all-0:  all bits = 0
+            * all-1:  all bits = 1
+            * vsi-h:  VSI-H test vector pattern
+            * cnt:    pattern with four 8-bit counters
         If called without the mode parameter the current setting is returned.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        mode: the tvg mode identifier (see above)
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            mode (str): the tvg mode identifier (see above)
     
-        Return:
-        String containing the current tvg mode; "unknown" if the mode could not be determined
+        Returns:
+            str: the current tvg mode; "unknown" if the mode could not be determined
 
-        Exception:
-        ValueError: in case an unknown mode has been specified 
+        Raises:
+            ValueError: in case an unknown mode has been specified 
         '''
         boardNum = self.boardToDigit(board)+1
 
@@ -932,11 +948,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Displays the current time of the active 1pps source
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
 
-        Return:
-        Datetime containing the current UTC timestamp of the active 1PPS source
+        Returns:
+            datetime: the current UTC timestamp of the active 1PPS source
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1005,32 +1021,32 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         If successful the command returns the resulting number of frames per second
         and the number of data threads, according to the currently selected input
-        (see core3h_inputselect for details).
+        (see :py:func:`core3h_inputselect` for details).
+
         If the VDIF frame properties do not match the currently selected input the
         "compatible" flag in the return dictionary is set to "False". The command
         fails if the desired frame setup is not supported. The frame setup is not
         changed in this case.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        channelWidth (optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
-        numChannels (optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
-        payloadSize (optional): the total payload size in bytes (=frame size without header) of the VDIF frame
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            channelWidth (int, optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
+            numChannels (int, optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
+            payloadSize (int, optional): the total payload size in bytes (=frame size without header) of the VDIF frame
 
-        Return:
-        Dictionary with the following keys:
-            "compatible"    (False in case an incomaptible setup was requested)
-            "channelWidth"
-            "numChannels"
-            "payloadSize"
-            "frameSize"
-            "numThreads"      (optional)
-            "framesPerSecond" (optional)
-            "framesPerThread" (optional)
-            
-        
-        Exception:
-        ValueError: in case channelWidth has been specified but no numChannels were set
+        Returns:
+            dict: dictionary with the following structure::
+
+                "compatible" (boolean): False in case an incompatible setup was requested, True otherwise
+                "channelWidth" (int): the size of each channel in bits
+                "numChannels" (int): number of channels per VDIF frame
+                "payloadSize" (int): the total payload size in bytes
+                "frameSize" (int): the size of the VDIF frame in bytes
+                "numThreads" (int, optional): the number of threads
+                "framesPerSecond" (int, optional): the number of frames per second
+                "framesPerThread" (int, optional): the number of frames per thread
+        Raises:
+            ValueError: in case channelWidth has been specified but no numChannels were set
         '''
 
         boardNum = self.boardToDigit(board)+1
