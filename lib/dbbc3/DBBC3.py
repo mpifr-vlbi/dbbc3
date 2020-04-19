@@ -35,11 +35,14 @@ from time import sleep
 
         
 class DBBC3(object):
+        ''' 
+        Main class of the DBBC3 module.
+        '''
         
-        dataFormats = ["vdif","raw"]
-        core3hModes = ["independent","half_merged", "merged", "pfb"]
+        dataFormats = ["vdif","raw"]    # valid output data formats
+    
+        core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
-        ''' Main class of the DBBC3 module.'''
 
         def __init__(self, host, port=4000, numBoards=8, mode="", version=""):
             ''' Constructor '''

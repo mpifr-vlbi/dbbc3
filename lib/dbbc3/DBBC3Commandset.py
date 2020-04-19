@@ -738,6 +738,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
         '''
+        ToDo: check with Sven concerning number of bitmasks
+    
         ToDo: parse output from command
         '''
         
@@ -861,7 +863,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Split mode requires an input width of at least 2 bit.
 
         Note: raw and vdif format can be applied independently to each split
-        stream with the heklp of the core3h_start 1+2+3+4 command syntax
+        stream with the help of the :py:func:`core3h_start` command syntax
 
         Note: in order to specify a correct VDIF frame setup you have to take
         into account that the effective input width is halved when the 
@@ -901,7 +903,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         
     def core3h_tvg_mode(self, board, mode=None):
         '''
-        Gets / sets the test vector generator mode for the given board.
+        Gets / sets the test vector generator (tvg) mode for the given board.
 
         mode can be one of:
             * all-0:  all bits = 0
@@ -947,6 +949,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def core3h_time(self, board):
         '''
         Displays the current time of the active 1pps source
+
+        The displayed time is the (synchronized) VDIF time in UTC format.
 
         Args:
             board (int): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1014,7 +1018,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_vdif_frame(self, board, channelWidth=None, numChannels=None, payloadSize=None):
         '''
-        Gets / sets the VDIF frame properties for the specified Core3H board
+        Gets / sets the VDIF frame properties for the specified core3H board
 
         If the command is called without the channelWidth parameter the current
         properties will be returned.
@@ -1102,21 +1106,23 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_vdif_station(self, board, stationId=None):
         '''
-        Gets / sets the VDIF station ID for the specified Core3h board
+        Gets / sets the VDIF station ID for the specified core3h board
+
+        If the method is called without supplying the stationID parameter the
+        current station ID will be reported.
 
         Note: setting this value directly affects the header data of 
         the VDIF data format
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        stationId (optional): The two-letter station code to set
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            stationId (str, optional): The two-letter station code to set
 
-        Return:
-        String containing the two-letter station code; "unknown" if the
-            code could not be determined
+        Returns:
+            str: the two-letter station code; "unknown" if the code could not be determined
 
-        Exception:
-        ValueError: in case an illegal station code has been specified
+        Raises:
+            ValueError: in case an illegal station code has been specified
         
         '''
 
@@ -1144,17 +1150,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Get the setting of the VDIF encoding switch.
 
-        If enabled the VSI input data is encoded as mandated by the VDIF standard.
-        If disabled the input data remains unmodified.
-    
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Possible return values::
+            * on: VDIF encoding is switched on
+            * off: VDIF encoding is switched off
+            * unknown: in case the VDIF encoding could not be determined
 
-        Return:
-        on: if VDIF encoding is enabled
-        off : if VDIF encoding is disabled
-        unknown: in case the encoding setting could not be determined
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+           str: current state of the VDIF encoding (for possible values see above)
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1179,19 +1185,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         d0 - d3 are optional. If not specified the current value of the field is kept.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A") 
-        d0 (optional): the value of the first user data field
-        d1 (optional): the value of the second user data field
-        d2 (optional): the value of the third user data field
-        d3 (optional): the value of the fourth user data field
+        Args:
+            board (int/str): the board number (starting at 0=A) or board ID (e.g "A") 
+            d0 (int, optional): the value of the first user data field
+            d1 (int, optional): the value of the second user data field
+            d2 (int, optional): the value of the third user data field
+            d3 (int, optional): the value of the fourth user data field
 
-        Return:
-        List containing the current content of all 4 user data fields
+        Returns:
+            list: list containing the current content of all 4 user data fields
 
-        Exception:
-        ValueError: in case the supplied value cannot be represented as hexadecimal
-        ValueError: in case the length of the supplied value exceeds 32 bit
+        Raises:
+            ValueError: in case the supplied value cannot be represented as hexadecimal
+            ValueError: in case the length of the supplied value exceeds 32 bit
         '''
         boardNum = self.boardToDigit(board)+1
 
@@ -1229,16 +1235,22 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Other threads will not be affected. This is useful when using multi-threaded VDIF. Likewise
         a single thread can be disabled by setting ip=None and specifying a threadID.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        outputId: the index of the Core3h output (starting at 0)
-        ip: the destination IP address 
-        port (optional): the destination IP port number (default = 46227)
-        threadId: the id of the tread for which to set the destination
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            outputId (int): the index of the Core3h output (starting at 0)
+            ip (str): the destination IP address 
+            port (int, optional): the destination IP port number (default = 46227)
+            threadId (int): the id of the tread for which to set the destination
         
-        Return: 
-        Dictionary containing keys: "ip","port","output".
-        In case thread destinations have been set additional keys exist: e.g. "thread_0" holding a dict with ip and port information
+        Returns: 
+            dict: dictionary with the following structure::
+
+                "ip" (str): the IP address
+                "port" (int): the port 
+                "output" (int): the index of the core3h output (starting at 0)
+                "thread_0" (dict, optional): dictionary holding destination "ip" and "port" for thread 0 (if defined)
+                "thread_1" (dict, optional): dictionary holding destination "ip" and "port" for thread 1 (if defined)
+                "...."
 
         '''
 
@@ -1301,7 +1313,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             device (str): the ethernet device name, e.g. eth0
 
         Returns:
-            (dict of str: str): a dictionary containing all configuration parameters as key/value pairs. The arp_cache key contains a list of arp entries ("mac","ip")
+            dict: a dictionary containing all configuration parameters as key/value pairs. The arp_cache key contains a list of arp entries ("mac","ip")
 
         Raises:
             ValueError: in case an unknown ethernet device has been given
@@ -1313,7 +1325,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ret = self.sendCommand("core3h=%d,tengbinfo %s " % (boardNum, device))
 
         if "not found" in ret:
-            raise ValueError("Unkown ethernet device specified (%s) in call to core3h_tengbinfo." % (device))
+            raise ValueError("Unknown ethernet device specified (%s) in call to core3h_tengbinfo." % (device))
 
         pattern = re.compile("\s+(..:..:..:..:..:..)\s+(\d+\.\d+\.\d+\.\d+)")
         for line in ret.split("\n"):
@@ -1353,14 +1365,12 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         port:  UDP port
         gateway: IP adress of gateway
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        device: the ethernet device name, e.g. eth0
-        key: the name of the parameter to set
-        value: the new parameter value
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            device (str): the ethernet device name, e.g. eth0
+            key (str): the name of the parameter to set
+            value (str): the new parameter value
 
-        Return:
-        True
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1368,23 +1378,20 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         cmd = "core3h=%d,tengbcfg %s %s=%s" % (boardNum, device, str(key), str(value))
         ret = self.sendCommand(cmd)
 
-        return(True)
+        return
 
     def core3h_tengbarp(self, board, device, arpId, mac):
         '''
         Sets one ARP entry for a 10Gb ethernet device
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        device: the ethernet device name, e.g. eth0
-        arpId: index of the ARP table entry to be modified
-        mac: MAC address to be set
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            device (str): the ethernet device name, e.g. eth0
+            arpId (int): index of the ARP table entry to be modified
+            mac (str): MAC address to be set (must be in format xx:xx:xx:xx:xx:xx)
 
-        Return:
-        True
-
-        Exception:
-        ValueError in case an invalid MAC address was given
+        Raises:
+            ValueError: in case an invalid MAC address was given
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1393,7 +1400,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         cmd = "core3h=%d,tengbarp %s %d %s" % (boardNum, device,arpId, mac)
         ret = self.sendCommand(cmd)
         
-        return(True)
+        return
 
     def core3h_arp(self, board, mode=None):
         '''
@@ -1401,15 +1408,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         If called without the mode parameter the current setting is reported
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        mode (optional): Can be "on" or "off". 
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            mode (str, optional): Can be "on" or "off". 
 
-        Return:
-        String containing the current ARP mode ("on" / "off")
+        Returns:
+            str: the current ARP mode ("on" / "off") or "unknown" in case the arp mode could not be determined
 
-        Exception:
-        ValueError: in case an illegal mode has been requested
+        Raises:
+            ValueError: in case an illegal mode has been requested
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1438,11 +1445,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         
     def core3h_start(self, board, format="vdif", force=False):
         '''
-        Starts/restart sending of formatted output data
+        Starts/restarts sending of formatted output data
         
         The output data format can be either:
-        vdif:   VDIF format
-        raw:    unformatted
+            * vdif:   VDIF format
+            * raw:    unformatted
         
         In case a single output format is given, this will be used for all outputs.
         Formats can be set for each of the outputs individually by separating
@@ -1450,23 +1457,23 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         if not explictely specified "vdif" will be used for all outputs.
 
         Raw format requires no time synchronization whereas vdif format requires
-        the respective timer to be synchronized (see core3h_timesync)
+        the respective timer to be synchronized (see :py:func:`core3h_timesync`)
 
         For fast testing: set the force parameter to True to automatically synchronize the
         timer to "zero" time(='2000-01-01T00:00:00'). Provided that a valid 1PPS signal
         is available this will always be successful.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        format (optional): a single format specifier or several concatenated by +. Default is "vdif"
-        force (optional): if set to True synchronize time to '2000-01-01T00:00:00'. Default is False
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            format (str, optional): a single format specifier or several concatenated by +. Default is "vdif"
+            force (boolean, optional): if set to True synchronize time to '2000-01-01T00:00:00'. Default is False
 
-        Return:
-        List containing the format specifiers for all outputs
+        Returns:
+            list: list of format specifiers for all outputs of the specified board
 
-        Exceptions:
-        ValueError: in case the number of format specifiers exceed the number of available outputs
-        ValueError: in case an unkown format specifier was given
+        Raises:
+            ValueError: in case the number of format specifiers exceed the number of available outputs
+            ValueError: in case an unkown format specifier was given
         '''
         boardNum = self.boardToDigit(board)+1
 
@@ -1497,10 +1504,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Stops sending of output data
 
-        The opposite of core3h_start
+        The opposite of :py:func:`core3h_start`
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            boolean: True in case the output of data was stopped; False otherwise
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1511,16 +1521,18 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         return(False)
         
 
-    def core3h_output(self, board, outputIdx=0, frameId=0, duration=1):
+    def core3h_output(self, board, outputIdx=0, frameId=0):
         '''
         Displays output debug information.
 
         The command displays the first 16 words of the first frame that was sent
         within the current second interval. The frame is recorded at the output
-        with the given outputIndex. 1PPS/frame-header/end-of-frame/frame-drop bits
-        attached to the stream are displayed together with the data.
-        If duration is given, a new frame is displayed every second. The debug sequence
-        can be cancelled by pressing <space> or <enter>.
+        specified by outputIdx. 
+        
+        In addition the following data is displayed:
+        1PPS/frame-header/end-of-frame/frame-drop bits
+
+        ToDo: implement output parsing
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1531,24 +1543,25 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_reset(self, board, keepsync=False):
         '''
-        Resets FiLa10G datapathand erases the syncronized time (optional)
+        Resets the FiLa10G datapath
 
         If called without arguments the complete datapath is reset and time 
         synchonization is lost.
+
         If called with keepsync=True, FiLa10G tries to maintain the current 
         time synchronization. For this to work the input stage of the data path
         and the timers are not reset.
+
         Warning:  Time synchronization will not be correct
         anymore in the rare but possible case that a data sample with a 1PPS
         flag is lost during the reset process.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        keepsync (optional): keeps the time synchronization if set to True. Default=False
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            keepsync (boolean, optional): keeps the time synchronization if set to True. Default=False
 
-        Return:
-        True: if successful
-        False: otherwise
+        Returns:
+            boolean: True: if successful False: otherwise
         '''
         
         boardNum = self.boardToDigit(board)+1
@@ -1566,17 +1579,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_reboot(self, board):
         '''
-        Reboots the system. The FiLa10G hardware and software for the given board is reset to 
+        Reboots the system.
+
+        The FiLa10G hardware and software for the given board is reset to 
         its initial state, i.e. as it was directly after the programming of the FPGA and
         lets the FiLa10G system boot again.
+
         Warning: all previously configured settings and states are lost when rebooting!
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
 
-        Return:
-        True: if successful
-        False: otherwise
+        Returns:
+            boolean: True: if successful False: otherwise
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1593,12 +1608,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Initializes the given core3h board and sets parameters as specified in 
         the control file.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
 
-        Return:
-        True if successful
-        False otherwise
+        Returns:
+            boolean: True if successful False otherwise
         '''
         boardNum = self.boardToDigit(board)+1
 
@@ -1614,15 +1628,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def core3h_core3_mode(self, board, mode=None):
         '''
         Gets or sets the Core3h mode.
+
         If the optional mode parameter is ommited the currently set mode is returned.
-        If given, mode must be a valid Core3h mode (as listed in DBBC3Config.core3hModes)
+        If specified mode must be a valid core3h mode (as listed in :py:attr:`DBBC3.core3hModes`)
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        mode (optional): if ommited gets the currently active mode
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            mode (str, optional): if ommited gets the currently active mode
 
-        Return:
-        A string containing the currently set mode
+        Returns:
+            str: the current mode
         '''
 
         retMode = ""
@@ -1678,6 +1693,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Identical to core3h_sysstat but returns machine (fields-system)
         readable output
+        
+        ToDo: implement parsing code
 
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
@@ -1689,6 +1706,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Returns mode information in a machine-readble form (field-system)
 
+        ToDo: implement parsing codes
+
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
         '''
@@ -1699,6 +1718,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Returns time sync information in a machine-readble form (field-system)
 
+        ToDo: implement parsing codes
+
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
         '''
@@ -1707,14 +1728,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_devices(self, board):
         ''' 
-        Lists all devices of the the current system and their
-        corresponding memory address ranges
+        Lists all devices of the the current system and their corresponding memory address ranges
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int): the board number (starting at 0=A) or board ID (e.g "A")
         
-        Return:
-        dictionary (key=devicename, value=memory address range)
+        Returns:
+            dict: dictionary with the following structure::
+
+                "devicename" (str): the name of the device
+                "value" (str): memory address range
         '''
         boardNum = self.boardToDigit(board)+1
 
@@ -1736,17 +1759,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_core3_bstat(self, board, sampler):
         '''
-        Obtains the 2-bit sampler statistics for the given core board 
-        and sampler.
+        Obtains the 2-bit sampler statistics for the given core board and sampler.
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
-        sampler: the sampler number (starting at 0)
+        Args:
+            board (int/str): can be given as a number (0 = board A) or as char e.g. A
+            sampler (int): the sampler number (starting at 0)
 
 
         Returns:
-        List containing the 4 levels
-        None: if the core board is not connected
+            list: list containing the count of the 4 levels or None if the core board is not connected
         '''
 
         boardNum = self.boardToDigit(board) +1
@@ -1773,25 +1794,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 #print (match.group(3))
                 bstats.append(int(match.group(3)))
 
-        # evaluate the registers that contain the statistics
-        #bstats.append(self.core3h_regread(boardNum-1, 5))
-        #bstats.append(self.core3h_regread(boardNum-1, 6))
-        #bstats.append(self.core3h_regread(boardNum-1, 7))
-        #bstats.append(self.core3h_regread(boardNum-1, 8))
-        #print (bstats)
-
         return (bstats)
 
     def core3h_core3_power(self, board):
         '''
         Obtains the gains of all 4 samplers of the given board
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
+        Args:
+            board (int/str): can be given as a number (0 = board A) or as char e.g. A
 
-        Return:
-        List containing the gains for all samplers (a[0] = sampler1 etc.)
-        None:  in case the core3 board is not connected
+        Returns:
+            list: list containing the gains for all samplers (a[0] = sampler1 etc.) or None in case the core3 board is not connected
         '''
 
         boardNum = self.boardToDigit(board) +1
@@ -1815,26 +1828,22 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 #print (match.group(3))
                 pow.append(int(match.group(2)))
 
-        #pow.append(self.core3h_regread(boardNum-1, 5))
-        #pow.append(self.core3h_regread(boardNum-1, 6))
-        #pow.append(self.core3h_regread(boardNum-1, 7))
-        #pow.append(self.core3h_regread(boardNum-1, 8))
-
         return(pow)
 
     def core3h_core3_corr(self, board):
         '''
-        Performs cross-correlation between the samplers of the given board. Correlation
-        products are between these samplers:
-        1) 0-1
-        2) 1-2
-        3) 2-3 
+        Performs cross-correlation between the samplers of the given board.
+
+        Correlation products are calculated between these sampler pairs:
+             * 0-1
+             * 1-2
+             * 2-3 
         
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
+        Args:
+            board (int/str): can be given as a number (0 = board A) or as char e.g. A
         
-        Return:
-        List containing the three cross-correlations in the order described above
+        Returns:
+            list: List containing the three cross-correlation coefficients in the order described above
         '''
 
         corr = [0] * 3 
