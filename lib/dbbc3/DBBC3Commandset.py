@@ -2446,7 +2446,26 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(value)
 
-    def core3hwrite(self):
+    def core3hwrite(self, board, block, bbc, register, value):
+        '''
+         Writes a value to a core3h register 
+
+        :note: this is an expert level method and should only be used if you know exactly what you are doing
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            block (int): the block index of the register to read (starts at 1)
+            bbc (int): the bbc index within the block (starts at 1)
+            register (int): the register index within the block (starts at 1)
+            value (int): the register value to write
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3hwrite=%d,%d,%d,%d,%d" % (boardNum, block,bbc,register,value)
+        ret = self.sendCommand(cmd)
+
         return
 
 class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
