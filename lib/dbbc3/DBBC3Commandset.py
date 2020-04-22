@@ -2047,7 +2047,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.mag_thr = types.MethodType (self.mag_thr.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
         clas.core3hread = types.MethodType (self.core3hread.__func__, clas)
-        clas.core3hwrite = types.MethodType (self.core3write.__func__, clas)
+        clas.core3hwrite = types.MethodType (self.core3hwrite.__func__, clas)
 
     def dbbc (self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
@@ -2212,6 +2212,8 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             "s" (tuple of float): sign statistics (USB, LSB)
             "m" (tuple of float): magnitude statistics (USB, LSB)
 
+        e.g. {'s': (49.85, 49.86), 'm': (34.82, 34.66)}
+
         Args:
             bbc: the BBC number (starts at 1)
             
@@ -2226,7 +2228,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         resp = {}
 
         # Received from DBBC: dbbcstat/ 16,S,34.67,34.53;
-        patStr = "dbbcstat\/\s+(\d+),([SM]),(\d+\.d+),(\d+\.d+);" 
+        pattern = re.compile("dbbcstat\/\s+(\d+),([SM]),(\d+\.\d+),(\d+\.\d+);")
 
         for mode in ["s", "m"]:
             cmd = "dbbcstat=%d,%s" % (bbc, mode)
@@ -2235,7 +2237,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             for line in ret.split("\n"):
                 match = pattern.match(line)
                 if match:
-                    resp[mode] = tuple(float(match.group(3)), float(match.group(4)))
+                    resp[mode] = (float(match.group(3)), float(match.group(4)))
                 
         return(resp)
 
@@ -2434,7 +2436,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(value)
 
-    def core3hwrite():
+    def core3hwrite(self):
         return
 
 class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
