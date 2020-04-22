@@ -290,10 +290,10 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         settings are reported.
 
         Args:
-            board: can be given as a number (0 = board A) or as char e.g. A
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
             inputType (int): 1 = IF input without downconversion; 
                        2 = IF input after downconversion
-            mode (str/int): "agc" = automatic gain control (default if not specified); "man" = manual attenuation (retains last agc value); numeric value = attenuation step (0-63) in steps of 0.5 dB
+            mode (int or str): "agc" = automatic gain control (default if not specified); "man" = manual attenuation (retains last agc value); numeric value = attenuation step (0-63) in steps of 0.5 dB
             target (int): the target power level for the "agc" mode
 
         Returns:
@@ -376,7 +376,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Gets the lock state of the GCoMo synthesizer serving the given core board
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
         Returns:
             boolean: True if the synthesizer is locked; False otherwise
 
@@ -430,7 +430,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Determines the frequency in MHz of the synthesizer serving the given core board
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             dict: A dictionary with the following structure::
@@ -551,7 +551,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             regNum (int): the index of the device register to read
             device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
 
@@ -582,7 +582,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             regNum (int): the index of the device register to read
             device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
 
@@ -604,7 +604,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
             regNum (int): the index of the device register to read
             value (hex): the register value to write; must be a 32-bit hexadecimal string, e.g. 0x01020304
@@ -637,7 +637,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The bitmask must be in hexadecimal format.
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the name of the device (as returned by the :py:func:`core3h_devices` command). default = core3
             regNum (int): the index of the device register to read
             value (hex): the register value to write; must be 32-bit hexadecimal string, e.g. 0x01020304
@@ -695,7 +695,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         sample rate is 1/decimation of the specified rate
         
         Args:
-            boardi (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampleRate (int, optional): the input sampling rate in samples per second
             decimation (int, optional): a divisor in the range 1..255; default=1
 
@@ -821,7 +821,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         (with or without the keepsync option) after changing the input source
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             source (str): one of "tvg","vsi1","vsi2","vsi1-2","vsi1-2-3-4","vsi1-2-3-4-5-6-7-8"
 
         Returns:
@@ -875,7 +875,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         always be forced to be single-threaded, regardless of the chosen frame setup.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             mode (str): "on" or "off"
 
         Returns:
@@ -911,10 +911,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             * all-1:  all bits = 1
             * vsi-h:  VSI-H test vector pattern
             * cnt:    pattern with four 8-bit counters
+
         If called without the mode parameter the current setting is returned.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             mode (str): the tvg mode identifier (see above)
     
         Returns:
@@ -954,7 +955,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The displayed time is the (synchronized) VDIF time in UTC format.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             datetime: the current UTC timestamp of the active 1PPS source
@@ -1034,7 +1035,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         changed in this case.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             channelWidth (int, optional): the size of each channel in bits (allowed values: 1,2,4,8,16,32,64)
             numChannels (int, optional): number of channels per VDIF frame (allowed values: 1,2,4,8,16,32,64,128)
             payloadSize (int, optional): the total payload size in bytes (=frame size without header) of the VDIF frame
@@ -1116,7 +1117,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         the VDIF data format
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             stationId (str, optional): The two-letter station code to set
 
         Returns:
@@ -1158,7 +1159,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             * unknown: in case the VDIF encoding could not be determined
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
            str: current state of the VDIF encoding (for possible values see above)
@@ -1187,7 +1188,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         d0 - d3 are optional. If not specified the current value of the field is kept.
 
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A") 
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A") 
             d0 (int, optional): the value of the first user data field
             d1 (int, optional): the value of the second user data field
             d2 (int, optional): the value of the third user data field
@@ -1237,7 +1238,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         a single thread can be disabled by setting ip=None and specifying a threadID.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             outputId (int): the index of the Core3h output (starting at 0)
             ip (str): the destination IP address 
             port (int, optional): the destination IP port number (default = 46227)
@@ -1310,7 +1311,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' Retrieve the current parameters of the specified 10Gb ethernet device
         
         Args:
-            board (int/str): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
 
         Returns:
@@ -1367,7 +1368,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         gateway: IP adress of gateway
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
             key (str): the name of the parameter to set
             value (str): the new parameter value
@@ -1386,7 +1387,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Sets one ARP entry for a 10Gb ethernet device
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
             arpId (int): index of the ARP table entry to be modified
             mac (str): MAC address to be set (must be in format xx:xx:xx:xx:xx:xx)
@@ -1410,7 +1411,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         If called without the mode parameter the current setting is reported
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             mode (str, optional): Can be "on" or "off". 
 
         Returns:
@@ -1465,7 +1466,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         is available this will always be successful.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             format (str, optional): a single format specifier or several concatenated by +. Default is "vdif"
             force (boolean, optional): if set to True synchronize time to '2000-01-01T00:00:00'. Default is False
 
@@ -1508,7 +1509,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         The opposite of :py:func:`core3h_start`
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             boolean: True in case the output of data was stopped; False otherwise
@@ -1558,7 +1559,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         flag is lost during the reset process.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             keepsync (boolean, optional): keeps the time synchronization if set to True. Default=False
 
         Returns:
@@ -1589,7 +1590,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Warning: all previously configured settings and states are lost when rebooting!
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             boolean: True: if successful False: otherwise
@@ -1610,7 +1611,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         the control file.
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             boolean: True if successful False otherwise
@@ -1634,7 +1635,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         If specified mode must be a valid core3h mode (as listed in :py:attr:`DBBC3.core3hModes`)
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             mode (str, optional): if ommited gets the currently active mode
 
         Returns:
@@ -1732,7 +1733,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Lists all devices of the the current system and their corresponding memory address ranges
 
         Args:
-            board (int): the board number (starting at 0=A) or board ID (e.g "A")
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
         
         Returns:
             dict: dictionary with the following structure::
@@ -1763,7 +1764,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Obtains the 2-bit sampler statistics for the given core board and sampler.
 
         Args:
-            board (int/str): can be given as a number (0 = board A) or as char e.g. A
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
             sampler (int): the sampler number (starting at 0)
 
 
@@ -1802,7 +1803,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Obtains the gains of all 4 samplers of the given board
 
         Args:
-            board (int/str): can be given as a number (0 = board A) or as char e.g. A
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
 
         Returns:
             list: list containing the gains for all samplers (a[0] = sampler1 etc.) or None in case the core3 board is not connected
@@ -1841,7 +1842,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
              * 2-3 
         
         Args:
-            board (int/str): can be given as a number (0 = board A) or as char e.g. A
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
         
         Returns:
             list: List containing the three cross-correlation coefficients in the order described above
@@ -2017,17 +2018,24 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return self.sendCommand(cmd)
 
-class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
+class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
     '''
-    Implementation of the DBBC3 Commandset for the 
-    DDC_V mode version 123
+    Implementation of the DBBC3Commandset with methods common to all
+    DDC modes of the DBBC3. Subclasses that implement special methods
+    of the various DDC modes; e.g. DDC_V, DDC_L or DDC_U should derive
+    from this class.
     '''
 
     def __init__(self, clas):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
-        clas.dbbc = types.MethodType (self.dbbc.__func__, clas)
+
+    def __init__(self, clas):
+
+        DBBC3CommandsetDefault.__init__(self,clas)
+
+        clas._dbbc = types.MethodType (self._dbbc.__func__, clas)
         clas.dbbcgain = types.MethodType (self.dbbcgain.__func__, clas)
         clas.dbbcstat = types.MethodType (self.dbbcstat.__func__, clas)
         clas.cont_cal = types.MethodType (self.cont_cal.__func__, clas)
@@ -2036,16 +2044,18 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         clas.dsc_corr = types.MethodType (self.dsc_corr.__func__, clas)
         clas.dsc_bstat = types.MethodType (self.dsc_bstat.__func__, clas)
         clas.mag_thr = types.MethodType (self.mag_thr.__func__, clas)
-        clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
+#        clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
 
-    def dbbc(self, bbc, freq=None, ifLabel=None, tpint=None):
+    def _dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
         Gets / sets the parameters of the specified BBC.
 
-        If called without setting the freq parameter the current settings are returned as a dictionary.
+        If called without passing the freq parameter the current settings are returned.
 
-        The frequency must be specified in units of MHz. The bandwidth for the DDC_V mode is fixed at 32MHz.
+        The frequency must be specified in units of MHz.
+
+         The bandwidth for the DDC_V mode is fixed at 32MHz.
 
         Args:
             bbc (int): the BBC number (starts at 1) 
@@ -2076,7 +2086,7 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
             
         if (tpint):
             self._validateTPInt(tpint)
-            cmd += "=%f,%s,32,%d" % (freq, ifLabel,tpint)
+            cmd += "=%f,%s,%d,%d" % (freq, ifLabel,bw,tpint)
 
         ret = self.sendCommand(cmd)
 
@@ -2103,13 +2113,13 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         gainU (optional): the gain level for the USB
         
 
-        Return:
-        Dictionary with the following keys:
-            "bbc"         The currently selected BBC number (starts at 1)
-            "mode"        The currently selected mode 
-            "target"      The current target count level (only returned when mode=agc)
-            "gainUSB"     The gain level of the USB
-            "gainLSB"     The gain level of the LSB
+        Returns:
+            Dictionary with the following keys:
+                "bbc"         The currently selected BBC number (starts at 1)
+                "mode"        The currently selected mode 
+                "target"      The current target count level (only returned when mode=agc)
+                "gainUSB"     The gain level of the USB
+                "gainLSB"     The gain level of the LSB
 
         Exception:
         ValueError: in case an invalid BBC number has been specified
@@ -2182,13 +2192,47 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
         return(resp)
 
     def dbbcstat(self, bbc):
+        '''
+        Returns the bit statistics of a single BBC.
+
+        Bit statistics are obained for the sign and magnitude portions.
+            * sign: the fraction of positive values (should be around 50%)
+            * magnitude:: the sum of the 00 and 11 states (should be around 36%)
+        
+        For each BBC sign and magnitude statistics are obtained for both sidebands
+        of the specified BBC.
+
+        The results are passed back as a dictionary with the following structure::
+    
+            "s" (tuple of float): sign statistics (USB, LSB)
+            "m" (tuple of float): magnitude statistics (USB, LSB)
+
+        Args:
+            bbc: the BBC number (starts at 1)
+            
+        Returns:
+            dict: the dictionary containing the sign and magnitude bit statistics (for structure see description above)
+        Raises:
+            ValueError: in case the specified bbc index is out of range
+        '''
 
         self._validateBBC(bbc)
 
-        cmd = "dbbcstat=%d" % (bbc)
-        ret = self.sendCommand(cmd)
+        resp = {}
 
-        return(ret)
+        # Received from DBBC: dbbcstat/ 16,S,34.67,34.53;
+        patStr = "dbbcstat\/\s+(\d+),([SM]),(\d+\.d+),(\d+\.d+);" 
+
+        for mode in ["s", "m"]:
+            cmd = "dbbcstat=%d,%s" % (bbc, mode)
+            ret = self.sendCommand(cmd)
+
+            for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                    resp[mode] = tuple(float(match.group(3)), float(match.group(4)))
+                
+        return(resp)
 
     def cont_cal(self, mode, polarity, freq, option):
 
@@ -2339,12 +2383,12 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
 
         return(ret)
 
-    def pps_sync(self):
-
-        cmd = "pps_sync"
-        ret = self.sendCommand(cmd)
-
-        return(ret)
+#    def pps_sync(self):
+#
+#        cmd = "pps_sync"
+#        ret = self.sendCommand(cmd)
+#
+#        return(ret)
     
     def pps_delay(self):
 
@@ -2366,6 +2410,17 @@ class DBBC3Commandset_DDC_V_123(DBBC3CommandsetDefault):
                                 delays.append(int(match.group(2+i*2)))
                 
         return(delays)
+
+class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
+    '''
+    Implementation of the DBBC3 Commandset for the 
+    DDC_V mode version 123
+    '''
+
+    def __init__(self, clas):
+
+        DBBC3Commandset_DDC_Common.__init__(self,clas)
+
 
 class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
 
