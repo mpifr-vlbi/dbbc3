@@ -2416,11 +2416,21 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
     def core3hread(self, board, block, bbc, register):
         '''
         Reads a core3h register value
+
+        :note: this is an expert level method and should only be used if you know exactly what you are doing
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            block (int): the block index of the register to read (starts at 1)
+            bbc (int): the bbc index within the block (starts at 1)
+            register (int): the register index within the block (starts at 1)
+
+        Returns:
+            str: hex representation of the register value, or None if the regsiter could not be read
+
         '''
 
         value = None
-
-        self._validateBBC(bbc)
 
         boardNum = self.boardToDigit(board)+1
 
@@ -2428,11 +2438,11 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         ret = self.sendCommand(cmd)
 
         # core3hread/ Core3H[1],Block[1],BBC[5000],Reg[1] = 00000077;
-        pattern = re.compile("core3hread/.+?=\s*(\d);")
+        pattern = re.compile("core3hread/.+?\s*=\s*(.+);")
         for line in ret.split("\n"):
             match = pattern.match(line)
             if (match):
-                value = match.group(1)
+                value = hex(int(match.group(1),16))
 
         return(value)
 
