@@ -43,11 +43,11 @@ class DBBC3Config(object):
         # number of samplers per core3h board
         self.numSamplers = 4
 
-        # the maximum total number of BBCs
-        self.maxTotalBBCs = 128
-
         # the number of core boards configured in the current system (will be set by user)
         self._numCoreBoards = 0
+
+        # the maximum total number of BBCs (depending on mode and number of boards)
+        self.maxTotalBBCs = -1
 
         # highest tuning frequency for a BBC
         self.maxBBFreq = 4096.0
@@ -62,6 +62,7 @@ class DBBC3Config(object):
             self._setupDDC_V()
         elif (mode == "DDC_L"):
             self._setupDDC_L()
+
 
 #    @property
 #    def maxBoardBBCs(self):
@@ -85,29 +86,28 @@ class DBBC3Config(object):
         for i in range(numCoreBoards):
             self.coreBoards.append(chr(65 +i))
 
+        self.maxTotalBBCs = numCoreBoards * self.maxBoardBBCs
+
     def _setupDDC_U(self):
         '''
-        Confugration settings specific to the DDC_U mode
+        Configuration settings specific to the DDC_U mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 16
 
     def _setupDDC_L(self):
         '''
-        Confugration settings specific to the DDC_L mode
+        Configuration settings specific to the DDC_L mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
         
     def _setupDDC_V(self):
         '''
-        Confugration settings specific to the DDC_V mode
+        Configuration settings specific to the DDC_V mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
-        
-        
-
 
 if __name__ == "__main__":
     config = DBBC3Config()

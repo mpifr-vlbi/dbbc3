@@ -156,8 +156,8 @@ class DBBC3(object):
             Checks whether the specified bbc number is valid
             '''
 
-            if bbc not in range(1, self.config.maxBBCs+1):
-                raise ValueError("BBC must be in the range 1-%d" % (self.config.maxBBCs))
+            if bbc not in range(1, self.config.maxTotalBBCs+1):
+                raise ValueError("BBC must be in the range 1-%d" % (self.config.maxTotalBBCs))
 
         def _validateBBCFreq(self, freq):
             ''' 
