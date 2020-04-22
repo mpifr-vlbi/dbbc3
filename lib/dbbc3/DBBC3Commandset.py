@@ -2035,6 +2035,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
+        clas.dbbc = types.MethodType (self.dbbc.__func__, clas)
         clas._dbbc = types.MethodType (self._dbbc.__func__, clas)
         clas.dbbcgain = types.MethodType (self.dbbcgain.__func__, clas)
         clas.dbbcstat = types.MethodType (self.dbbcstat.__func__, clas)
@@ -2047,7 +2048,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 #        clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
 
-    def _dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
+    def dbbc (self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
         Gets / sets the parameters of the specified BBC.
 
@@ -2071,6 +2072,11 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             ValueError: in case an invalid BBC frequency has been specified
             ValueError: in case an invalid tpint value has been specified
         '''
+
+        return(self._dbbc(bbc,freq,bw,ifLabel,tpint))
+
+
+    def _dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
 
         self._validateBBC(bbc)
 
