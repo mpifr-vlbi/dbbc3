@@ -2045,8 +2045,9 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.dsc_corr = types.MethodType (self.dsc_corr.__func__, clas)
         clas.dsc_bstat = types.MethodType (self.dsc_bstat.__func__, clas)
         clas.mag_thr = types.MethodType (self.mag_thr.__func__, clas)
-#        clas.pps_sync = types.MethodType (self.pps_sync.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
+        clas.core3hread = types.MethodType (self.core3hread.__func__, clas)
+        clas.core3hwrite = types.MethodType (self.core3write.__func__, clas)
 
     def dbbc (self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
@@ -2055,8 +2056,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         If called without passing the freq parameter the current settings are returned.
 
         The frequency must be specified in units of MHz.
-
-         The bandwidth for the DDC_V mode is fixed at 32MHz.
 
         Args:
             bbc (int): the BBC number (starts at 1) 
@@ -2389,13 +2388,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(ret)
 
-#    def pps_sync(self):
-#
-#        cmd = "pps_sync"
-#        ret = self.sendCommand(cmd)
-#
-#        return(ret)
-    
     def pps_delay(self):
 
         cmd = "pps_delay"
@@ -2408,6 +2400,8 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         patStr = patStr[:-1] + ";"
         pattern = re.compile(patStr)
 
+        # TODO send command
+
         delays = []
         for line in ret.split("\n"):
                 match = pattern.match(line)
@@ -2416,6 +2410,32 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                                 delays.append(int(match.group(2+i*2)))
                 
         return(delays)
+
+    def core3hread(self, board, block, bbc, register):
+        '''
+        Reads a core3h register value
+        '''
+
+        value = None
+
+        self._validateBBC(bbc)
+
+        boardNum = self.boardToDigit(board)+1
+
+        cmd = "core3hread=%d,%d,%d,%d" % (boardNum, block,bbc,register)
+        ret = self.sendCommand(cmd)
+
+        # core3hread/ Core3H[1],Block[1],BBC[5000],Reg[1] = 00000077;
+        pattern = re.compile("core3hread/.+?=\s*(\d);")
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if (match):
+                value = match.group(1)
+
+        return(value)
+
+    def core3hwrite():
+        return
 
 class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
     '''
@@ -2426,6 +2446,33 @@ class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
     def __init__(self, clas):
 
         DBBC3Commandset_DDC_Common.__init__(self,clas)
+
+    def dbbc (self, bbc, freq=None, ifLabel=None, tpint=None):
+        ''' 
+        Gets / sets the parameters of the specified BBC.
+
+        If called without passing the freq parameter the current settings are returned.
+
+        The frequency must be specified in units of MHz.
+        
+        The bandwidth is fixed to 32 MHz for the DDC_V mode
+
+        Args:
+            bbc (int): the BBC number (starts at 1) 
+            freq (optional, float): the BBC frequency. If not specified the current setting is returned
+            ifLabel (optional, str): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.
+            tpint (optional,int): total power integration time in seconds (default = 1 second)
+
+        Returns:
+            settings (dict): dictionary containting the settings of the specified BBC
+
+        Raises:
+            ValueError: in case an invalid BBC number has been specified
+            ValueError: in case an invalid BBC frequency has been specified
+            ValueError: in case an invalid tpint value has been specified
+        '''
+
+        return(self._dbbc(bbc,freq,32,ifLabel,tpint))
 
 
 class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
