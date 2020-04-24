@@ -2101,33 +2101,34 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         '''
         Gets / sets the gain levels and gain control mode for a single BBC.
 
-        If the command is called with only the bbc parameter set the current
-        settings will be returned.
+        If the command is called with only the bbc parameter the current settings will be returned.
 
-        If the command is being called with the mode=agc the automatic gain control is switched on. If the target parameter
-        is also set then the levels are automatically adjusted to reach the given target otherwise the target specified in the
-        DBBC configuration file is being used.
+        If the command is being called with the mode=agc the automatic gain control is switched on.
+        If the target parameter is also set then the levels are automatically adjusted to reach the
+        given target otherwise the target specified in the DBBC configuration file is being used.
 
-        If the command is being called with mode=man the automatic gain control is switched off and the current gain levels are being frozen. In case
-        also the gainU and gainL parameters are set then these values will be used as the gain levels for the USB and LSB respectively.
+        If the command is being called with mode=man the automatic gain control is switched off
+        and the current gain levels are being frozen. In case also the gainU and gainL parameters
+        are set then these values will be used as the gain levels for the USB and LSB respectively.
 
-        Parameters:
-        bbc: the BBC number (starts at 1) 
-        mode (optional): the gain control mode. Can be "agc" (automatic gain control) or "man" to freeze the current gain settings.
-        target (optional): the target count level when running in "agc" mode
-        gainU (optional): the gain level for the USB
+        Args:
+            bbc (int): the BBC number (starts at 1) 
+            mode (str, optional): the gain control mode. Can be "agc" (automatic gain control) or "man" to freeze the current gain settings.
+            target (int, optional): the target count level when running in "agc" mode
+            gainU (int, optional): the gain level for the USB
         
 
         Returns:
-            Dictionary with the following keys:
-                "bbc"         The currently selected BBC number (starts at 1)
-                "mode"        The currently selected mode 
-                "target"      The current target count level (only returned when mode=agc)
-                "gainUSB"     The gain level of the USB
-                "gainLSB"     The gain level of the LSB
+            dict: a dictionary with the following structure::
 
-        Exception:
-        ValueError: in case an invalid BBC number has been specified
+                "bbc" (int):         The currently selected BBC number (starts at 1)
+                "mode" (str):        The currently selected mode 
+                "target" (int):      The current target count level (only returned when mode=agc)
+                "gainUSB" (int):     The gain level of the USB
+                "gainLSB" (int):     The gain level of the LSB
+
+        Raises:
+            ValueError: in case an invalid BBC number has been specified
 
         '''
         resp = {}
@@ -2242,9 +2243,29 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         return(resp)
 
     def cont_cal(self, mode, polarity, freq, option):
+        '''
+        Turns continuous calibration on or off.
+
+        ToDo:
+            Finish implementation
+
+        The optional parameter "polarity" can have the following values:
+            * 0: no polarity change, no display swap
+            * 1: polarity change, no display swap
+            * 2: no polarity change, display swap
+            * 3: polarity change, display swap
+
+        Args:
+            mode (str): can be either "on" or "off"
+            polarity (int, optional): can be either 0,1,2,3 (see description above)
+            freq (int, optional): the noise diodeswitching frequency (in Hz)
+            option (int, optional): 0=pulsed, 1=always on
+        '''
+
 
         self._validateOnOff(mode)
 
+        # cont_cal/ off,0,80,0; 
         cmd = "cont_cal=%s" % (mode)
         ret = self.sendCommand(cmd)
 
@@ -2415,9 +2436,12 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def core3hread(self, board, block, bbc, register):
         '''
-        Reads a core3h register value
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
 
-        :note: this is an expert level method and should only be used if you know exactly what you are doing
+        Reads a core3h register value
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -2448,9 +2472,13 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def core3hwrite(self, board, block, bbc, register, value):
         '''
-         Writes a value to a core3h register 
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
 
-        :note: this is an expert level method and should only be used if you know exactly what you are doing
+        Writes a value to a core3h register 
+
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
