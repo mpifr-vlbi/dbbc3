@@ -2242,7 +2242,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 
         return(resp)
 
-    def cont_cal(self, mode="", *args):
+    def cont_cal(self, mode=None, *args):
         '''
         Turns continuous calibration on or off.
 
@@ -2278,11 +2278,10 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         '''
 
 
-        print (args)
         resp = {}
         cmd = "cont_cal"
         
-        if (mode != ""):
+        if (mode):
             if not d3u.validateOnOff(mode):
                 raise ValueError("cont_cal: mode must be 'on' or 'off'")
             #cmd += "=%s,%d,%d,%d" % (mode,polarity,freq,0)
@@ -2305,7 +2304,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 for arg in args:
                     cmd += ",%d" % arg
 
-        print (cmd)
         ret = self.sendCommand(cmd)
 
         # cont_cal/ off,0,80,0; 
