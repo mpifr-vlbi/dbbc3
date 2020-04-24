@@ -2320,12 +2320,36 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         return(resp)
 
     def dbbctp(self, board):
+        '''
+        Obtains the DSC total power values
+
+        Separate DSC power values are returned for the three cases:
+            * DSC total power
+            * DSC total power off
+            * DSC total power on
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            tuple: (dsc_power, dsc_power_off, dsc_power_on)
+        '''
+
+        resp = None
 
         board = self.boardToChar(board).lower()
         cmd = "dbbctp%s" % (board)
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        #dbbctpd/ 0, 0, 0;
+        pattern = re.compile("%s\/\s*(\d+),\s*(\d+),\s*(\d+);" % (cmd))
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                resp = (match.group(1), match.group(2),match.group(3))
+                
+        return(resp)
 
     def dsc_tp(self, board):
         '''
