@@ -24,7 +24,7 @@ __copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
-import DBBC3Util as d3util
+import DBBC3Util as d3u
 import types 
 import re
 import time
@@ -1010,7 +1010,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         if "succeeded" in ret:
             print (ret)
-            timestamp = d3util.parseTimeResponse(ret)
+            timestamp = d3u.parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
             #print timestamp, datetime.now()
@@ -2242,34 +2242,84 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 
         return(resp)
 
-    def cont_cal(self, mode, polarity, freq, option):
+    def cont_cal(self, mode="", *args):
         '''
         Turns continuous calibration on or off.
 
-        ToDo:
-            Finish implementation
+        If called without the mode parameter the current setting of the 
+        continous calibration is returned
 
-        The optional parameter "polarity" can have the following values:
+        If executing with mode='on' up to three extra parameters can be supplied:
+            polarity, freq, option
+
+        The optional polarity parameter  can have the following values:
             * 0: no polarity change, no display swap
             * 1: polarity change, no display swap
             * 2: no polarity change, display swap
             * 3: polarity change, display swap
 
+        The optional freq parameter specifies the cal frequency in Hz.
+        
+        The optional option parameter can have the following values:
+            * 0: cal is pulsed
+            * 1: cal is always on
+
         Args:
-            mode (str): can be either "on" or "off"
-            polarity (int, optional): can be either 0,1,2,3 (see description above)
-            freq (int, optional): the noise diodeswitching frequency (in Hz)
-            option (int, optional): 0=pulsed, 1=always on
+            mode (str, optional): can be either "on" or "off"
+            *args (int): up to three extra parmeters (see description above)
+        
+        Returns:
+            dict: A dictionary with the following structure::
+        
+                "mode" (str): the current continuous cal mode 
+                "polarity" (int): the current polarity setting (see above)
+                "freq" (int): the current continuous cal frequency in Hz
+                "option" (int): the current option setting (see above)
         '''
 
 
-        self._validateOnOff(mode)
+        print (args)
+        resp = {}
+        cmd = "cont_cal"
+        
+        if (mode != ""):
+            if not d3u.validateOnOff(mode):
+                raise ValueError("cont_cal: mode must be 'on' or 'off'")
+            #cmd += "=%s,%d,%d,%d" % (mode,polarity,freq,0)
+            cmd += "=%s" % (mode)
+            
+            if (mode == "on"):
+                if (len(args) > 3):
+                    raise ValueError("cont_cal: too many arguments given (max 4)")
 
-        # cont_cal/ off,0,80,0; 
-        cmd = "cont_cal=%s" % (mode)
+                if args[0]:
+                    if (args[0] not in range(0,4)):
+                        ValueError("cont_cal: polarity must be in range 0-3")
+                if args[1]:
+                    if (args[1] < 0):
+                        ValueError("cont_cal: freq must be positive")
+                if args[2]:
+                    if (args[2] not in [0,1]):
+                        ValueError("cont_cal: option must be 0 or 1")
+
+                for arg in args:
+                    cmd += ",%d" % arg
+
+        print (cmd)
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        # cont_cal/ off,0,80,0; 
+        pattern = re.compile("cont_cal\/\s+(.+?),(\d),(\d+),(\d);")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                resp["mode"] = match.group(1)
+                resp["polarity"] = int(match.group(2))
+                resp["freq"] = int(match.group(3))
+                resp["option"] = int(match.group(4))
+
+        return(resp)
 
     def dbbctp(self, board):
 
@@ -2632,12 +2682,3 @@ class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_V_124):
         '''
 
         DBBC3Commandset_DDC_V_124.__init__(self,clas)
-
-
-#class DBBC3Commandset_OCT_D_120(DBBC3Commandset):
-#    pass
-#class DBBC3Commandset_OCT_D_150(DBBC3Commandset):
-#   pass
-#class DBBC3Commandset_OCT_D_220(DBBC3Commandset):
-#    pass
-
