@@ -56,3 +56,7 @@ def parseTimeResponse(response):
         timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy+1, hour, minute, second), "%Y %j %H %M %S %Z")
 
     return(timestamp)
+
+def validateOnOff(string):
+
+    return (string in ["on", "off"])

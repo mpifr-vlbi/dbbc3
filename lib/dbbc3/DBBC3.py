@@ -175,10 +175,6 @@ class DBBC3(object):
             if (tpint < 1 or tpint > 60):
                 raise ValueError("tpint value must be in the range 1-60")
 
-        def _validateOnOff(self, mode):
-            if (mode not in ["on", "off"]):
-                raise ValueError("Mode must be either on or off")
-
         def boardToChar(self, board):
             '''
             Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
