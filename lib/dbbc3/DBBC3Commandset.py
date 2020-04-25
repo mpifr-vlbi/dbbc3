@@ -2333,6 +2333,9 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         Returns:
             tuple: (dsc_power, dsc_power_off, dsc_power_on)
+
+        Raises:
+            ValueError: in case the requested board is out of range
         '''
 
         resp = None
@@ -2353,13 +2356,18 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def dsc_tp(self, board):
         '''
-        Reads the DSC total power values for
-        all four samplers of the selected board
+        Gets the DSC total power values
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
+        Power values are obtained for all 4 samplers of the selected board.
 
-        Returns: an array holding the TP values for all four samplers
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            list:  a list holding the power values for all four samplers
+
+        Raises:
+            ValueError: in case the requested board is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2377,25 +2385,31 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 if match:
                     values.append(int(match.group(1)))
 
-
         return(values)
         
     def dsc_corr(self, board):
         '''
-        Performs cross-correlation between the samplers of the given board. Correlation
-        products are between these samplers:
-        1) 0-1
-        2) 1-2
-        3) 2-3
-        The values can be used to check if the samplers are in the correct phase (=synchronized).
-        Note: The absolute numbers returned depend on the input power and IF bandwidth. However the
-        values of one board should not deviate by more than 10%.
+        Cross-correlates the signals of the 4 samplers
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
+        Performs cross-correlation between the 4 samplers of the given board. Correlation
+        products are between these samplers:
+            * 0-1
+            * 1-2
+            * 2-3
+
+        The values can be used to check if the samplers are in the correct phase (=synchronized).
+
+        Note: The absolute numbers returned depend on the input power and IF bandwidth. However the
+        values obtained for a board should not deviate by more than 10%.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
-        List containing the three cross-correlations in the order described above
+            list: list containing the three cross-correlations in the order described above
+
+        Raises:
+            ValueError: in case the requested board is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2404,6 +2418,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         ret = self.sendCommand(cmd)
 
         corr = [0] * 3
+
         # Correlation board 1:
         # [0-1]: 157322344
         # [1-2]: 155710069
@@ -2422,24 +2437,27 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         '''
         Determines DSC statistics of the given board and sampler
 
-        Parameters:
-        board: can be given as a number (0 = board A) or as char e.g. A
-        sampler: the sampler number (0-3)
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int): the sampler number (0-3)
 
         Returns:
-        list of dictionaries with the following keys:
-        count:  count for the given state
-        perc:   percentage for the given state
+            list: list of dictionaries with the following keys::
 
-        the list indices are
-        0: ++ state
-        1: + state
-        2: - state
-        3: -- state
+                "count":  count for the given state
+                "perc":   percentage for the given state
 
-        return example:
-        [{'count': 1413, 'perc': 9}, {'count': 6358, 'perc': 40}, {'count': 6392, 'perc': 40}, {'count': 1459, 'perc': 9}]
+            the list indices are
+                0: ++ state
+                1: + state
+                2: - state
+                3: -- state
+
+            return example:
+                [{'count': 1413, 'perc': 9}, {'count': 6358, 'perc': 40}, {'count': 6392, 'perc': 40}, {'count': 1459, 'perc': 9}]
         
+        Raises:
+            ValueError: in case the requested board is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2462,7 +2480,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             line = line.strip().replace(";","")
             match = pattern.match(line)
             if (match):
-                print (line)
+#                print (line)
                 if (match.group(1) == "11"):
                     stat[0] = {"count":int(match.group(2)), "perc":int(match.group(3))}
                 elif (match.group(1) == "10"):
@@ -2474,8 +2492,17 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(stat)
 
-    def mag_thr(self, bbc, value):
+    def mag_thr(self, bbc, value=0.75):
+        '''
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
 
+        Sets the threshold factor for the continuous threshold calibration
+
+
+        '''
         self._validateBBC(bbc)
 
         cmd = "mag_thr=%d,%d" % (bbc, value)
