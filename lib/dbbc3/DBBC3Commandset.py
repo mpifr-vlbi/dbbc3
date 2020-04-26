@@ -2492,23 +2492,45 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(stat)
 
-    def mag_thr(self, bbc, value=0.75):
+    def mag_thr(self, bbc, threshold=None):
         '''
         :warning::
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
 
-        Sets the threshold factor for the continuous threshold calibration
+        Gets/sets the threshold factor for the continuous threshold calibration
 
+        if called without the threshold parameter, the current threshold factor is returned.
 
+        Args:
+            bbc (int): the BBC number (starts at 1) 
+            threshold (float): the threshold factor to apply
+
+        Returns:
+            float: the threshold factor; None if the threshold could not be obtained or set
+
+        Raises:
+            ValueError: in case an invalid BBC number has been specified
         '''
+
         self._validateBBC(bbc)
 
-        cmd = "mag_thr=%d,%d" % (bbc, value)
-        ret = self.sendCommand(cmd)
+        cmd = "mag_thr=%d" % (bbc)
+        if threshold:
+            cmd += ",%d" % (threshold)
 
-        return(ret)
+        ret = self.sendCommand(cmd)
+        # mag_thr/ 1,75.000000;
+
+        pattern = re.compile("mag_thr\/\s*(\d+),(\d+\.\d+)")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                return(float(match.group(2)))
+
+        return(None)
 
     def pps_delay(self):
 
