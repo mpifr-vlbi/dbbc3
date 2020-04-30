@@ -142,6 +142,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         #clas.cal_gain = types.MethodType (self.cal_offset.__func__, clas)
         #clas.cal_delay = types.MethodType (self.cal_offset.__func__, clas)
         clas.adb3linit = types.MethodType (self.adb3linit.__func__, clas)
+        clas.core3hinit = types.MethodType (self.core3hinit.__func__, clas)
         clas.synthinit = types.MethodType (self.synthinit.__func__, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
@@ -380,6 +381,37 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 return(True)
 
         return (False) 
+
+    def core3hinit(self, board=None):
+        '''
+        Reinitializes the CORE3H board(s)
+
+        If called without the optional board parameter reinitialization is performed for all CORE3H boards present
+        in the system; otherwise only the specified board is bein initialized.
+        The boards are reset to their default settings as specified in the configuration files. 
+
+        Args:
+            board (int or str, optional): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            boolean: True if the reinitialization was successful; False otherwise
+        '''
+        cmd = "core3hinit"
+        
+        if board:
+            board = self.boardToDigit(board)
+            cmd += "=%d" % board
+        ret = self.sendCommand(cmd)
+
+        #  core3hinit/ Core3H initialized;
+        pattern = re.compile("core3hinit\/\s*Core3H initialized;")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                return(True)
+
+        return (False)
 
     def synthinit(self):
         '''
