@@ -2173,11 +2173,23 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         Args:
             bbc (int): the BBC number (starts at 1) 
             freq (optional, float): the BBC frequency. If not specified the current setting is returned
-            ifLabel (optional, str): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h.
+            ifLabel (optional, str): the IF label to be used for the BBC (relevant e.g. for FS log). Must be single letter a-h
             tpint (optional,int): total power integration time in seconds (default = 1 second)
 
         Returns:
-            settings (dict): dictionary containting the settings of the specified BBC
+            dict: a dictionary with the following structure::
+                
+                "freq" (float):  the frequency of the BBC in MHz
+                "ifLabel" (str): the label of the ascociated IF (a-h)
+                "bw" (int): the bandwidth
+                "tpint" (int): the total power integration time in seconds
+                "mode" (str): the current gain control mode (agc / manual)
+                "gainUSB" (int): the gain of the USB (0-255)
+                "gainLSB" (int): the gain of the LSB (0-255)
+                "tpUSBOn" (int): the total power of the USB with cal diode on
+                "tpLSBOn" (int): the total power of the LSB with cal diode on
+                "tpUSBOff" (int): the total power of the USB with cal diode off
+                "tpLSBOff" (int): the total power of the LSB with cal diode off
 
         Raises:
             ValueError: in case an invalid BBC number has been specified
@@ -2185,12 +2197,28 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             ValueError: in case an invalid tpint value has been specified
         '''
 
-        return(self._dbbc(bbc,freq,bw,ifLabel,tpint))
+        # first obtain the current settings
+        ret = self._dbbc(bbc, None, None, None, None)
+
+        if (freq):
+            ret["freq"] = freq 
+
+            if (bw):
+                ret["bw"] = bw 
+            if (ifLabel):
+                ret["ifLabel"] = ifLabel 
+            if (tpint):
+                ret["tpint"] = tpint 
+            ret = self._dbbc(bbc,ret["freq"],ret["bw"],ret["ifLabel"],ret["tpint"])
+
+        return(ret)
 
 
-    def _dbbc(self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
+    def _dbbc(self, bbc, freq, bw, ifLabel, tpint):
 
         self._validateBBC(bbc)
+
+        resp = {}
 
         if (ifLabel):
             ifLabel = ifLabel.lower()
@@ -2198,17 +2226,43 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 raise ValueError("dbbc: ifLabel must be one of abcdefgh")
 
         cmd = "dbbc{:02d}".format(bbc)
+
         if (freq):
             self._validateBBCFreq(freq)
-            cmd += "=%f,%s" %(freq, ifLabel)
             
-        if (tpint):
-            self._validateTPInt(tpint)
-            cmd += "=%f,%s,%d,%d" % (freq, ifLabel,bw,tpint)
+            cmd += "=%f" %(freq)
+
+            if (bw):
+                # bw cannot be set with empty ifLabel due to control software parameter order
+                if not ifLabel:
+                    ifLabel = 'a'
+                cmd += ",%s,%d" % (ifLabel,bw)
+
+                if (tpint):
+                    self._validateTPInt(tpint)
+                    cmd += ",%d" % (tpint)
 
         ret = self.sendCommand(cmd)
 
-        return(ret)
+        #  dbbc001/ 2992.000000,a,32,1,agc,142,123,14855,14753,14866,14749;
+        pattern = re.compile("dbbc{:03d}\/\s*(\d+\.\d+),(.?),(\d+),(\d+),(.+?),(\d+),(\d+),(\d+),(\d+),(\d+),(\d+);".format(bbc))
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if (match):
+                resp['freq'] = match.group(1)
+                resp['ifLabel'] = match.group(2)
+                resp['bw'] = match.group(3)
+                resp['tpint'] = match.group(4)
+                resp['mode'] = match.group(5)
+                resp['gainUSB'] = match.group(6)
+                resp['gainLSB'] = match.group(7)
+                resp['tpUSBOn'] = match.group(8)
+                resp['tpLSBOn'] = match.group(9)
+                resp['tpUSBOff'] = match.group(10)
+                resp['tpLSBOff'] = match.group(11)
+
+        return(resp)
 
     def dbbcgain(self, bbc, mode=None, target= None, gainU=None, gainL=None):
         '''
@@ -2229,6 +2283,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             mode (str, optional): the gain control mode. Can be "agc" (automatic gain control) or "man" to freeze the current gain settings.
             target (int, optional): the target count level when running in "agc" mode
             gainU (int, optional): the gain level for the USB
+            gainL (int, optional): the gain level for the LSB
         
 
         Returns:
