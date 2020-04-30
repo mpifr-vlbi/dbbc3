@@ -187,9 +187,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_reset = types.MethodType (self.adb3l_reset.__func__, clas)
         clas.adb3l_reseth = types.MethodType (self.adb3l_reseth.__func__, clas)
         clas.adb3l_resets = types.MethodType (self.adb3l_resets.__func__, clas)
-        clas.adb3l_biston = types.MethodType (self.adb3l_biston.__func__, clas)
-        clas.adb3l_bistoff = types.MethodType (self.adb3l_bistoff.__func__, clas)
-        clas.adb3l_SDA_on = types.MethodType (self.adb3l_SDA_on.__func__, clas)
+#        clas.adb3l_biston = types.MethodType (self.adb3l_biston.__func__, clas)
+#        clas.adb3l_bistoff = types.MethodType (self.adb3l_bistoff.__func__, clas)
+#        clas.adb3l_SDA_on = types.MethodType (self.adb3l_SDA_on.__func__, clas)
         clas.adb3l_delay = types.MethodType (self.adb3l_delay.__func__, clas)
         clas.adb3l_offset = types.MethodType (self.adb3l_offset.__func__, clas)
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.__func__, clas)
@@ -1958,76 +1958,84 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(corr)
 
-
-
     # ADB3L commands
     def adb3l_reset(self):
-        ''' Resets all ADB3L boards and sets the registers to default values
-
-        Args:
-            test (str): Description of test
-
-        Returns:
-            str: empty string
+        ''' 
+        Resets all ADB3L boards and sets the registers to default values
         '''
-        return self.sendCommand("adb3l=reset")
+        self.sendCommand("adb3l=reset")
+        return
 
     def adb3l_reseth(self):
         '''
         Resets all ADB3L boards, but does NOT change/reset any register settings
         '''
-        return self.sendCommand("adb3l=reseth")
+        self.sendCommand("adb3l=reseth")
+        return 
 
-    def adb3l_resets(self, board, sampler=-1):
+    def adb3l_resets(self, board, sampler=None):
         '''
-        Resets the ADB3L registers to default values for the specified board and 
-        for the specified sampler (optiona1)
+        Resets the ADB3L registers to default values for the specified board and sampler
+
+        If called without the optional sampler parameter a reset is performed for all samplers
+        of the specified board. 
     
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampler (optional): sampler number (0-3)
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int, optional): sampler number (0-3)
         '''
 
         boardNum = self.boardToDigit(board)+1
 
         cmd = "adb3l=resets=%d" % boardNum
-        if sampler != -1:
+
+        if sampler:
             cmd += ",%d" % sampler
             
-        return self.sendCommand(cmd)
+        self.sendCommand(cmd)
+        return 
 
     def adb3l_biston(self, board):
         '''
         Turns on BIST-mode for all samplers on the specified board.
-        Note: after setting BIST-mode a "reseth" command must be executed
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Note:
+             after enabling the BIST-mode the samplers must be reset by calling :py:func:`adb3l_reseth` 
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
         '''
 
         boardNum = self.boardToDigit(board)+1
-        return self.sendCommand("adb3l=biston=%d" % boardNum)
+        self.sendCommand("adb3l=biston=%d" % boardNum)
+        return
 
     def adb3l_bistoff(self, board):
         '''
         Turns off BIST-mode for all samplers on the specified board.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
         '''
 
         boardNum = self.boardToDigit(board)+1
-        return self.sendCommand("adb3l=bistoff=%d" % boardNum)
+        self.sendCommand("adb3l=bistoff=%d" % boardNum)
+
+        return
 
     def adb3l_SDA_on(self, board, sampler):
         '''
         Turns on SDA Mode (Sampler Delay Adjust) for the specified board and sampler.
-        Has to be used before adjusting the delay of a sampler with the delay command.
+
+        This method must be called prior to adjusting the delay of a sampler with the :py:func:`adb3l_delay` command.
         Introduces a delay offset of 60ps.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampler: sampler number (0-3)
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int): sampler number (0-3)
+
+        Raises:
+            ValueError: in case the specified sampler is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2035,22 +2043,25 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         cmd = "adb3l=SDA_on=%d,%d" % (boardNum, sampler)
 
-        return self.sendCommand(cmd)
+        self.sendCommand(cmd)
+        return
 
 
     def adb3l_delay(self, board, sampler, value=512):
         '''
         Sets the sampler delay for the specified board and sampler.
+
         The allowed range is 0-1023 which corresponds to -60ps to +60ps with a stepping size of 120fs.
         The default is 512 = 0ps.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampler: sampler number (0-3)
-        value (default=512): the delay value in steps of 120fs
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int): sampler number (0-3)
+            value (int, optional): the delay value in steps of 120fs. Default is 512 (=0ps)
 
-        Exceptions:
-        Throws ValueError in case an illegal value was passed
+        Raises:
+            ValueError: in case the specified sampler is out of range
+            ValueError: in case the specified value parameter is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2061,21 +2072,24 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         cmd = "adb3l=delay=%d,%d,%d" % (boardNum, sampler,value)
 
-        return self.sendCommand(cmd)
+        self.sendCommand(cmd)
+        return
 
-    def adb3l_offset(self, board, sampler, value=512):
+    def adb3l_offset(self, board, sampler, value=128):
         '''
         Sets the sampler offset value for the specified board and sampler.
+
         The allowed range is 0-255 which corresponds to -20mV to +20mV with a stepping size of 156microV.
         The default is 128 = 0mV.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampler: sampler number (0-3)
-        value (default=128): the sampler offset in steps of 156microV.
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int): sampler number (0-3)
+            value (int, optional): the offset value in steps of 156 microV. Default is 128 (=0 mV)
 
-        Exceptions:
-        Throws ValueError in case an illegal value was passed
+        Raises:
+            ValueError: in case the specified sampler is out of range
+            ValueError: in case the specified value parameter is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2086,21 +2100,24 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         cmd = "adb3l=offset=%d,%d,%d" % (boardNum, sampler,value)
 
-        return self.sendCommand(cmd)
+        self.sendCommand(cmd)
+        return
 
     def adb3l_gain(self, board, sampler, value=512):
         '''
         Sets the sampler gain value for the specified board and sampler.
+
         The allowed range is 0-255 which corresponds to -0.5dB to +0.5dB with a stepping size of 0.004dB.
         The default is 128 = 0dB.
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
-        sampler: sampler number (0-3)
-        value (default=128): the sampler offset in steps of 0.004dB.
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            sampler (int): sampler number (0-3)
+            value (int, optional): the offset value in steps of 0.004dB. Default is 128 (=0 dB)
 
-        Exceptions:
-        Throws ValueError in case an illegal value was passed
+        Raises:
+            ValueError: in case the specified sampler is out of range
+            ValueError: in case the specified value parameter is out of range
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2111,7 +2128,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         cmd = "adb3l=gain=%d,%d,%d" % (boardNum, sampler,value)
 
-        return self.sendCommand(cmd)
+        self.sendCommand(cmd)
+        return
 
 class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
     '''
