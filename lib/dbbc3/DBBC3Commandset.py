@@ -138,6 +138,10 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.time = types.MethodType (self.time.__func__, clas)
         clas.version = types.MethodType (self.version.__func__, clas)
         clas.reconfigure = types.MethodType (self.reconfigure.__func__, clas)
+        #clas.cal_offset = types.MethodType (self.cal_offset.__func__, clas)
+        #clas.cal_gain = types.MethodType (self.cal_offset.__func__, clas)
+        #clas.cal_delay = types.MethodType (self.cal_offset.__func__, clas)
+        clas.adb3linit = types.MethodType (self.adb3linit.__func__, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.__func__, clas)
@@ -354,6 +358,43 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         self.sendCommand("reconfigure")
+
+    def adb3linit(self):
+        '''
+        Performs full reset of all ADB3L boards
+
+        All ADB3L boards are fully reinitialized to the setting defined in the configuration file.
+
+        Returns:
+            boolean: True if the ADB3L boards have been successfully reinitialized; False otherwise
+        '''
+        ret = self.sendCommand("adb3linit")
+
+        # adb3linit/ Samplers initialized;
+        pattern = re.compile("adb3linit\/\s*Samplers initialized;")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                return(True)
+
+        return (False) 
+
+        
+#    def cal_offset(self, board):
+#        '''
+#        Calibrates the sampler offsets
+#
+#        Calibrates the offsets of the 4 samplers of the specified board. The corresponding
+#        GCoMo should be set to maximum attenuation when executing the offset calibration
+#
+#        ToDo:
+#            Write up calibration instructions and put a refrerence here
+#
+#        Args:
+#            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+#    
+#        '''
 
     def checkphase(self):
         '''
