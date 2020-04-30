@@ -142,6 +142,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         #clas.cal_gain = types.MethodType (self.cal_offset.__func__, clas)
         #clas.cal_delay = types.MethodType (self.cal_offset.__func__, clas)
         clas.adb3linit = types.MethodType (self.adb3linit.__func__, clas)
+        clas.synthinit = types.MethodType (self.synthinit.__func__, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.__func__, clas)
@@ -366,12 +367,33 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         All ADB3L boards are fully reinitialized to the setting defined in the configuration file.
 
         Returns:
-            boolean: True if the ADB3L boards have been successfully reinitialized; False otherwise
+            boolean: True if the ADB3L boards were successfully reinitialized; False otherwise
         '''
         ret = self.sendCommand("adb3linit")
 
         # adb3linit/ Samplers initialized;
         pattern = re.compile("adb3linit\/\s*Samplers initialized;")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                return(True)
+
+        return (False) 
+
+    def synthinit(self):
+        '''
+        Reinitiliases the synthesizers
+
+        All synthesizers of the GCoMo boards are reset to their initial state as defined in the configuration files
+
+        Returns:
+            boolean: True if the synthesizers were successfully reinitialized; False otherwise
+        '''
+        ret = self.sendCommand("synthinit")
+
+        #  synthinit/ Synthesizers configured;
+        pattern = re.compile("synthinit\/\s*Synthesizers configured;")
 
         for line in ret.split("\n"):
             match = pattern.match(line)
