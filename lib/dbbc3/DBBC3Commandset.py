@@ -15,8 +15,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 '''
-  This module is part of the DBBC3 package and implements the command sets
-  of the DBBC3 for the various modes and versions
+This module is part of the DBBC3 package and implements the command sets
+of the DBBC3 for the various modes and versions
 '''
 
 __author__ = "Helge Rottmann"
@@ -2561,14 +2561,15 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         Performs cross-correlation between the 4 samplers of the given board. Correlation
         products are between these samplers:
+
             * 0-1
             * 1-2
             * 2-3
 
         The values can be used to check if the samplers are in the correct phase (=synchronized).
 
-        Note: The absolute numbers returned depend on the input power and IF bandwidth. However the
-        values obtained for a board should not deviate by more than 10%.
+        Note:
+             The absolute numbers returned depend on the input power and IF bandwidth. However the values obtained for a board should not deviate by more than 10%.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -2791,7 +2792,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
 class DBBC3Commandset_DDC_V_123(DBBC3Commandset_DDC_Common):
     '''
-    Implementation of the DBBC3 Commandset for the 
+    Implementation of the DBBC3 commandset for the 
     DDC_V mode version 123
     '''
 
@@ -2927,15 +2928,38 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
             
-class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_V_124):
+class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
     '''
-    Implementation of the DBBC3 Commandset for the
+    Implementation of the DBBC3 commandset for the
     DDC_U mode version 125
     '''
 
     def __init__(self, clas):
         '''
-        For now use the DDC_V_124 commandset
         '''
 
-        DBBC3Commandset_DDC_V_124.__init__(self,clas)
+        DBBC3Commandset_DDC_Common.__init__(self,clas)
+
+class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DDC_L mode version 121
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+        DBBC3Commandset_DDC_Common.__init__(self,clas)
+
+
+class DBBC3Commandset_DSC_110(DBBC3CommandsetDefault):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DSC mode version 110
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+
+        DBBC3CommandsetDefault.__init__(self,clas)
