@@ -1,0 +1,198 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>DBBC3Validation Module &mdash; dbbc3 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="dbbc3 0.1 documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">dbbc3 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-dbbc3.DBBC3Validation">
+<span id="dbbc3validation-module"></span><h1><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Validation</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Validation" title="Permalink to this headline">¶</a></h1>
+<p>This module is part of the DBBC3 package and implements higher
+level validation methods for verification of the proper
+initialization and configuration of the DBBC3 VLBI backend</p>
+<dl class="class">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Validation.</tt><tt class="descname">DBBC3Validation</tt><big>(</big><em>dbbc3</em>, <em>ignoreErrors=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.ERROR">
+<tt class="descname">ERROR</tt><em class="property"> = '\x1b[1;31mERROR\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.INFO">
+<tt class="descname">INFO</tt><em class="property"> = '\x1b[1;34mINFO\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.INFO" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.OK">
+<tt class="descname">OK</tt><em class="property"> = '\x1b[1;32mOK\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.OK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.RESOLUTION">
+<tt class="descname">RESOLUTION</tt><em class="property"> = '\x1b[1;34mRESOLUTION\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.RESOLUTION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.WARN">
+<tt class="descname">WARN</tt><em class="property"> = '\x1b[1;35mWARN\x1b[0m'</em><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.WARN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.report">
+<tt class="descname">report</tt><big>(</big><em>level</em>, <em>message</em>, <em>resolutionMsg=''</em>, <em>exit=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default method for reporting the outcome of validation actions.
+Should be overriding for customization</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.setIgnoreErrors">
+<tt class="descname">setIgnoreErrors</tt><big>(</big><em>ignoreErrors</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.setIgnoreErrors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateIFLevel">
+<tt class="descname">validateIFLevel</tt><big>(</big><em>board</em>, <em>downConversion=True</em>, <em>agc=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateIFLevel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs various validations of the IF power settings as obtained from trhe dbbcif command
+1) IF power should be within 1000 counts of the target value
+2) The attenuation setting should be within 20-40
+3) AGC should be switched on (unless check is  disabled with the agc parameter)
+4) input should be set to 2 (unless check is disabled with the downConversion parameter)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validatePPS">
+<tt class="descname">validatePPS</tt><big>(</big><em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validatePPS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validatePPSDelay">
+<tt class="descname">validatePPSDelay</tt><big>(</big><em>board</em>, <em>exitOnError=False</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validatePPSDelay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerOffsets">
+<tt class="descname">validateSamplerOffsets</tt><big>(</big><em>boardNum</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerOffsets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPhases">
+<tt class="descname">validateSamplerPhases</tt><big>(</big><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPhases" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPower">
+<tt class="descname">validateSamplerPower</tt><big>(</big><em>boardNum</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSamplerPower" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerFreq">
+<tt class="descname">validateSynthesizerFreq</tt><big>(</big><em>board</em>, <em>targetFreq=0</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerFreq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validates the actual tuning frequency of the GCoMo synthesizer serving the given board against
+the target value specified in the DBBC3 configuration file.</p>
+<p>If the parameter targetFreq is set to a value &gt; 0 an additional check is performed against that frequency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerLock">
+<tt class="descname">validateSynthesizerLock</tt><big>(</big><em>board</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateSynthesizerLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if synthesizer serving the given board is locked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Validation.DBBC3Validation.validateTimesync">
+<tt class="descname">validateTimesync</tt><big>(</big><em>board</em>, <em>exitOnError=True</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Validation.DBBC3Validation.validateTimesync" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/source/dbbc3validation.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">dbbc3 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2020, Helge Rottmann.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

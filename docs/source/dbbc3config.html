@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DBBC3 Module &mdash; dbbc3 0.1 documentation</title>
+    <title>DBBC3Config Module &mdash; dbbc3 0.1 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -46,34 +46,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-dbbc3.DBBC3">
-<span id="dbbc3-module"></span><h1><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3" title="Permalink to this headline">¶</a></h1>
-<p>module for monitoring and control of the DBBC3 VLBI backend</p>
+  <div class="section" id="module-dbbc3.DBBC3Config">
+<span id="dbbc3config-module"></span><h1><tt class="xref py py-mod docutils literal"><span class="pre">DBBC3Config</span></tt> Module<a class="headerlink" href="#module-dbbc3.DBBC3Config" title="Permalink to this headline">¶</a></h1>
+<p>This module is part of the DBBC3 package. It contains code for handling the DBBC3 configuration</p>
 <dl class="class">
-<dt id="dbbc3.DBBC3.DBBC3">
-<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3.</tt><tt class="descname">DBBC3</tt><big>(</big><em>host</em>, <em>port=4000</em>, <em>numBoards=8</em>, <em>mode=''</em>, <em>version=''</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Main class of the DBBC3 module.</p>
-<dl class="method">
-<dt id="dbbc3.DBBC3.DBBC3.boardToChar">
-<tt class="descname">boardToChar</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.boardToChar" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
-board: board identifier; can be numeric e.g. 0, or char e.g. &#8216;A&#8217;
-Returns the core board identifier as uppercase char e.g. A</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="dbbc3.DBBC3.DBBC3.boardToDigit">
-<tt class="descname">boardToDigit</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.boardToDigit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts the core board ID (e.g. A) into the board number (starting at 0)
-board: board identifier; can be numeric e.g. 0, or char e.g. &#8216;A&#8217;
-Returns the core board identifier as integer (starting at 0 for board A)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="dbbc3.DBBC3.DBBC3.sendCommand">
-<tt class="descname">sendCommand</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3.DBBC3.sendCommand" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method for sending generic commands to the DBBC3</p>
-<p>Returns the response</p>
+<dt id="dbbc3.DBBC3Config.DBBC3Config">
+<em class="property">class </em><tt class="descclassname">dbbc3.DBBC3Config.</tt><tt class="descname">DBBC3Config</tt><big>(</big><em>mode</em>, <em>version</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Config.DBBC3Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Class for storing and handling of the DBBC3 configuration</p>
+<dl class="attribute">
+<dt id="dbbc3.DBBC3Config.DBBC3Config.numCoreBoards">
+<tt class="descname">numCoreBoards</tt><a class="headerlink" href="#dbbc3.DBBC3Config.DBBC3Config.numCoreBoards" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of CORE3H boards installed in the DBBC3</p>
 </dd></dl>
 
 </dd></dl>
@@ -88,7 +72,7 @@ Returns the core board identifier as integer (starting at 0 for board A)</p>
         <div class="sphinxsidebarwrapper">
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../_sources/source/dbbc3.txt"
+    <li><a href="../_sources/source/dbbc3config.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
