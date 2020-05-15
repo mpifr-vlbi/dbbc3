@@ -1629,7 +1629,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         In addition the following data is displayed:
         1PPS/frame-header/end-of-frame/frame-drop bits
 
-        ToDo: implement output parsing
+        TODO: implement output parsing
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1637,6 +1637,30 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ret = self.sendCommand(cmd)
 
         return(ret)
+        # output
+
+        #Searching for output frames...
+        #2020-05-06T07:01:15
+        #
+        #Frame ID 0 (t=1s):
+        #Word | PPS/Hdr/EoF/Drop | Data (hex)
+        #------|------------------|------------------
+        #0 |  1   1   0   0   | 00000000 6E887E41
+        #1 |  0   1   0   0   | 28000000 00A67FBB
+        #2 |  0   1   0   0   | 04004E41 04000404
+        #3 |  0   1   0   0   | 00000000 00000000
+        #4 |  0   1   0   0   | 00000000 00000000
+        #5 |  0   0   0   0   | 627665F1 9A701495
+        #6 |  0   0   0   0   | 556DAD8E 556DAD8E
+        #7 |  0   0   0   0   | 95458139 6995555A
+        #8 |  0   0   0   0   | 60851289 AAAAAAAA
+        #9 |  0   0   0   0   | AD265969 1126AFDC
+        #10 |  0   0   0   0   | BCFBD022 8C9E1C76
+        #11 |  0   0   0   0   | 97826F37 E9D7D166
+        #12 |  0   0   0   0   | 1638AA49 AB652942
+        #13 |  0   0   0   0   | A526A2A1 67AEB375
+        #14 |  0   0   0   0   | 25E80D58 3D50588E
+        #15 |  0   0   0   0   | 9DEAA9F6 0287D639
 
     def core3h_reset(self, board, keepsync=False):
         '''
@@ -1760,38 +1784,117 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         
     def core3h_version(self, board):
         ''' 
-        Displays the firmware version
+        Displays the FILA10G versions of the specified board
 
-        TODO: Discuss with Sven the future format of the version output and implement parsing code
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Returns:
+            dict: a dictionary with the following structure::
+
+                "systemName" (str): the FILA10G system name
+                "compileDate" (str): the date string of the firmware compile date
+                "versionSW" (str): the version string of the FILA10G firmware
+                "versionHW" (str): the version string of the FILA10G hardware
+        
         '''
         boardNum = self.boardToDigit(board)+1
-        return self.sendCommand("core3h=%d,version" % (boardNum))
+
+        resp = {}
+
+        ret = self.sendCommand("core3h=%d,version" % (boardNum))
+        # version
+        # System name : FiLa10GS4+
+        # Compiled on : Apr 18 2016 15:17:17
+        # SW version  : 2.8.0-S4+
+        # HW version  : 2.8-S4+
+        for line in ret.split("\n"):
+            tok = line.split(":")
+            if (len(tok) == 2):
+                if (tok[0].strip().startswith("System name")):
+                    resp["systemName"] = tok[1].strip()
+                elif (tok[0].strip().startswith("Compiled on")):
+                    resp["compileDate"] = tok[1].strip()
+                elif (tok[0].strip().startswith("SW version")):
+                    resp["versionSW"] = tok[1].strip()
+                elif (tok[0].strip().startswith("HW version")):
+                    resp["versionHW"] = tok[1].strip()
+            
+        return (resp)
+
 
     def core3h_sysstat(self, board):
         ''' 
         Displays information about the current status of the system and
-        gives an overviewof the state of the most important user 
+        gives an overview of the state of the most important user 
         settings.
 
-        TODO: add parsing code and return dictionary with values
+        All key value pairs of the sysstat output are returned as a dictionary. All whitespaces 
+        have been converted to '_' all characters have been converted to lower-space. 
 
-        Parameters:
-        board: the board number (starting at 0=A) or board ID (e.g "A")
+        Args:
+            board: the board number (starting at 0=A) or board ID (e.g "A")
 
-        Returns: The output of the sysstat command
+        Returns: 
+            dict: a dictionary with the systat key value pairs with whitespaces converted to '_' 
+
+            example: 
+                [{'selected_input': 'vsi1', 'input_sample_rate': '128000000 Hz / 2', 'vsi_input_swapped': 'no', 'vsi_input_bitmask': '0xFFFFFFFF', 'vsi_input_width': '32 bit', 'pps_count': '0', 'tvg_mode': 'vsi-h', 'mk5b_timesync': 'no', 'vdif_timesync': 'no', 'gps_receiver': 'installed', 'output': 'stopped', 'output_0_format': 'raw', 'output_0_dest': '192.168.1.2:46220', 'output_1_format': 'raw', 'output_1_dest': '192.168.1.3:46227', 'output_2_format': 'raw', 'output_2_dest': '192.168.1.4:46227', 'output_3_format': 'raw', 'output_3_dest': '192.168.1.5:46227', 'ethernet_arps': 'on', 'selected_vsi_output': 'vsi1-2-3-4'}]
         '''
         boardNum = self.boardToDigit(board)+1
-        return self.sendCommand("core3h=%d,sysstat" % (boardNum))
+
+        resp = {}
+
+        ret = self.sendCommand("core3h=%d,sysstat" % (boardNum))
+        # sysstat
+
+        # System status:
+        # Selected input      : vsi1
+        # Input sample rate   : 128000000 Hz / 2
+        # VSI input swapped   : no
+        # VSI input bitmask   : 0xFFFFFFFF
+        # VSI input width     : 32 bit
+        # PPS count           : 59051
+        # 
+        # TVG mode            : vsi-h
+        # 
+        # MK5B timesync       : yes
+        # VDIF timesync       : yes
+        # GPS receiver        : installed
+        # 
+        # Output              : started
+        # Output 0 format     : vdif
+        # Output 0 dest.      : 172.16.3.24:46220
+        # Output 1 format     : vdif
+        # Output 1 dest.      : 192.168.1.3:46227 (rewriting enabled)
+        # Output 2 format     : vdif
+        # Output 2 dest.      : 192.168.1.4:46227 (rewriting enabled)
+        # Output 3 format     : vdif
+        # Output 3 dest.      : 192.168.1.5:46227 (rewriting enabled)
+        # Ethernet ARPs       : off (during data transfer)
+        # Selected VSI output : vsi1-2-3-4
+        
+        for line in ret.split("\n"):
+            tok = line.strip().split(":",1)
+            if tok[0].startswith("Core3H") or tok[0].startswith("System status"):
+                continue
+            print (tok[0])
+            if len(tok) == 2:
+                # replace space by underscore, make lower case
+                key = (' '.join(tok[0].split())).replace(" ", "_",2).replace(".","").lower()
+                value = tok[1].strip()
+                resp[key] = value
+
+                
+        return (resp)
+        
 
     def core3h_sysstat_fs(self, board):
         ''' 
         Identical to core3h_sysstat but returns machine (fields-system)
         readable output
         
-        ToDo: implement parsing code
+        TODO: implement parsing code
 
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
@@ -1803,7 +1906,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         ''' 
         Returns mode information in a machine-readble form (field-system)
 
-        ToDo: implement parsing codes
+        TODO: implement parsing codes
 
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
@@ -1811,17 +1914,23 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         boardNum = self.boardToDigit(board)+1
         return self.sendCommand("core3h=%d,mode_fs" % (boardNum))
 
+        # mode_fs
+        # vsi1,128000000/2,0xFFFFFFFF,vdif,2,16,1024
+
     def core3h_status_fs(self, board):
         ''' 
         Returns time sync information in a machine-readble form (field-system)
 
-        ToDo: implement parsing codes
+        TODO: implement parsing codes
 
         Parameters:
         board: the board number (starting at 0=A) or board ID (e.g "A")
         '''
         boardNum = self.boardToDigit(board)+1
         return self.sendCommand("core3h=%d,status_fs" % (boardNum))
+
+        # status_fs
+        # synced,vdif,started
 
     def core3h_devices(self, board):
         ''' 
