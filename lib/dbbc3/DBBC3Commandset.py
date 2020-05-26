@@ -104,6 +104,7 @@ class DBBC3Commandset(object):
 
     def __init__(self,clas, mode="", version=""):
         
+
         csClassName = getMatchingCommandset(mode, version )
         #print ("Using commandset version: ", csClassName)
     
@@ -126,6 +127,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def __init__(self, clas):
 
+        clas.version = types.MethodType (self.version.__func__, clas)
         #clas.dbbcif = types.MethodType (self.dbbcif.__func__, clas)
         #clas.enableloop = types.MethodType (self.enableloop.__func__, clas)
         clas.dbbcif = types.MethodType (self.dbbcif.__func__, clas)
@@ -136,7 +138,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.synthLock = types.MethodType (self.synthLock.__func__, clas)
         clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
         clas.time = types.MethodType (self.time.__func__, clas)
-        clas.version = types.MethodType (self.version.__func__, clas)
         clas.reconfigure = types.MethodType (self.reconfigure.__func__, clas)
         #clas.cal_offset = types.MethodType (self.cal_offset.__func__, clas)
         #clas.cal_gain = types.MethodType (self.cal_offset.__func__, clas)
@@ -195,6 +196,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.__func__, clas)
 
 # GENERAL DBBC3 commands
+    
     def version(self):
         ''' Returns the DBBC3 control software version.
 
@@ -224,7 +226,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return (resp)
 
-    
     def time(self):
         '''
         Obtains the time information from all boards.

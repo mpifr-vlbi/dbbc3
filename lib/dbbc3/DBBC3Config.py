@@ -55,11 +55,14 @@ class DBBC3Config(object):
         # maximum number of output formats allowed for the core3h_start command
         self.numCore3hOutputs = 4
 
+	# multicast support
+	self.enableMulticast = False
+
         # specific parameters depending on the DBBC3 mode
         if (mode == "DDC_U"):
             self._setupDDC_U()
         elif (mode == "DDC_V"):
-            self._setupDDC_V()
+            self._setupDDC_V(version)
         elif (mode == "DDC_L"):
             self._setupDDC_L()
 
@@ -88,12 +91,15 @@ class DBBC3Config(object):
 
         self.maxTotalBBCs = numCoreBoards * self.maxBoardBBCs
 
-    def _setupDDC_U(self):
+    def _setupDDC_U(self, version):
         '''
         Configuration settings specific to the DDC_U mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 16
+
+	if (int(version) > 125):
+	    self.enableMulticast = True
 
     def _setupDDC_L(self):
         '''
@@ -102,12 +108,16 @@ class DBBC3Config(object):
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
         
-    def _setupDDC_V(self):
+    def _setupDDC_V(self, version):
         '''
         Configuration settings specific to the DDC_V mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
+
+#	if (int(version) > 124):
+#	    self.enableMulticast = True
+	
 
 if __name__ == "__main__":
     config = DBBC3Config()

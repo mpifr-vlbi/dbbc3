@@ -20,9 +20,8 @@
 
 __author__ = "Helge Rottmann"
 __copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
-__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
-
 
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Commandset import DBBC3Commandset
@@ -33,8 +32,6 @@ import re
 import sys
 from time import sleep
 
-
-        
 class DBBC3(object):
         ''' 
         Main class of the DBBC3 module.
@@ -45,24 +42,25 @@ class DBBC3(object):
         core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
 
-        def __init__(self, host, port=4000, numBoards=8, mode="", version=""):
+        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None):
             ''' Constructor '''
 
             self.socket = None
-            self.mode = mode
-            self.modeVersion = version
 
-            self.config = DBBC3Config(mode, version)
+            self._connect(host,port)
+
+            # attach command set
+            DBBC3Commandset(self)
+
+            retVersion = self.version()
+            self._validateVersion(retVersion, mode, majorVersion)
+
+            DBBC3Commandset(self, retVersion["mode"], retVersion["majorVersion"])
+     
+            self.config = DBBC3Config(retVersion["mode"], retVersion["majorVersion"])
             self.config.host = host
             self.config.port = port
             self.config.numCoreBoards = numBoards
-
-            self._connect(host,port)
-            # attach command set
-            DBBC3Commandset(self, mode, version)
-
-            self._validateVersion()
-
 
             self.lastCommand = ""
             self.lastResponse = ""
@@ -105,15 +103,15 @@ class DBBC3(object):
                 return(self.lastResponse)
 
 
-        def _validateVersion(self):
-            retVersion = self.version()
+        def _validateVersion(self, retVersion, mode, majorVersion):
 
-            if (retVersion["mode"] != self.mode):
-                raise Exception("The requested mode (%s) does not match the loaded firmware (%s)" % (self.mode, retVersion["mode"]))
+            if (mode):
+                if (retVersion["mode"] != mode):
+                    raise Exception("The requested mode (%s) does not match the loaded firmware (%s)" % (mode, retVersion["mode"]))
 
-            if (self.modeVersion != ""):
-                if (retVersion["majorVersion"] != self.modeVersion):
-                    raise Exception("The requested version (%s) does not match the version of the loaded firmware (%s)" % (self.modeVersion, retVersion["majorVersion"]))
+            if (majorVersion):
+                if (retVersion["majorVersion"] != majorVersion):
+                    raise Exception("The requested version (%s) does not match the version of the loaded firmware (%s)" % (majorVersion, retVersion["majorVersion"]))
 
 
         def _validateMAC(self, mac):
