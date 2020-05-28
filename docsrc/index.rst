@@ -50,6 +50,7 @@ DBBC3 Module Reference
     * :mod:`dbbc3.DBBC3Config`
     * :mod:`dbbc3.DBBC3Util`
     * :mod:`dbbc3.DBBC3Validation`
+    * :mod:`dbbc3.DBBC3Multicast`
 
 
 Links
