@@ -2,6 +2,7 @@ import socket
 import locale
 import re
 import struct
+import math
 from datetime import datetime
 
 class DBBC3Multicast(object):
@@ -54,9 +55,9 @@ class DBBC3Multicast(object):
 
         # DDC_V,124,November 07 2019
         self.message["mode"] = versionString[0]
-        self.message["majorVersion"] = versionString[1]
+        self.message["majorVersion"] = int(versionString[1])
         self.message["minorVersionString"] = versionString[2]
-        self.message["minorVersion"] = datetime.strptime(amended.strip().encode("utf-8"), '%B %d %Y').strftime('%y%m%d')
+        self.message["minorVersion"] = int(datetime.strptime(amended.strip().encode("utf-8"), '%B %d %Y').strftime('%y%m%d'))
         
     def _parseGcomo(self, message):
         for i in range(0,8):
@@ -64,11 +65,11 @@ class DBBC3Multicast(object):
             shortArray = struct.unpack('HHH', message[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
             if message[32+i*8] == 0:
                 gcomo["mode"] = "man"
-                print(str(i+1) + " man" + str(shortArray))
+        #        print(str(i+1) + " man" + str(shortArray))
             else:
                 gcomo["mode"] = "agc"
-                print(str(i+1) + " agc" + str(shortArray))
-            gcomo["attenuation"] = shortArray[0]
+        #        print(str(i+1) + " agc" + str(shortArray))
+            gcomo["attenuation"] = int(shortArray[0])
             gcomo["count"] = int(shortArray[1])
             gcomo["target"] = int(shortArray[2])
 
@@ -81,7 +82,7 @@ class DBBC3Multicast(object):
         for i in range(0,8):
             synth = {}
             shortArray = struct.unpack('HHHH', message[self.dcOffset+i*8:self.dcOffset+i*8+8])
-            print(str(shortArray))
+        #    print(str(shortArray))
 
             synth["status"] = int(shortArray[0])
             synth["lock"] = int(shortArray[1])
@@ -101,27 +102,27 @@ class DBBC3Multicast(object):
             s3 = {}
 
             powerArray = struct.unpack('IIII', message[offset:offset+16])
-            print(str(powerArray))
-            s0["power"] = powerArray[0]
-            s1["power"] = powerArray[1]
-            s2["power"] = powerArray[2]
-            s3["power"] = powerArray[3]
+            #print(str(powerArray))
+            s0["power"] = int(powerArray[0])
+            s1["power"] = int(powerArray[1])
+            s2["power"] = int(powerArray[2])
+            s3["power"] = int(powerArray[3])
 
             offset = offset + 16
             bstatArray_0 = struct.unpack('IIII', message[offset:offset+16])
-            print(str(bstatArray_0) + str(sum(bstatArray_0)))
+            #print(str(bstatArray_0) + str(sum(bstatArray_0)))
             offset = offset + 16
     
             bstatArray_1 = struct.unpack('IIII', message[offset:offset+16])
-            print(str(bstatArray_1) + str(sum(bstatArray_1)))
+            #print(str(bstatArray_1) + str(sum(bstatArray_1)))
             offset = offset + 16
     
             bstatArray_2 = struct.unpack('IIII', message[offset:offset+16])
-            print(str(bstatArray_2) + str(sum(bstatArray_2)))
+            #print(str(bstatArray_2) + str(sum(bstatArray_2)))
             offset = offset + 16
     
             bstatArray_3 = struct.unpack('IIII', message[offset:offset+16])
-            print(str(bstatArray_3) + str(sum(bstatArray_3)))
+            #print(str(bstatArray_3) + str(sum(bstatArray_3)))
     
             s0["stats"] = bstatArray_0
             s1["stats"] = bstatArray_1
@@ -130,7 +131,7 @@ class DBBC3Multicast(object):
 
             offset = offset + 16
             corrArray = struct.unpack('III', message[offset:offset+12])
-            print(str(corrArray))
+            #print(str(corrArray))
 
             self.message["if_"+str(i+1)]["sampler0"]= s0
             self.message["if_"+str(i+1)]["sampler1"]= s1
@@ -145,37 +146,68 @@ class DBBC3Multicast(object):
         # Core3H Values
         for i in range(0,8):
             timeValue = struct.unpack('I', message[offset:offset+4])
-            print("Time["+str(i)+"] " +str(timeValue))
-            self.message["if_"+str(i+1)]["time"]= timeValue
+            #print("Time["+str(i)+"] " +str(timeValue))
+            self.message["if_"+str(i+1)]["time"]= timeValue[0]
 
             offset = offset + 4
     
             ppsDelayValue = struct.unpack('I', message[offset:offset+4])
-            print("pps_delay["+str(i)+"] " +str(ppsDelayValue))
-            self.message["if_"+str(i+1)]["ppsDelay"]= ppsDelayValue
+            #print("pps_delay["+str(i)+"] " +str(ppsDelayValue))
+            self.message["if_"+str(i+1)]["ppsDelay"]= ppsDelayValue[0]
             offset = offset + 4
     
             tpS0_0Value = struct.unpack('I', message[offset:offset+4])
-            print("tpS0_0["+str(i)+"] " +str(tpS0_0Value))
-            self.message["if_"+str(i+1)]["tpOn"]= tpS0_0Value
+            #print("tpS0_0["+str(i)+"] " +str(tpS0_0Value))
+            self.message["if_"+str(i+1)]["tpOn"]= tpS0_0Value[0]
             offset = offset + 4
     
             tpS0_1Value = struct.unpack('I', message[offset:offset+4])
-            print("tpS0_1["+str(i)+"] " +str(tpS0_1Value))
-            self.message["if_"+str(i+1)]["tpOff"]= tpS0_1Value
+            #print("tpS0_1["+str(i)+"] " +str(tpS0_1Value))
+            self.message["if_"+str(i+1)]["tpOff"]= tpS0_1Value[0]
             offset = offset + 4
     
             tsysValue = struct.unpack('I', message[offset:offset+4])
-            print("Tsys["+str(i)+"] " + str(tsysValue))
-            self.message["if_"+str(i+1)]["tsys"]= tsysValue
+            #print("Tsys["+str(i)+"] " + str(tsysValue))
+            self.message["if_"+str(i+1)]["tsys"]= tsysValue[0]
             offset = offset + 4
     
             sefdValue = struct.unpack('I', message[offset:offset+4])
-            print("Sefd["+str(i)+"] " + str(sefdValue))
-            self.message["if_"+str(i+1)]["sefd"]= sefdValue
+            #print("Sefd["+str(i)+"] " + str(sefdValue))
+            self.message["if_"+str(i+1)]["sefd"]= sefdValue[0]
             offset = offset + 4
     
             
+    def _parseBBC(self, message):
+
+        # BBC Values
+        offset = self.bbcOffset
+        for i in range(0,128):
+            ifNum = int(math.floor(i /  16)) + 1
+            bbc= {}
+            bbcValue = struct.unpack('IBBBBIIIIHHHHHHHH', message[offset:offset+40])
+            offset = offset + 40
+
+            bbc["frequency"] = float(bbcValue[0]/524288)
+            bbc["bandwidth"] = bbcValue[0]
+            bbc["agcStatus"] = bbcValue[1]
+            bbc["gainUSB"] = bbcValue[2]
+            bbc["gainLSB"] = bbcValue[3]
+            bbc["powerOnUSB"] = bbcValue[4]
+            bbc["powerOnLSB"] = bbcValue[5]
+            bbc["powerOffUSB"] = bbcValue[6]
+            bbc["powerOffLSB"] = bbcValue[7]
+            bbc["stat00"] = bbcValue[8]
+            bbc["stat01"] = bbcValue[9]
+            bbc["stat10"] = bbcValue[10]
+            bbc["stat11"] = bbcValue[11]
+            bbc["tsysUSB"] = bbcValue[12]
+            bbc["tsysLSB"] = bbcValue[13]
+            bbc["sefdUSB"] = bbcValue[14]
+            bbc["sefdLSB"] = bbcValue[15]
+
+            self.message["if_" + str(ifNum)]["bbc_" + str(i+1)] = bbc
+            
+        
     def poll(self):
         '''
         Parses the multicast message
@@ -271,6 +303,7 @@ class DBBC3Multicast(object):
         self._parseDC(valueArray)
         self._parseAdb3l(valueArray)
         self._parseCore3h(valueArray)
+        self._parseBBC(valueArray)
 
         return(self.message)
 
