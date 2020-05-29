@@ -12,13 +12,24 @@ class DBBC3Multicast(object):
         self.socket = None
         self.group = group
         self.port = port
-        self.message = {}
+        self.message = {} 
 
         self._connect(timeout)
 
         # configure multicast layout based on mode and version
         self._setupLayout()
 
+
+    @property
+    def lastMessage(self):
+        '''
+        Returns the last received multicast message
+
+        Returns:
+            (dict): the last message dictionary received via multicast.
+        '''
+
+        return self.message
 
     def _connect(self, timeout):
 
@@ -294,7 +305,7 @@ class DBBC3Multicast(object):
   },
         '''
 
-        
+        self.message = {}
 
         valueArray = self.sock.recv(16384)
 
