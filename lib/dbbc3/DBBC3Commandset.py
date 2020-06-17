@@ -471,6 +471,12 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Gets the lock state of the GCoMo synthesizer serving the given core board
 
+        Each sythesizer has two outputs (source=1 or 2)
+        board A is served by synth 1 source 1
+        board B is served by synth 1 source 2
+        board C is served by synth 2 source 1
+        etc.
+
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
         Returns:
@@ -478,20 +484,10 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Raises:
             DBBC3Exception: in case the lock state of the synthesizer cannot be obtained
-
-        ToDo:
-            * Needs to be verified for systems with 8 boards (probably parsing code is incomplete)
-            * The corresponding validation code must be changed due to different return type
-            
         '''
 
         board = self.boardToDigit(board)
 
-        # Each synthesizer has two outputs (source=1 or 2)
-        # board A is served by synth 1 source 1
-        # board B is served by synth 1 source 2
-        # board C is served by synth 2 source 1
-        # etc.
         synthNum = int(board / 2) +1
         sourceNum = board % 2 + 1
 
