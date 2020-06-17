@@ -200,9 +200,9 @@ class DBBC3Validation(object):
     def _reportLock(self, board, value):
         
         error = 0 
-        if (value == 1): 
+        if (value == True): 
                 self.report(self.OK, "Locked") 
-        elif (value==0):    
+        elif (value==False):    
                 self.report(self.ERROR, "Synthesizer for board %s is not locked" % board, "Check if 10MHz is connected", exit=True)  
                 error = 1
         else:    
@@ -220,7 +220,7 @@ class DBBC3Validation(object):
         ret = self.dbbc3.synthLock(board)
 
         print ("\n===Checking synthesizer lock state of board %s" % (board))
-        self._reportLock(board, ret['locked'])
+        self._reportLock(board, ret)
 
         #if error > 0 and exitOnError:
         #    if self.ignoreErrors:
