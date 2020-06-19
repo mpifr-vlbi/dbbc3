@@ -49,18 +49,20 @@ class DBBC3(object):
 
             self._connect(host,port)
 
-            # attach command set
+            # attach basic command set
             DBBC3Commandset(self)
 
             retVersion = self.version()
             self._validateVersion(retVersion, mode, majorVersion)
 
-            DBBC3Commandset(self, retVersion["mode"], retVersion["majorVersion"])
-     
-            self.config = DBBC3Config(retVersion["mode"], retVersion["majorVersion"])
+            # update the configuration
+            self.config = DBBC3Config(retVersion)
             self.config.host = host
             self.config.port = port
             self.config.numCoreBoards = numBoards
+
+            # attach final command set
+            DBBC3Commandset(self, retVersion)
 
             self.lastCommand = ""
             self.lastResponse = ""
