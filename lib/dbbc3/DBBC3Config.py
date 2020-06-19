@@ -29,12 +29,12 @@ class DBBC3Config(object):
     Class for storing and handling of the DBBC3 configuration
     '''
 
-    def __init__(self, mode, version):
+    def __init__(self, version):
         '''
         Constructor
         '''
-        self.mode = mode
-        self.modeVersion = version
+        # version dict (see DBBC3Commandset version() method for structure)
+        self.cmdsetVersion = version
 
         self.coreBoards = []
         self.host = ""
@@ -59,11 +59,11 @@ class DBBC3Config(object):
         self.enableMulticast = False
 
         # specific parameters depending on the DBBC3 mode
-        if (mode == "DDC_U"):
-            self._setupDDC_U(version)
-        elif (mode == "DDC_V"):
-            self._setupDDC_V(version)
-        elif (mode == "DDC_L"):
+        if (self.cmdsetVersion["mode"] == "DDC_U"):
+            self._setupDDC_U()
+        elif (self.cmdsetVersion["mode"] == "DDC_V"):
+            self._setupDDC_V()
+        elif (self.cmdsetVersion["mode"] == "DDC_L"):
             self._setupDDC_L()
 
 
@@ -91,14 +91,14 @@ class DBBC3Config(object):
 
         self.maxTotalBBCs = numCoreBoards * self.maxBoardBBCs
 
-    def _setupDDC_U(self, version):
+    def _setupDDC_U(self):
         '''
         Configuration settings specific to the DDC_U mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 16
 
-        if (int(version) >= 125):
+        if (self.cmdsetVersion["majorVersion"] >= 125):
             self.enableMulticast = True
 
     def _setupDDC_L(self):
@@ -108,15 +108,13 @@ class DBBC3Config(object):
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
         
-    def _setupDDC_V(self, version):
+    def _setupDDC_V(self):
         '''
         Configuration settings specific to the DDC_V mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
 
-#       if (int(version) > 124):
-#           self.enableMulticast = True
         
 
 if __name__ == "__main__":
