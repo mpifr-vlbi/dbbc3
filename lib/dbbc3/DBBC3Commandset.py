@@ -2268,50 +2268,94 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.core3hread = types.MethodType (self.core3hread.__func__, clas)
         clas.core3hwrite = types.MethodType (self.core3hwrite.__func__, clas)
 
-    def dbbctp0 (self, bbc, tp0):
+    def dbbctp0 (self, bbc, tp0=None):
         '''
         Set the TP0 value for a given or all of the BBCs
 
         The TP0 value will be used for the determination of Tsys values that are broadcasted via multicast.
-
         The TP0 value has the same dimension as the total power values given by :py:func:`dbbc` command
+
+        If called without supplying tp0 value the current setting is returned
 
         Args:
             bbc (int/str): the BBC number (starts at 1) or 'all' in case the TP0 should be applied to all BBCs
-            tp0 (int): the TP0 value
+            tp0 (int, optional): the TP0 value
+
+        Returns:
+            int: the current tp0 value
         '''
 
         if (bbc != "all"):
             self._validateBBC(bbc)
             bbc = str(bbc)
 
-        cmd = "dbbctp0=%s,%d" % (bbc, tp0)
+        cmd = "dbbctp0=%s" % (bbc)
+        if tp0:
+            cmd += ",%d" % (tp0)
         ret = self.sendCommand(cmd)
+        # dbbctp0/ all,10;
+        # dbbctp0/ 1,10;
+        pattern = re.compile("dbbctp0\/\s*(.+?),(\d+);")
 
-        return(ret)
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if (match):
+                return match.group(2)
 
-    def dbbctdiode (self, bbc, tdiodeUSB, tdiodeLSB):
+        return(None)
+
+
+    def dbbctdiode (self, bbc, tdiodeUSB=None, tdiodeLSB=None):
         '''
         Sets the t_diode value for a given or all of the BBCs
 
         The t_diode value will be used for calculating the Tsys values that are broadcasted via multicast.
         Separate t_diode for USB and LSB can be supplied. The t_diode should be given in units of K.
 
+        If called without supplying t_diode values the current setting is returned
+
         Args:
             bbc (int/str): the BBC number (starts at 1) or 'all' in case the t_diode should be applied to all BBCs
-            tdiodeUSB (int): the t_diode value to use for the USB
-            tdiodeLSB (int): the t_diode value to use for the LSB
+            tdiodeUSB (int, optional): the t_diode value to use for the USB
+            tdiodeLSB (int, optional): the t_diode value to use for the LSB
 
+        Returns:
+            tuple (int,int): current t_diode values (USB, LSB)
         '''
+
+        mode = "get"
+        # both values have been set
+        if (all([tdiodeUSB, tdiodeLSB])):
+            mode = "set"
+        # only one has been set
+        elif (any([tdiodeUSB, tdiodeLSB])):
+            raise ValueError("dbbctdiode: t_diode values must be given both for USB and LSB")
 
         if (bbc != "all"):
             self._validateBBC(bbc)
             bbc = str(bbc)
+        elif (mode == "get"):
+            raise ValueError("dbbctdiode: option 'all' is only allowed when setting t_diode  values")
 
-        cmd = "dbbctdiode=%s,%d,%d" % (bbc, tdiodeUSB, tdiodeLSB)
+        cmd = "dbbctdiode=%s" % (bbc)
+
+        if (mode == "set"):
+            cmd += ",%d,%d" % (tdiodeUSB, tdiodeLSB)
+
+        print (cmd)
         ret = self.sendCommand(cmd)
+        # dbbctdiode/ all,20,30;
+        # dbbctdiode/ 1,20,30;
+        pattern = re.compile("dbbctdiode\/\s*(.+?),(\d+),(\d+);")
 
-        return(ret)
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if (match):
+                return match.group(2), match.group(3)
+            
+        return(None)
+
+
     def dbbcdpfu (self, bbc, dpfuUSB=None, dpfuLSB=None):
         '''
         Sets the DPFU value for a given or all of the BBCs
@@ -2325,6 +2369,9 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             bbc (int/str): the BBC number (starts at 1) or 'all' in case the DPFU should be applied to all BBCs
             dpfuUSB (int, optional): the DPFU value to use for the USB
             dpfuLSB (int, optional): the DPFU value to use for the LSB
+
+        Returns:
+            tuple (int,int): current DPFU values (USB, LSB)
 
         '''
 
@@ -2361,7 +2408,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
             
         return(None)
     
-
         
     def dbbc (self, bbc, freq=None, bw=None, ifLabel=None, tpint=None):
         ''' 
