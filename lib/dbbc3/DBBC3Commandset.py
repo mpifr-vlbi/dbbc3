@@ -34,19 +34,19 @@ import sys
 from datetime import datetime
 from DBBC3Exception import DBBC3Exception
 
-def getMatchingCommandset(mode, version):
+def getMatchingCommandset(mode, majorVersion):
     '''
-    Determines the command set sub-class to be used for the given mode and version.
+    Determines the command set sub-class to be used for the given mode and major version.
 
     if mode is not given the default command set class (DBBC3CommandsetDefault) is selected
-    if version is not given the latest implemented version for the activated mode will be used.
+    if majorVersion is not given the latest implemented version for the activated mode will be used.
 
     Args:
         mode (str): the dbbc3 mode (e.g. OCT_D)
-        version (str): the command set version
+        majorVersion (str): the command set major version
 
     Returns:
-        str: The class name that implements the command set for the given mode and version
+        str: The class name that implements the command set for the given mode and major version
     
 
     '''
@@ -70,13 +70,13 @@ def getMatchingCommandset(mode, version):
 
     versions.sort()
 
-    if (version == ""):
+    if (majorVersion == ""):
         # if no specific version was requested return the most recent one
         pickVer = versions[-1]
     else:
         pickVer = versions[0]
         for i in versions:
-            if int(i) <= int(version):
+            if int(i) <= int(majorVersion):
                 pickVer = i
             else:
                 break
@@ -102,10 +102,17 @@ class DBBC3Commandset(object):
 
     '''
 
-    def __init__(self,clas, mode="", version=""):
+    def __init__(self,clas, version=None):
         
 
-        csClassName = getMatchingCommandset(mode, version )
+        majorVersion = ""
+        mode = ""
+        if version:
+            majorVersion = version['majorVersion']
+            mode = version['mode']
+        
+
+        csClassName = getMatchingCommandset(mode, majorVersion)
         #print ("Using commandset version: ", csClassName)
     
         if (csClassName == ""):
@@ -114,7 +121,7 @@ class DBBC3Commandset(object):
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Commandset"), csClassName)
         CsClass(clas)
 
-
+    
 class DBBC3CommandsetDefault(DBBC3Commandset):
     '''
     The basic class implementing all commands common to all DBBC modes and versions.
@@ -136,6 +143,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.enablecal = types.MethodType (self.enablecal.__func__, clas)
         clas.synthFreq = types.MethodType (self.synthFreq.__func__, clas)
         clas.synthLock = types.MethodType (self.synthLock.__func__, clas)
+        clas.synthOen = types.MethodType (self.synthOen.__func__, clas)
+        clas.synthAtt = types.MethodType (self.synthAtt.__func__, clas)
         clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
         clas.time = types.MethodType (self.time.__func__, clas)
         clas.reconfigure = types.MethodType (self.reconfigure.__func__, clas)
@@ -195,17 +204,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3l_offset = types.MethodType (self.adb3l_offset.__func__, clas)
         clas.adb3l_gain = types.MethodType (self.adb3l_gain.__func__, clas)
 
+
 # GENERAL DBBC3 commands
     
+
     def version(self):
         ''' Returns the DBBC3 control software version.
 
         Returns:
             a dictionary containing the version information of the DBBC3 control software::
 
-                "mode": the current DBBC3 mode, e.g. DDC_V
-                "majorVersion": the major version, e.g. 124
-                "minorVersion": the minor version (format YYYYMMDD) e.g. 20200113
+                "mode" (str): the current DBBC3 mode, e.g. DDC_V
+                "majorVersion" (int): the major version, e.g. 124
+                "minorVersion" (int): the minor version (format YYYYMMDD) e.g. 20200113
         '''
 
         resp = {}
@@ -221,8 +232,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             # remove any st/nd/rd/th from the date string
             amended = re.sub('\d+(st|nd|rd|th)', lambda m: m.group()[:-2].zfill(2), match.group(3))
             resp["mode"] = match.group(1)
-            resp["majorVersion"] =  match.group(2)
-            resp["minorVersion"] = datetime.strptime(amended, '%B %d %Y').strftime('%y%m%d')
+            resp["majorVersion"] =  int(match.group(2))
+            resp["minorVersion"] = int(datetime.strptime(amended, '%B %d %Y').strftime('%y%m%d'))
 
         return (resp)
 
@@ -544,6 +555,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         synthNum = int(boardNum / 2) +1
         sourceNum = boardNum % 2 + 1
 
+        # first enable the source of the given synthesizer corresponding to the selected board
         self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
         ret = self.sendCommand("synth=%d,cw" % synthNum)
 
@@ -559,6 +571,96 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             raise DBBC3Exception("The synthesizer frequency for board %d could not be determined" % (board))
 
         return(resp)
+
+    def synthOen (self, board, state=None):
+
+        '''
+        Enables/disables the synthesizer output that serves the given board.
+    
+        :warning::
+            Disabling the output will switch of the downconversion stage of the DBBC3.
+
+        If called without the state argument the current output setting is reported.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            state (str, optional): the output state. Can be either "on" or "off"
+
+        Returns:
+            int: the current state of the synthesizer output; 0=off, 1=off
+            None: in case the state could not be determined
+
+        Raises:
+            ValueError: In case an illegal state argument has been supplied
+        '''
+
+        print ("state: ", state)
+        resp = {}
+        boardNum = self.boardToDigit(board)
+
+        # determine synthesizer and output for the given board
+        synthNum = int(boardNum / 2) +1
+        sourceNum = boardNum % 2 + 1
+
+        cmd = "synth=%d,oen" % (synthNum)
+        if state is not None:
+            if not d3u.validateOnOff(state):
+                raise ValueError("synthOen: state  must be 'on' or 'off'")
+            if state == "on":
+                cmd += " 1"
+            else:
+                cmd += " 0"
+
+        # first enable the source of the given synthesizer corresponding to the selected board
+        self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
+        ret = self.sendCommand(cmd)
+
+        pattern = re.compile("\s*OEN\s+(\d)\s*;")
+        # OEN 1;
+        for line in ret.split("\n"):
+                match =  pattern.match(line)
+                if match:
+                    return(match.group(1))
+
+        return(None)
+
+    def synthAtt (self, board):
+
+        '''
+        Gets the current attenuation setting of the synthesizer output serving the given board
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            float: the attenuation level in dB of the synthesizer ouput serving the given board
+            
+        '''
+
+        resp = {}
+        boardNum = self.boardToDigit(board)
+
+        # determine synthesizer and output for the given board
+        synthNum = int(boardNum / 2) +1
+        sourceNum = boardNum % 2 + 1
+
+        # first enable the source of the given synthesizer corresponding to the selected board
+        self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
+
+        cmd = "synth=%d,att" % (synthNum)
+
+        ret = self.sendCommand(cmd)
+
+        # ATT 30.0; // dB
+        # -2->;
+        pattern = re.compile("\s*ATT\s+(\d+\.\d+)\s*;")
+        for line in ret.split("\n"):
+                match =  pattern.match(line)
+                if match:
+                    return(match.group(1))
+
+        return (None)
+
 
     def enableloop(self):
         '''
@@ -1875,7 +1977,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             tok = line.strip().split(":",1)
             if tok[0].startswith("Core3H") or tok[0].startswith("System status"):
                 continue
-            print (tok[0])
+        #    print (tok[0])
             if len(tok) == 2:
                 # replace space by underscore, make lower case
                 key = (' '.join(tok[0].split())).replace(" ", "_",2).replace(".","").lower()
@@ -2245,9 +2347,9 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
     from this class.
     '''
 
-    def __init__(self, clas):
-
-        DBBC3CommandsetDefault.__init__(self,clas)
+#    def __init__(self, clas):
+#
+#        DBBC3CommandsetDefault.__init__(self,clas)
 
 
     def __init__(self, clas):
@@ -2257,7 +2359,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.dbbc = types.MethodType (self.dbbc.__func__, clas)
         clas._dbbc = types.MethodType (self._dbbc.__func__, clas)
         clas.dbbcgain = types.MethodType (self.dbbcgain.__func__, clas)
-        clas.dbbcstat = types.MethodType (self.dbbcstat.__func__, clas)
+#        clas.dbbcstat = types.MethodType (self.dbbcstat.__func__, clas)
         clas.cont_cal = types.MethodType (self.cont_cal.__func__, clas)
         clas.dbbctp = types.MethodType (self.dbbctp.__func__, clas)
         clas.dsc_tp = types.MethodType (self.dsc_tp.__func__, clas)
@@ -2342,7 +2444,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         if (mode == "set"):
             cmd += ",%d,%d" % (tdiodeUSB, tdiodeLSB)
 
-        print (cmd)
         ret = self.sendCommand(cmd)
         # dbbctdiode/ all,20,30;
         # dbbctdiode/ 1,20,30;
@@ -2614,6 +2715,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def dbbcstat(self, bbc):
         '''
+        DEPRECATED
         Returns the bit statistics of a single BBC.
 
         Bit statistics are obained for the sign and magnitude portions.
@@ -3080,9 +3182,11 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
     def __init__(self, clas):
 
         DBBC3Commandset_DDC_V_123.__init__(self,clas)
-        clas.dbbcdpfu = types.MethodType (self.dbbcdpfu.__func__, clas)
-        clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
-        clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
+
+        if (clas.config.cmdsetVersion["minorVersion"] >= 200618):
+            clas.dbbcdpfu = types.MethodType (self.dbbcdpfu.__func__, clas)
+            clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
+            clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
     def pps_delay(self, board=None):
         '''
@@ -3189,9 +3293,11 @@ class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
         '''
 
         DBBC3Commandset_DDC_Common.__init__(self,clas)
-        clas.dbbcdpfu = types.MethodType (self.dbbcdpfu.__func__, clas)
-        clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
-        clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
+
+        if (clas.config.cmdsetVersion["minorVersion"] >= 200618):
+            clas.dbbcdpfu = types.MethodType (self.dbbcdpfu.__func__, clas)
+            clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
+            clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
 class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
     '''
