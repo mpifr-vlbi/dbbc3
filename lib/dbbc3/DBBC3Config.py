@@ -65,6 +65,10 @@ class DBBC3Config(object):
             self._setupDDC_V()
         elif (self.cmdsetVersion["mode"] == "DDC_L"):
             self._setupDDC_L()
+        elif (self.cmdsetVersion["mode"] == "OCT_D"):
+            self._setupOCT_D()
+        elif (self.cmdsetVersion["mode"] == "OCT_S"):
+            self._setupOCT_S()
 
 
 #    @property
@@ -111,6 +115,20 @@ class DBBC3Config(object):
     def _setupDDC_V(self):
         '''
         Configuration settings specific to the DDC_V mode
+        '''
+        # the maximum number of BBCs per core board
+        self.maxBoardBBCs = 8
+
+    def _setupOCT_D(self):
+        '''
+        Configuration settings specific to the OCT_D mode
+        '''
+        # the maximum number of BBCs per core board
+        self.maxBoardBBCs = 8
+
+    def _setupOCT_S(self):
+        '''
+        Configuration settings specific to the OCT_S mode
         '''
         # the maximum number of BBCs per core board
         self.maxBoardBBCs = 8
