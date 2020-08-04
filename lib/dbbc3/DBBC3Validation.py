@@ -82,7 +82,7 @@ class DBBC3Validation(object):
                 msg = "Check and adjust IF input power levels (should be @ -11dBm)"
                 self.report(self.ERROR, "IF power not on target value. Should be close to %d is %d" % (ret['target'], ret['count']), msg, exit=True)
                 errorCount +=1
-        if ret['input'] != 2 and downConversion==True:
+        if ret['inputType'] != 2 and downConversion==True:
                 self.report(self.ERROR, "Wrong IF input setting. Is %d, should be 2 to enable downconversion" % ret['input'], exit=True)
                 errorCount +=1
         if ret['mode'] != "agc" and agc==True:
@@ -96,6 +96,8 @@ class DBBC3Validation(object):
                 errorCount +=1
         if errorCount == 0:
             self.report(self.OK, "count = %d" % (ret['count']))
+
+
 
     def validateSamplerPhases(self):
         print ("\n=== Checking sampler phases")
