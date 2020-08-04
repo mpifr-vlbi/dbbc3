@@ -101,7 +101,8 @@ if __name__ == "__main__":
 
         except Exception as e:
                print (e.message)
-               dbbc3.disconnect()
+               if 'dbbc3' in vars() or 'dbbc3' in globals():
+                       dbbc3.disconnect()
                 
 
         
