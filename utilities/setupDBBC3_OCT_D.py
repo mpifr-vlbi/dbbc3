@@ -65,14 +65,14 @@ if __name__ == "__main__":
                 val.validateSamplerPhases()
 
                 # load tap filters (extra script)
-                response = input("Do you want to set the tap filters now? [y/n]")
+                response = input("Do you want to load the tap filters now? [y/n]")
                 if response == "y":
                     for board in useBoards:
                         print ("=== Loading tap filters for board " + str(board+1))
                         dbbc3.tap(board+1,"2000-4000_floating.flt")
                         dbbc3.tap2(board+1,"0-2000_floating.flt")
-                else:   
-                        sys.exit(0)
+                #else:   
+                #        sys.exit(0)
 
                 print ("=== Setting up calibration loop")
                 dbbc3.enablecal()
