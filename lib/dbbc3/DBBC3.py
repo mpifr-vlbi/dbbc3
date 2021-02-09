@@ -42,12 +42,12 @@ class DBBC3(object):
         core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
 
-        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None):
+        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None, timeout=120):
             ''' Constructor '''
 
             self.socket = None
 
-            self._connect(host,port)
+            self._connect(host,port, timeout)
 
             # attach basic command set
             DBBC3Commandset(self)
