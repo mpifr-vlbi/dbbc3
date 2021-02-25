@@ -49,6 +49,7 @@ github:
 	@make html
 	@mkdir -p  ../docs
 	@rm -rf ../docs/*
+	@touch ../docs/.nojekyll
 	@cp -a _build/html/. ../docs
 
 dirhtml:

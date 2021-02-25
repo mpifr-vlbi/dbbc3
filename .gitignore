@@ -3,4 +3,5 @@
 lib/build/
 lib/dbbc3.egg-info/
 lib/dist/
+docs/.buildinfo
 
