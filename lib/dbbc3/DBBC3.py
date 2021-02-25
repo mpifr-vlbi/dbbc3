@@ -52,6 +52,7 @@ class DBBC3(object):
             # attach basic command set
             DBBC3Commandset(self)
 
+            # obtain firmware version and validate
             retVersion = self.version()
             self._validateVersion(retVersion, mode, majorVersion)
 
@@ -76,7 +77,7 @@ class DBBC3(object):
             try:
                 self.socket = socket.create_connection((host, port), timeout)
             except:
-                raise DBBC3Exception("Failed to connect to %s on port %d." % (self.config.host, self.config.port))
+                raise DBBC3Exception("Failed to connect to %s on port %d." % (host, port))
 
         def disconnect(self):
             if self.socket:
