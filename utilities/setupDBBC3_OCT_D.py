@@ -7,6 +7,7 @@ from dbbc3.DBBC3Validation import DBBC3Validation
 import re
 import sys
 import numpy as np
+import traceback
 
 from time import sleep
 
@@ -66,8 +67,6 @@ if __name__ == "__main__":
                         print ("=== Loading tap filters for board " + str(board+1))
                         dbbc3.tap(board+1,"2000-4000_floating.flt")
                         dbbc3.tap2(board+1,"0-2000_floating.flt")
-                #else:   
-                #        sys.exit(0)
 
                 print ("=== Setting up calibration loop")
                 dbbc3.enablecal()
@@ -95,7 +94,12 @@ if __name__ == "__main__":
                 print ("=== Done")
 
         except Exception as e:
-               print (e.message)
+               # make compatible with python 2 and 3
+               if hasattr(e, 'message'):
+                    print(e.message)
+               else:
+                    print(e)
+                    
                if 'dbbc3' in vars() or 'dbbc3' in globals():
                        dbbc3.disconnect()
                 
