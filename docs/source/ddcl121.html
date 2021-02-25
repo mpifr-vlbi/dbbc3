@@ -571,7 +571,7 @@ in case an unknown mode has been specified</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_mode_fs">
 <tt class="descname">core3h_mode_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_mode_fs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns mode information in a machine-readble form (field-system)</p>
-<p>ToDo: implement parsing codes</p>
+<p>TODO: implement parsing codes</p>
 <p>Parameters:
 board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 </dd></dl>
@@ -585,7 +585,7 @@ within the current second interval. The frame is recorded at the output
 specified by outputIdx.</p>
 <p>In addition the following data is displayed:
 1PPS/frame-header/end-of-frame/frame-drop bits</p>
-<p>ToDo: implement output parsing</p>
+<p>TODO: implement output parsing</p>
 </dd></dl>
 
 <dl class="method">
@@ -866,7 +866,7 @@ in case an unkown format specifier was given</li>
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_status_fs">
 <tt class="descname">core3h_status_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_status_fs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns time sync information in a machine-readble form (field-system)</p>
-<p>ToDo: implement parsing codes</p>
+<p>TODO: implement parsing codes</p>
 <p>Parameters:
 board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 </dd></dl>
@@ -894,12 +894,24 @@ board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_sysstat">
 <tt class="descname">core3h_sysstat</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_sysstat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays information about the current status of the system and
-gives an overviewof the state of the most important user
+gives an overview of the state of the most important user
 settings.</p>
-<p>TODO: add parsing code and return dictionary with values</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
-<p>Returns: The output of the sysstat command</p>
+<p>All key value pairs of the sysstat output are returned as a dictionary. All whitespaces
+have been converted to &#8216;_&#8217; all characters have been converted to lower-space.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dictionary with the systat key value pairs with whitespaces converted to &#8216;_&#8217;<p class="rubric">example</p>
+<p>[{&#8216;selected_input&#8217;: &#8216;vsi1&#8217;, &#8216;input_sample_rate&#8217;: &#8216;128000000 Hz / 2&#8217;, &#8216;vsi_input_swapped&#8217;: &#8216;no&#8217;, &#8216;vsi_input_bitmask&#8217;: &#8216;0xFFFFFFFF&#8217;, &#8216;vsi_input_width&#8217;: &#8216;32 bit&#8217;, &#8216;pps_count&#8217;: &#8216;0&#8217;, &#8216;tvg_mode&#8217;: &#8216;vsi-h&#8217;, &#8216;mk5b_timesync&#8217;: &#8216;no&#8217;, &#8216;vdif_timesync&#8217;: &#8216;no&#8217;, &#8216;gps_receiver&#8217;: &#8216;installed&#8217;, &#8216;output&#8217;: &#8216;stopped&#8217;, &#8216;output_0_format&#8217;: &#8216;raw&#8217;, &#8216;output_0_dest&#8217;: &#8216;192.168.1.2:46220&#8217;, &#8216;output_1_format&#8217;: &#8216;raw&#8217;, &#8216;output_1_dest&#8217;: &#8216;192.168.1.3:46227&#8217;, &#8216;output_2_format&#8217;: &#8216;raw&#8217;, &#8216;output_2_dest&#8217;: &#8216;192.168.1.4:46227&#8217;, &#8216;output_3_format&#8217;: &#8216;raw&#8217;, &#8216;output_3_dest&#8217;: &#8216;192.168.1.5:46227&#8217;, &#8216;ethernet_arps&#8217;: &#8216;on&#8217;, &#8216;selected_vsi_output&#8217;: &#8216;vsi1-2-3-4&#8217;}]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -907,7 +919,7 @@ board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 <tt class="descname">core3h_sysstat_fs</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_sysstat_fs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identical to core3h_sysstat but returns machine (fields-system)
 readable output</p>
-<p>ToDo: implement parsing code</p>
+<p>TODO: implement parsing code</p>
 <p>Parameters:
 board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
 </dd></dl>
@@ -1206,10 +1218,24 @@ in case the length of the supplied value exceeds 32 bit</li>
 <dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_version">
 <tt class="descname">core3h_version</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.core3h_version" title="Permalink to this definition">¶</a></dt>
-<dd><p>Displays the firmware version</p>
-<p>TODO: Discuss with Sven the future format of the version output and implement parsing code</p>
-<p>Parameters:
-board: the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</p>
+<dd><p>Displays the FILA10G versions of the specified board</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> (<em>int or str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dictionary with the following structure:<div class="highlight-python"><pre>&quot;systemName&quot; (str): the FILA10G system name
+&quot;compileDate&quot; (str): the date string of the firmware compile date
+&quot;versionSW&quot; (str): the version string of the FILA10G firmware
+&quot;versionHW&quot; (str): the version string of the FILA10G hardware</pre>
+</div>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1395,6 +1421,35 @@ in case an invalid tpint value has been specified</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcdpfu">
+<tt class="descname">dbbcdpfu</tt><big>(</big><em>bbc</em>, <em>dpfuUSB=None</em>, <em>dpfuLSB=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcdpfu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the DPFU value for a given or all of the BBCs</p>
+<p>The DPFU value will be used for calculating the SEFD values that are broadcasted via multicast.
+Separate DPFU for USB and LSB can be supplied. The DPFU should be given in units of K/Jy.</p>
+<p>If called without supplying the DPFU values the current setting is returned</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bbc</strong> (<em>int/str</em>) &#8211; the BBC number (starts at 1) or &#8216;all&#8217; in case the DPFU should be applied to all BBCs</li>
+<li><strong>dpfuUSB</strong> (<em>int, optional</em>) &#8211; the DPFU value to use for the USB</li>
+<li><strong>dpfuLSB</strong> (<em>int, optional</em>) &#8211; the DPFU value to use for the LSB</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211;
+current DPFU values (USB, LSB)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int,int</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcgain">
 <tt class="descname">dbbcgain</tt><big>(</big><em>bbc</em>, <em>mode=None</em>, <em>target=None</em>, <em>gainU=None</em>, <em>gainL=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcgain" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets / sets the gain levels and gain control mode for a single BBC.</p>
@@ -1484,7 +1539,8 @@ in case any arguments exceeds the valid range</p>
 <dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcstat">
 <tt class="descname">dbbcstat</tt><big>(</big><em>bbc</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbcstat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the bit statistics of a single BBC.</p>
+<dd><p>DEPRECATED
+Returns the bit statistics of a single BBC.</p>
 <dl class="docutils">
 <dt>Bit statistics are obained for the sign and magnitude portions.</dt>
 <dd><ul class="first last simple">
@@ -1518,6 +1574,35 @@ in case the specified bbc index is out of range</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctdiode">
+<tt class="descname">dbbctdiode</tt><big>(</big><em>bbc</em>, <em>tdiodeUSB=None</em>, <em>tdiodeLSB=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctdiode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the t_diode value for a given or all of the BBCs</p>
+<p>The t_diode value will be used for calculating the Tsys values that are broadcasted via multicast.
+Separate t_diode for USB and LSB can be supplied. The t_diode should be given in units of K.</p>
+<p>If called without supplying t_diode values the current setting is returned</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bbc</strong> (<em>int/str</em>) &#8211; the BBC number (starts at 1) or &#8216;all&#8217; in case the t_diode should be applied to all BBCs</li>
+<li><strong>tdiodeUSB</strong> (<em>int, optional</em>) &#8211; the t_diode value to use for the USB</li>
+<li><strong>tdiodeLSB</strong> (<em>int, optional</em>) &#8211; the t_diode value to use for the LSB</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211;
+current t_diode values (USB, LSB)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int,int</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctp">
 <tt class="descname">dbbctp</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtains the DSC total power values</p>
@@ -1542,6 +1627,33 @@ in case the specified bbc index is out of range</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
 in case the requested board is out of range</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctp0">
+<tt class="descname">dbbctp0</tt><big>(</big><em>bbc</em>, <em>tp0=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbctp0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the TP0 value for a given or all of the BBCs</p>
+<p>The TP0 value will be used for the determination of Tsys values that are broadcasted via multicast.
+The TP0 value has the same dimension as the total power values given by <a class="reference internal" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbc" title="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.dbbc"><tt class="xref py py-func docutils literal"><span class="pre">dbbc()</span></tt></a> command</p>
+<p>If called without supplying tp0 value the current setting is returned</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bbc</strong> (<em>int/str</em>) &#8211; the BBC number (starts at 1) or &#8216;all&#8217; in case the TP0 should be applied to all BBCs</li>
+<li><strong>tp0</strong> (<em>int, optional</em>) &#8211; the TP0 value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the current tp0 value</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1766,6 +1878,24 @@ in case an invalid BBC number has been specified</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthAtt">
+<tt class="descname">synthAtt</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthAtt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the current attenuation setting of the synthesizer output serving the given board</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>board</strong> (<em>int or str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the attenuation level in dB of the synthesizer ouput serving the given board</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthFreq">
 <tt class="descname">synthFreq</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthFreq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines the frequency in MHz of the synthesizer serving the given core board</p>
@@ -1793,6 +1923,11 @@ In case the frequency could not be determined</td>
 <dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthLock">
 <tt class="descname">synthLock</tt><big>(</big><em>board</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthLock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the lock state of the GCoMo synthesizer serving the given core board</p>
+<p>Each sythesizer has two outputs (source=1 or 2)
+board A is served by synth 1 source 1
+board B is served by synth 1 source 2
+board C is served by synth 2 source 1
+etc.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1808,14 +1943,40 @@ in case the lock state of the synthesizer cannot be obtained</td>
 </tr>
 </tbody>
 </table>
-<dl class="docutils">
-<dt>ToDo:</dt>
-<dd><ul class="first last simple">
-<li>Needs to be verified for systems with 8 boards (probably parsing code is incomplete)</li>
-<li>The corresponding validation code must be changed due to different return type</li>
+</dd></dl>
+
+<dl class="method">
+<dt id="dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthOen">
+<tt class="descname">synthOen</tt><big>(</big><em>board</em>, <em>state=None</em><big>)</big><a class="headerlink" href="#dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121.synthOen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables/disables the synthesizer output that serves the given board.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Disabling the output will switch of the downconversion stage of the DBBC3.</p>
+</div>
+<p>If called without the state argument the current output setting is reported.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>board</strong> (<em>int or str</em>) &#8211; the board number (starting at 0=A) or board ID (e.g &#8220;A&#8221;)</li>
+<li><strong>state</strong> (<em>str, optional</em>) &#8211; the output state. Can be either &#8220;on&#8221; or &#8220;off&#8221;</li>
 </ul>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the current state of the synthesizer output; 0=off, 1=off
+None: in case the state could not be determined</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">int</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> &#8211;
+In case an illegal state argument has been supplied</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1872,9 +2033,9 @@ in case no time information could be obtained</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary containing the version information of the DBBC3 control software:<div class="highlight-python"><pre>&quot;mode&quot;: the current DBBC3 mode, e.g. DDC_V
-&quot;majorVersion&quot;: the major version, e.g. 124
-&quot;minorVersion&quot;: the minor version (format YYYYMMDD) e.g. 20200113</pre>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary containing the version information of the DBBC3 control software:<div class="highlight-python"><pre>&quot;mode&quot; (str): the current DBBC3 mode, e.g. DDC_V
+&quot;majorVersion&quot; (int): the major version, e.g. 124
+&quot;minorVersion&quot; (int): the minor version (format YYYYMMDD) e.g. 20200113</pre>
 </div>
 </td>
 </tr>
@@ -1927,7 +2088,7 @@ in case no time information could be obtained</td>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2020, Helge Rottmann.
+        &copy; Copyright 2021, Helge Rottmann.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
