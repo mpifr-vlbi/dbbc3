@@ -1,2 +1,6 @@
 *.pyc
 **/*.log
+lib/build/
+lib/dbbc3.egg-info/
+lib/dist/
+
