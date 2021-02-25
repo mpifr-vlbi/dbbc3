@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'dbbc3'
-copyright = u'2020, Helge Rottmann'
+copyright = u'2021, Helge Rottmann'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
