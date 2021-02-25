@@ -18,31 +18,26 @@ if __name__ == "__main__":
         parser.add_argument("-n", "--num-coreboards", default=8, type=int, help="The number of activated core boards in the DBBC3 (default 8)")
         parser.add_argument("-i", "--if", dest='boards', nargs="+", help="A list of core boards to be used for setup and validation. (e.g. -i A C E). If not specified will use all activated core boards.")
         parser.add_argument("--use-version", dest='ver', default= "", help="The software version of the DBBC3 DDC_V mode to use. Will assume the latest release version if not specified")
-        parser.add_argument("--ignore-errors", action='store_true', help="Ignore any errors and continue with the validation")
+        parser.add_argument("--ignore-errors", dest='ignoreErrors',default=False, action='store_true', help="Ignore any errors and continue with the validation")
         parser.add_argument('ipaddress', help="the IP address of the DBBC3 running the control software")
+        parser.add_argument("-m", "--mode", required=False, default="OCT_D", help="The current DBBC3 mode (default: %(default)s)")
 
         args = parser.parse_args()
 
         try:
-                config = DBBC3Config()
 
-                config.numCoreBoards = args.num_coreboards
+                print ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
+                dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode=args.mode)
+                print ("===Connected")
 
-                config.host=args.ipaddress
-                config.port=args.port
+                ver = dbbc3.version()
+                print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
+               # print (dbbc3.version())
 
-                #dbbc3 = DBBC3(config, mode="DDC_V", version=args.ver)
-
-
-                dbbc3 = DBBC3(config, mode="OCT_D", version=args.ver)
-                
-                dbbc3.connect()
-
+                val = DBBC3Validation(dbbc3, ignoreErrors=args.ignoreErrors)
 
                 print ("=== Disabling calibration loop")
                 dbbc3.disableloop()
-
-                val = DBBC3Validation(dbbc3, ignoreErrors=True)
 
                 useBoards = []
                 if args.boards:
@@ -65,8 +60,8 @@ if __name__ == "__main__":
                 val.validateSamplerPhases()
 
                 # load tap filters (extra script)
-                response = input("Do you want to load the tap filters now? [y/n]")
-                if response == "y":
+                response = raw_input ("Do you want to load the tap filters now? [y/n]  ")
+                if (response == "y"):
                     for board in useBoards:
                         print ("=== Loading tap filters for board " + str(board+1))
                         dbbc3.tap(board+1,"2000-4000_floating.flt")
