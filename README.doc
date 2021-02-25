@@ -1,0 +1,11 @@
+Documentation is created with sphinx following google docstring standard
+
+To create html documentation:
+cd docsrc
+make html
+
+To view html documentation
+cd docs/_build/html
+python -m SimpleHTTPServer 4000
+
+then point your browser to YOURHOST:4000
