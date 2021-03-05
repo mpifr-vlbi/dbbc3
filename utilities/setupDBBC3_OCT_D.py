@@ -48,42 +48,48 @@ if __name__ == "__main__":
                     for board in range(args.num_coreboards):
                         useBoards.append(dbbc3.boardToDigit(board))
 
-                print (dbbc3.version())
+               # print (dbbc3.version())
 
+                print ("=== Checking sampler phase synchronisation")
+                val.validateSamplerPhases()
+                
                 for board in useBoards:
 
+                    #print ("IF before offset check", dbbc3.dbbcif(board))
                     val.validateSynthesizerLock(board)
                     val.validateSynthesizerFreq(board)
                     val.validateIFLevel(board)
                     val.validateSamplerPower(board)
                     val.validateSamplerOffsets(board)
+               #     print ("IF after offset check", dbbc3.dbbcif(board))
 
-                val.validateSamplerPhases()
 
                 # load tap filters (extra script)
-                response = raw_input ("Do you want to load the tap filters now? [y/n]  ")
+                try: input = raw_input
+                except NameError: pass
+                response = input ("Do you want to load the tap filters now? [y/n]  ")
                 if (response == "y"):
                     for board in useBoards:
                         print ("=== Loading tap filters for board " + str(board+1))
                         dbbc3.tap(board+1,"2000-4000_floating.flt")
                         dbbc3.tap2(board+1,"0-2000_floating.flt")
+                    print ("=== Setting up calibration loop")
+                    dbbc3.enablecal()
+                    print ("=== Enabling calibration loop")
+                    dbbc3.enableloop()
 
-                print ("=== Setting up calibration loop")
-                dbbc3.enablecal()
-                print ("=== Enabling calibration loop")
-                dbbc3.enableloop()
+                    print ("=== Waiting for 2 minutes to allow adjusting the power levels")
+                    for remaining in range(120, 0, -1):
+                        sys.stdout.write("\r")
+                        sys.stdout.write("{:2d} seconds remaining.".format(remaining))
+                        sys.stdout.flush()
+                        sleep(1)
+                    
+                    dbbc3.disableloop()
 
-                print ("=== Waiting for 2 minutes to allow adjusting the power levels")
-                for remaining in range(120, 0, -1):
-                    sys.stdout.write("\r")
-                    sys.stdout.write("{:2d} seconds remaining.".format(remaining))
-                    sys.stdout.flush()
-                    sleep(1)
-                
-                dbbc3.disableloop()
                 print ("=== Now re-checking the bit statistics (should be proper 2-bit)")
                 for board in useBoards:
-                    val.validateSamplerOffsets(board)
+                    val.validateBitStatistics(board)
 
                 print ("=== Setting up calibration loop")
                 dbbc3.enablecal()
