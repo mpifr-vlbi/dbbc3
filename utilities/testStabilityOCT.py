@@ -25,6 +25,8 @@ class MyValidation(DBBC3Validation):
         DBBC3Validation.__init__(self,dbbc3,ignoreErrors) 
 
         self.logger = logger
+        self.errorCount = 0
+        self.warnCount = 0
 
     def report(self, level, check="", message="", resolutionMsg = "", exit=False):
 
@@ -32,8 +34,10 @@ class MyValidation(DBBC3Validation):
             self.logger.info ("%s - %s" % (check ,message))
         elif ("WARN" in level ):
             self.logger.warning ("%s - %s" % (check ,message))
+            self.warnCount += 1
         elif ("ERROR" in level ):
             self.logger.error ("%s - %s" % (check ,message))
+            self.errorCount += 1
 
 
 def parseCommandLine():
@@ -154,7 +158,7 @@ def main():
     try:
               
         logger.debug ("=== Trying to connect to %s:%d" % (args.ipaddress, args.port))
-        dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode="OCT_D", numBoards=args.num_coreboards, timeout=900)
+        dbbc3 = DBBC3(host=args.ipaddress, port=args.port, mode="OCT_D", numBoards=args.num_coreboards, timeout=1200)
     except Exception as e:
         print ("ERROR: ", e.message)
 
@@ -179,7 +183,7 @@ def main():
             ver = dbbc3.version()
             logger.info ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
-            logger.info("=== Starting loop %d" % count)
+            logger.info("=== Starting loop %d (errors=%d warnings=%d)" % (count,val.errorCount, val.warnCount))
             #logger.info("=== Checking stability of IF power")
             #for i in range(20):
             #    logger.info("dbbcifa : " + str(dbbc3.dbbcif(0)))
@@ -189,18 +193,18 @@ def main():
             #    sleep(1)
 
             for board in useBoards:
-
-                #val.validateSynthesizerLock(board)
-                #val.validateSynthesizerFreq(board)
-                #val.validateIFLevel(board)
+                val.validateSynthesizerLock(board)
+                val.validateSynthesizerFreq(board)
+                val.validateIFLevel(board)
                 val.validateSamplerPower(board)
                 val.validateSamplerOffsets(board)
                 logger.info("=== Sampler delays {}".format(dbbc3.core3h_core3_corr(board)))
 
+            logger.info("=== Checking sampler phase synchronization" )
             val.validateSamplerPhases()
 
-            #loopFilters = 1
-            loopFilters = 0
+            loopFilters = 1
+            #loopFilters = 0
 
             for i in range(loopFilters):
                 for board in useBoards:
@@ -221,15 +225,15 @@ def main():
 
                 logger.info ("=== Now re-checking the bit statistics (should be proper 2-bit)")
                 for board in useBoards:
-                    val.validateSamplerOffsets(board)
+                    val.validateBitStatistics(board)
 #
-            #logger.info("=== Checking stability of IF power")
-            #for i in range(20):
-            #    logger.info("dbbcifa : " + str(dbbc3.dbbcif(0)))
-            #    logger.info("dbbcifb : " + str(dbbc3.dbbcif(1)))
-            #    logger.info("dbbcifc : " + str(dbbc3.dbbcif(2)))
-            #    logger.info("dbbcifd : " + str(dbbc3.dbbcif(3)))
-            #    sleep(1)
+            logger.info("=== Checking stability of IF power")
+            for i in range(10):
+                logger.info("dbbcifa : " + str(dbbc3.dbbcif(0)))
+                logger.info("dbbcifb : " + str(dbbc3.dbbcif(1)))
+                logger.info("dbbcifc : " + str(dbbc3.dbbcif(2)))
+                logger.info("dbbcifd : " + str(dbbc3.dbbcif(3)))
+                sleep(1)
 #
             if (not args.skipReload):
                 logger.info("=== Reloading firmware")
@@ -237,8 +241,13 @@ def main():
 
             count += 1
         except Exception as e:
-            print ("ERROR: ", e.message)
-            pass
+
+# make compatible with python 2 and 3
+               if hasattr(e, 'message'):
+                    print(e.message)
+               else:
+                    print(e)
+               pass
 
     sys.exit()
 
