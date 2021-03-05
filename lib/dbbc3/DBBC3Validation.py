@@ -46,6 +46,7 @@ class DBBC3Validation(object):
         self.lastMessage = ""
         self.lstResolution = ""
 
+
     def setIgnoreErrors(ignoreErrors):
         self.ignoreErrors = ignoreErrors
 
@@ -124,15 +125,17 @@ class DBBC3Validation(object):
         # sampler gains should be checked with IF power close to target (32000)
         retOrig = self.dbbc3.dbbcif(board)
 
-        ret = dict(retOrig)
-        while (ret["target"] < 30000):
-            ret = self.dbbc3.dbbcif(board, 1, "agc", 32000)
+        #ret = dict(retOrig)
+        #while (ret["count"] < 30000):
+        #   ret = self.dbbc3.dbbcif(board, 1, "agc", 32000)
 
         # Now freeze the attenuation
-        ret = self.dbbc3.dbbcif(board, 1, "man")
+        ret = self.dbbc3.dbbcif(board, 2, "man")
+        #print (self.dbbc3.lastResponse)
 
         pow= self.dbbc3.core3h_core3_power(boardNum)
         if pow is None:
+                self._resetIFSettings( board, retOrig)
                 self.report(self.ERROR, check, self.dbbc3.lastResponse, exit=True)
 
         mean = np.mean(pow)
@@ -141,6 +144,7 @@ class DBBC3Validation(object):
                 resolv += "If the problem persists retry restart up to 5 times.\n"
                 resolv += "If the problem persists do a full hardware restart."
 
+                self._resetIFSettings( board, retOrig)
                 self.report(self.ERROR, check, "Sampler powers are 0 for board %s" % board, resolv, exit=True)
         #if self.verbose:
         #       print "power values=%s mean=%f" % (str(pow), mean)
@@ -166,33 +170,52 @@ class DBBC3Validation(object):
                 self.report(self.OK, check,  "sampler powers = %s" % (pow))
 
         # Finally reset the dbbcif settings to their original values
-        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
+        self._resetIFSettings( board, retOrig)
+#        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
                 
 
 
-    def validateSamplerOffsets(self, boardNum):
+    def _resetIFSettings(self, board, setting):
+
+        # set attenuator manually to original value
+        self.dbbc3.dbbcif(board, setting["inputType"], setting["attenuation"])
+
+        # check that IF settings have been changed (workaround for bug)
+        while True:
+            ret = self.dbbc3.dbbcif(board)
+            if (ret["attenuation"] == setting["attenuation"]):
+                break
+            else:
+                ret = self.dbbc3.dbbcif(board, setting["inputType"], setting["attenuation"])
+            
+
+        # switch back to original mode
+        self.dbbc3.dbbcif(board, setting["inputType"], setting["mode"], setting["target"])
+
+        while True:
+            ret = self.dbbc3.dbbcif(board)
+            if (ret["mode"] == setting["mode"]):
+                break
+            else:
+                self.dbbc3.dbbcif(board, setting["inputType"], setting["mode"], setting["target"])
+
+        #print (self.dbbc3.lastResponse)
+
+
+        
+    def validateBitStatistics(self, boardNum):
 
         board = self.dbbc3.boardToChar(boardNum)
 
-        # sampler offsets should be checked with IF power of approx. 5000
-        retOrig = self.dbbc3.dbbcif(board)
-
-        ret = dict(retOrig)
-        while (ret["target"] > 5000):
-            ret = self.dbbc3.dbbcif(board, 1, "agc", 5000)
-
-        # Now freeze the attenuation
-        ret = self.dbbc3.dbbcif(board, 1, "man")
+        self.report(self.INFO, "===Checking bit statistics for board %s" % (board), "" , "")
             
-        # Reset the core3h thresholds (needed in case the calibration has been running)
-        # core3h=1,regwrite core3 1 0xA4A4A4A4
-        self.dbbc3.core3h_regwrite(board, "core3", 1, 0xA4A4A4A4)
-
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
                 errorCount = 0
-                check = "===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
+                check = "===Checking board %s sampler %d" % (board, samplerNum)
+
                 bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
+        #        print (self.dbbc3.lastResponse)
                 if bstats is None:
                         self.report (self.ERROR, check, self.dbbc3.lastResponse, exit=True)
 
@@ -201,7 +224,7 @@ class DBBC3Validation(object):
                         #dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
                         dev = abs((bstats[0] + bstats[1] - bstats[2] - bstats[3]) / float(bstats[0] + bstats[1] + bstats[2] + bstats[3]))
                 except ZeroDivisionError:
-                        msg = "Sampler offsets of 0 found %s" % str(bstats)
+                        msg = "Corrupted bit statitics found (all 0): %s" % str(bstats)
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
         
                         self.report(self.ERROR, check, msg, resolv, exit=True)
@@ -228,8 +251,93 @@ class DBBC3Validation(object):
                 if errorCount == 0:
                         self.report(self.OK, check, "Asymmetry = %f%%" % (dev*100))
 
+    def validateSamplerOffsets(self, boardNum):
+
+        board = self.dbbc3.boardToChar(boardNum)
+
+        self.report(self.INFO, "===Checking sampler offsets for board %s" % (board), "" , "")
+        # save the original IF settings
+        retOrig = self.dbbc3.dbbcif(board)
+        #print ("Original IF settings: ", retOrig)
+
+        #ret = dict(retOrig)
+        #attenuation = ret["attenuation"]
+        
+        # set attenuator to max. value
+        attenuation = 63
+        ret = self.dbbc3.dbbcif(board, 2, attenuation)
+
+        # check that IF settings have been changed (workaround for bug)
+        while True:
+            ret = self.dbbc3.dbbcif(board)
+            if (ret["attenuation"] == 63):
+                break
+            else:
+                ret = self.dbbc3.dbbcif(board, 2, attenuation)
+
+        # sampler offsets should be checked with IF power of approx. 5000
+        while (ret["count"] < 5000 and ret["attenuation"] > 0):
+            attenuation -=1 
+            ret = self.dbbc3.dbbcif(board, 2, attenuation)
+
+        # Now freeze the attenuation
+        ret = self.dbbc3.dbbcif(board, 2, "man")
+        #print ("Modified IF settings: ", ret)
+            
+        # Reset the core3h thresholds (needed in case the calibration has been running)
+        # core3h=1,regwrite core3 1 0xA4A4A4A4
+        self.dbbc3.core3h_regwrite(board, "core3", 1, 0xA4A4A4A4)
+
+        for samplerNum in range(self.dbbc3.config.numSamplers):
+
+                errorCount = 0
+                check = "===Checking board %s sampler %d" % (board, samplerNum)
+
+                bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
+        #        print (self.dbbc3.lastResponse)
+                if bstats is None:
+                        self._resetIFSettings(board, retOrig)
+                        self.report (self.ERROR, check, self.dbbc3.lastResponse, exit=True)
+
+                # Checking difference lower against upper half
+                try:
+                        #dev = abs(1 - float(bstats[0]+bstats[1]) / float(bstats[2]+bstats[3]))
+                        dev = abs((bstats[0] + bstats[1] - bstats[2] - bstats[3]) / float(bstats[0] + bstats[1] + bstats[2] + bstats[3]))
+                except ZeroDivisionError:
+                        msg = "Sampler offsets of 0 found %s" % str(bstats)
+                        resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
+        
+                        self._resetIFSettings(board, retOrig)
+                        self.report(self.ERROR, check, msg, resolv, exit=True)
+                        continue
+
+                        
+                if dev > 0.10:
+                        errorCount += 1
+                        msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100) 
+                        resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
+                        resolv += "If the problem persists retry restart up to 5 times.\n"
+                        resolv += "If the problem persists do a full hardware restart."
+
+                        self._resetIFSettings(board, retOrig)
+                        self.report(self.ERROR, check, msg, resolv, exit=True)
+                elif dev > 0.05:
+                        errorCount += 1
+                        msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
+                        resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
+                        resolv += "If the problem persists retry restart up to 5 times.\n"
+                        resolv += "If the problem persists do a full hardware restart."
+                
+                        self.dbbc3.dbbcif(board)
+                        #print (self.dbbc3.lastResponse)
+                        self.report(self.WARN, check, msg, resolv, exit=False)
+
+                if errorCount == 0:
+                        self.report(self.OK, check, "Asymmetry = %f%%" % (dev*100))
+
         # Finally reset the dbbcif settings to their original values
-        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
+        self._resetIFSettings(board, retOrig)
+#        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
 
 
     def _reportLock(self, board, value):
