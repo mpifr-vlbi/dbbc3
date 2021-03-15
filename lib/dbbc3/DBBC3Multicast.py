@@ -48,14 +48,15 @@ class DBBC3Multicast(object):
 
         # determine mode and version
         valueArray = self.sock.recv(16384)
+
         self._parseVersion(valueArray)
 
         # defaults
         self.gcomoOffset = 32
-        self.dcOffset = self.gcomoOffset + 64
-        self.adb3lOffset = self.dcOffset + 64
-        self.core3hOffset = self.adb3lOffset + 92
-        self.bbcOffset = self.core3hOffset + 24
+        self.dcOffset = self.gcomoOffset + 8*8
+        self.adb3lOffset = self.dcOffset + 8*8
+        self.core3hOffset = self.adb3lOffset + 8*92
+        self.bbcOffset = self.core3hOffset + 8*24
 
 
     def _parseVersion(self, message):
@@ -68,9 +69,11 @@ class DBBC3Multicast(object):
         self.message["mode"] = versionString[0]
         self.message["majorVersion"] = int(versionString[1])
         self.message["minorVersionString"] = versionString[2]
-        self.message["minorVersion"] = int(datetime.strptime(amended.strip().encode("utf-8"), '%B %d %Y').strftime('%y%m%d'))
+        #self.message["minorVersion"] = int(datetime.strptime(amended.strip().encode("utf-8"), '%B %d %Y').strftime('%y%m%d'))
+        self.message["minorVersion"] = int(datetime.strptime(amended.strip(), '%B %d %Y').strftime('%y%m%d'))
         
     def _parseGcomo(self, message):
+#OK
         for i in range(0,8):
             gcomo = {}
             shortArray = struct.unpack('HHH', message[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
@@ -88,6 +91,7 @@ class DBBC3Multicast(object):
             
 
     def _parseDC(self,message):
+#OK
 
         # Downconverter Values
         for i in range(0,8):
@@ -103,6 +107,7 @@ class DBBC3Multicast(object):
             self.message["if_"+str(i+1)]["synth"] = synth
     
     def _parseAdb3l(self,message):
+#OK
         offset = self.adb3lOffset
 
         # ADB3L Values
@@ -134,15 +139,15 @@ class DBBC3Multicast(object):
     
             bstatArray_3 = struct.unpack('IIII', message[offset:offset+16])
             #print(str(bstatArray_3) + str(sum(bstatArray_3)))
+            offset = offset + 16
     
             s0["stats"] = bstatArray_0
             s1["stats"] = bstatArray_1
             s2["stats"] = bstatArray_2
             s3["stats"] = bstatArray_3
 
-            offset = offset + 16
             corrArray = struct.unpack('III', message[offset:offset+12])
-            #print(str(corrArray))
+            offset += 12
 
             self.message["if_"+str(i+1)]["sampler0"]= s0
             self.message["if_"+str(i+1)]["sampler1"]= s1
@@ -199,22 +204,22 @@ class DBBC3Multicast(object):
             offset = offset + 40
 
             bbc["frequency"] = float(bbcValue[0]/524288)
-            bbc["bandwidth"] = bbcValue[0]
-            bbc["agcStatus"] = bbcValue[1]
-            bbc["gainUSB"] = bbcValue[2]
-            bbc["gainLSB"] = bbcValue[3]
-            bbc["powerOnUSB"] = bbcValue[4]
-            bbc["powerOnLSB"] = bbcValue[5]
-            bbc["powerOffUSB"] = bbcValue[6]
-            bbc["powerOffLSB"] = bbcValue[7]
-            bbc["stat00"] = bbcValue[8]
-            bbc["stat01"] = bbcValue[9]
-            bbc["stat10"] = bbcValue[10]
-            bbc["stat11"] = bbcValue[11]
-            bbc["tsysUSB"] = bbcValue[12]
-            bbc["tsysLSB"] = bbcValue[13]
-            bbc["sefdUSB"] = bbcValue[14]
-            bbc["sefdLSB"] = bbcValue[15]
+            bbc["bandwidth"] = bbcValue[1]
+            bbc["agcStatus"] = bbcValue[2]
+            bbc["gainUSB"] = bbcValue[3]
+            bbc["gainLSB"] = bbcValue[4]
+            bbc["powerOnUSB"] = bbcValue[5]
+            bbc["powerOnLSB"] = bbcValue[6]
+            bbc["powerOffUSB"] = bbcValue[7]
+            bbc["powerOffLSB"] = bbcValue[8]
+            bbc["stat00"] = bbcValue[9]
+            bbc["stat01"] = bbcValue[10]
+            bbc["stat10"] = bbcValue[11]
+            bbc["stat11"] = bbcValue[12]
+            bbc["tsysUSB"] = bbcValue[13]
+            bbc["tsysLSB"] = bbcValue[14]
+            bbc["sefdUSB"] = bbcValue[15]
+            bbc["sefdLSB"] = bbcValue[16]
 
             self.message["if_" + str(ifNum)]["bbc_" + str(i+1)] = bbc
             
