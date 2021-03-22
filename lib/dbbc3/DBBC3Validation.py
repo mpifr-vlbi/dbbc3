@@ -441,18 +441,20 @@ class DBBC3Validation(object):
         board = self.dbbc3.boardToChar(board)
         check =  "=== Checking time synchronisation of core board %s" % board.upper()
 
+        resolv = "Check that a GPS antenna is connected to the DBBC3\n"
+        resolv = "Check that GPS satellites are visible (core3h=BOARD,gps)\n"
+        resolv += "Re-initialize the DBBC3 and re-check\n"
+
         ret = self.dbbc3.core3h_time( board)
         if not ret:
                 msg =   "No timestamp could be obtained for core board %s" % board.upper()
-                resolv = "Run core3h_timesync and re-check"
-                resolv += "Check that a GPS antenna is connected to the DBBC3"
                 self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
         else:
                 delta = datetime.utcnow() - ret
                 if delta.seconds > 10:
                         msg =   "Difference between reported time and local NTP time > 10s for board %s" % board.upper()
-                        resolv = "Run core3h_timesync and re-check"
-                        resolv += "Check that the local computer is synchronised via NTP"
+                        resolv += "Run core3h_timesync and re-check\n"
+                        resolv += "Check that the local computer is synchronised via NTP\n"
                         self.report (self.ERROR,check,  msg, resolv, exit=exitOnError)
                 else:
                         self.report(self.OK, check, "Reported time: %s" % str(ret))
