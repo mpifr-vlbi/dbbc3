@@ -27,6 +27,7 @@ __license__ = "GPLv3"
 from datetime import datetime
 import sys
 import re
+import subprocess
 
 
 def parseTimeResponse(response):
@@ -60,3 +61,12 @@ def parseTimeResponse(response):
 def validateOnOff(string):
 
     return (string in ["on", "off"])
+
+
+def checkRecorderInterface (host ,device, user="oper"):
+    out = subprocess.Popen("ssh {user}@{host} ip link show {device}".format(user=user, host=host,  device=device), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    start = str(out[0]).find("state") + 6
+    end = str(out[0]).find("qlen")
+    state = str(out[0])[start:end]
+
+    return(state)
