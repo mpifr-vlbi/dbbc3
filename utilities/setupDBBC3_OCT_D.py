@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import DBBC3Util as d3u
+import subprocess
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Validation import DBBC3Validation
@@ -52,9 +54,20 @@ if __name__ == "__main__":
 
                 print ("=== Checking sampler phase synchronisation")
                 val.validateSamplerPhases()
+
+                print ("=== Checking state of recorder interfaces" )
+                print ("=== recorder1 eth3: %s" % d3u.checkRecorderInterface ("recorder1", "eth3"))
+                print ("=== recorder1 eth5: %s" % d3u.checkRecorderInterface ("recorder1", "eth5"))
+                print ("=== recorder2 eth3: %s" % d3u.checkRecorderInterface ("recorder2", "eth3"))
+                print ("=== recorder2 eth5: %s" % d3u.checkRecorderInterface ("recorder2", "eth5"))
+                print ("=== recorder3 eth3: %s" % d3u.checkRecorderInterface ("recorder3", "eth3"))
+                print ("=== recorder3 eth5: %s" % d3u.checkRecorderInterface ("recorder3", "eth5"))
+                print ("=== recorder4 eth3: %s" % d3u.checkRecorderInterface ("recorder4", "eth3"))
+                print ("=== recorder4 eth5: %s" % d3u.checkRecorderInterface ("recorder4", "eth5"))
                 
                 for board in useBoards:
 
+                    val.validateTimesync(board)
                     #print ("IF before offset check", dbbc3.dbbcif(board))
                     val.validateSynthesizerLock(board)
                     val.validateSynthesizerFreq(board)
