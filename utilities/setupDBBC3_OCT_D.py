@@ -18,11 +18,11 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in OCT_D mode")
 
         parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: 4000)")
-        parser.add_argument("-n", "--num-coreboards", default=8, type=int, help="The number of activated core boards in the DBBC3 (default 8)")
-        parser.add_argument("-i", "--if", dest='boards', nargs="+", help="A list of core boards to be used for setup and validation. (e.g. -i A C E). If not specified will use all activated core boards.")
+        parser.add_argument("-n", "--num-coreboards",  type=int, help="The number of activated core boards in the DBBC3 (default 8)")
+        parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
         parser.add_argument("--use-version", dest='ver', default= "", help="The software version of the DBBC3 DDC_V mode to use. Will assume the latest release version if not specified")
         parser.add_argument("--ignore-errors", dest='ignoreErrors',default=False, action='store_true', help="Ignore any errors and continue with the validation")
-        parser.add_argument('ipaddress', help="the IP address of the DBBC3 running the control software")
+        parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         parser.add_argument("-m", "--mode", required=False, default="OCT_D", help="The current DBBC3 mode (default: %(default)s)")
 
         args = parser.parse_args()
@@ -35,7 +35,6 @@ if __name__ == "__main__":
 
                 ver = dbbc3.version()
                 print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
-               # print (dbbc3.version())
 
                 val = DBBC3Validation(dbbc3, ignoreErrors=args.ignoreErrors)
 
@@ -46,11 +45,22 @@ if __name__ == "__main__":
                 if args.boards:
                     for board in args.boards:
                         useBoards.append(dbbc3.boardToDigit(board))
-                else:
+                elif args.num_coreboards:
                     for board in range(args.num_coreboards):
                         useBoards.append(dbbc3.boardToDigit(board))
+                else:
+                    for board in range(dbbc3.config.numCoreBoards):
+                        useBoards.append(dbbc3.boardToDigit(board))
 
-               # print (dbbc3.version())
+                print ("=== Using boards: %s" % str(useBoards))
+
+                print ("==============================================")
+                print ("NOTE: the following tests should be done with")
+                print ("only noise fed to the IF inputs of the DBBC3.")
+                print ("Injecting additional tones can lead to false")
+                print ("results in the validation of the sampler states.")
+                print ("==============================================")
+
 
                 print ("=== Checking sampler phase synchronisation")
                 val.validateSamplerPhases()
