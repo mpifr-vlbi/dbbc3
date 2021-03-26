@@ -19,7 +19,7 @@
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
@@ -64,6 +64,9 @@ class DBBC3(object):
 
             # attach final command set
             DBBC3Commandset(self, retVersion)
+
+            # determine number of enabled GComos (should be equal to number of installed core3h boards)
+            self.config.numCoreBoards = self._getNumCoreBoards()
 
             self.lastCommand = ""
             self.lastResponse = ""
@@ -175,6 +178,22 @@ class DBBC3(object):
 
             if (tpint < 1 or tpint > 60):
                 raise ValueError("tpint value must be in the range 1-60")
+
+        def _getNumCoreBoards(self):
+            '''
+            Determines the number of active GComo units by issuing dbbcif commands
+            Because the number of GComos must match the number of installed 
+            core3h boards this method is used to determine the number of boards.
+
+            Note: This does not catch cases where the core3h board is installed but
+            disbaled by a prefix of 30 in the configuration file.
+            '''
+
+            for board in range(8):
+                if not self.dbbcif(board):
+                    break
+
+            return(board)
 
         def boardToChar(self, board):
             '''
