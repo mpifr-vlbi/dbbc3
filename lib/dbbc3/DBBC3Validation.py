@@ -268,20 +268,24 @@ class DBBC3Validation(object):
         ret = self.dbbc3.dbbcif(board, 2, attenuation)
 
         # check that IF settings have been changed (workaround for bug)
+        count = 0
         while True:
             ret = self.dbbc3.dbbcif(board)
-            print (ret)
             if (ret["attenuation"] == 63):
+                break
+            elif (count == 10):
+                self.report(self.WARN, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "")
                 break
             else:
                 ret = self.dbbc3.dbbcif(board, 2, attenuation)
+                count += 1
 
         # sampler offsets should be checked with IF power of approx. 5000
         while (ret["count"] < 5000 and ret["attenuation"] > 0):
             print (ret["count"], ret["attenuation"])
             ret = self.dbbc3.dbbcif(board, 2, attenuation)
-	    # if power cannot be regulated (e.g. no IF connected) give up
-#		self.report(self.WARN, "Too little IF power to perform
+        # if power cannot be regulated (e.g. no IF connected) give up
+#       self.report(self.WARN, "Too little IF power to perform
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, 2, "man")
