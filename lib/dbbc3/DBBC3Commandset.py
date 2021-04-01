@@ -24,7 +24,7 @@ __copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
-import DBBC3Util as d3u
+import dbbc3.DBBC3Util as d3u
 import types 
 import re
 import time
@@ -32,7 +32,7 @@ import importlib
 import inspect
 import sys
 from datetime import datetime
-from DBBC3Exception import DBBC3Exception
+from dbbc3.DBBC3Exception import DBBC3Exception
 
 def getMatchingCommandset(mode, majorVersion):
     '''

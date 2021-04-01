@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-import DBBC3Util as d3u
 import subprocess
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Validation import DBBC3Validation
+import dbbc3.DBBC3Util as d3u
 import re
 import sys
 import numpy as np
