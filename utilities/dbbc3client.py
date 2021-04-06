@@ -34,8 +34,11 @@ if __name__ == "__main__":
 
                 while command.lower().strip() != 'quit':
                         command= input(">> ")
-                        dbbc3.sendCommand(command)
-                        print (dbbc3.lastResponse)
+                        if (command.strip() == "exit"):
+                            print ("Type 'quit' to exit")
+                        else:
+                            dbbc3.sendCommand(command)
+                            print (dbbc3.lastResponse)
 
 
         except Exception as e:
