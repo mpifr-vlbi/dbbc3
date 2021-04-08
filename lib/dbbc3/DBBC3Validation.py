@@ -29,6 +29,7 @@ import re
 import sys
 import numpy as np
 from datetime import datetime
+import time
 
 
 class DBBC3Validation(object):
@@ -281,9 +282,11 @@ class DBBC3Validation(object):
                 count += 1
 
         # sampler offsets should be checked with IF power of approx. 5000
+        print (ret["count"], ret["attenuation"])
         while (ret["count"] < 5000 and ret["attenuation"] > 0):
             print (ret["count"], ret["attenuation"])
-            ret = self.dbbc3.dbbcif(board, 2, attenuation)
+            time.sleep(1)
+            ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
         # if power cannot be regulated (e.g. no IF connected) give up
 #       self.report(self.WARN, "Too little IF power to perform
 
