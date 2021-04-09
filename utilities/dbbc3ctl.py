@@ -3,7 +3,7 @@
 import argparse
 import subprocess
 import sys
-import DBBC3Util as d3u
+import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Validation import DBBC3Validation
