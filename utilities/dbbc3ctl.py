@@ -11,9 +11,9 @@ from cmd import Cmd
 
 from time import sleep
 
-checkTree = {"system":"#board", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board" }
+checkTree = {"recorder":"@host @interface", "system":"#board", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board" }
 printTree = {"setup":"#board"}
-commandTree = {"check": checkTree, "reconfigure": "", "print": printTree}
+commandTree = {"check": checkTree }
 
 class Prompt(Cmd):
 
@@ -40,7 +40,14 @@ class Prompt(Cmd):
                 self.cmdList.append(("{} [all,{}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
                     self.cmdChains.append("{} {}".format(" ".join(self.path), board))
-            self.path.pop()
+                self.path.pop()
+            # parameters 
+            elif (v.startswith('@')):
+                subs = v.split(' ')
+                self.cmdChains.append(" ".join(self.path))
+                self.cmdList.append("{} {} ".format(" ".join(self.path)," ".join(subs)))
+                self.path.pop()
+                        
           elif v is None:
             self.path.append(k)
             ## do something special
@@ -92,9 +99,15 @@ class Prompt(Cmd):
             elif subcommand == "freq":
                 self.val.validateSynthesizerFreq(board)
         
+    def _checkRecorder(self, args):
+        if len(args) != 3:
+            self.do_help("check recorder")
+            return
+        d3u.checkRecorderInterface(args[1], args[2])
+        print ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
+
     def do_check(self, args):
 
-        print (args)
         fields = args.split()
 
         boards = self.boards
@@ -128,13 +141,12 @@ class Prompt(Cmd):
                 boards = self._resolveBoards(fields[1])
             for board in boards:
                 val.validateBitStatistics(board)
-                
-
-        
+        elif fields[0] == "recorder":
+            self._checkRecorder(fields)
+            
         
     def do_quit(self,args ):
         sys.exit(0)
-
 
 
 if __name__ == "__main__":
@@ -144,7 +156,7 @@ if __name__ == "__main__":
         parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: 4000)")
         parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
         parser.add_argument("-y", "--yes", help="Answer yes to all interactive confirmations.")
-        parser.add_argument("-c", "--command", type=str,  help="exectute the given commandi.")
+        parser.add_argument("-c", "--command", action='append', type=str,  help="Exectute the given command(s). If this option is specified  multiple times the commands will be processed in the order they appear on the command line.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
 
@@ -182,33 +194,14 @@ if __name__ == "__main__":
                 prompt = Prompt(dbbc3, useBoards)
 
                 if (args.command):
-                    prompt.onecmd(args.command)
+                    for command in args.command:
+                        prompt.onecmd(command)
 
                 prompt.cmdloop()
 
-                print ("=== Checking sampler phase synchronisation")
-                val.validateSamplerPhases()
 
-                print ("=== Checking state of recorder interfaces" )
-                print ("=== recorder1 eth3: %s" % d3u.checkRecorderInterface ("recorder1", "eth3"))
-                print ("=== recorder1 eth5: %s" % d3u.checkRecorderInterface ("recorder1", "eth5"))
-                print ("=== recorder2 eth3: %s" % d3u.checkRecorderInterface ("recorder2", "eth3"))
-                print ("=== recorder2 eth5: %s" % d3u.checkRecorderInterface ("recorder2", "eth5"))
-                print ("=== recorder3 eth3: %s" % d3u.checkRecorderInterface ("recorder3", "eth3"))
-                print ("=== recorder3 eth5: %s" % d3u.checkRecorderInterface ("recorder3", "eth5"))
-                print ("=== recorder4 eth3: %s" % d3u.checkRecorderInterface ("recorder4", "eth3"))
-                print ("=== recorder4 eth5: %s" % d3u.checkRecorderInterface ("recorder4", "eth5"))
-                
                 for board in useBoards:
-
-                    val.validateTimesync(board)
-                    #print ("IF before offset check", dbbc3.dbbcif(board))
-                    val.validateSynthesizerLock(board)
-                    val.validateSynthesizerFreq(board)
                     val.validateIFLevel(board)
-                    val.validateSamplerPower(board)
-                    val.validateSamplerOffsets(board)
-               #     print ("IF after offset check", dbbc3.dbbcif(board))
 
 
                 # load tap filters (extra script)
@@ -233,10 +226,6 @@ if __name__ == "__main__":
                         sleep(1)
                     
                     dbbc3.disableloop()
-
-                print ("=== Now re-checking the bit statistics (should be proper 2-bit)")
-                for board in useBoards:
-                    val.validateBitStatistics(board)
 
                 print ("=== Setting up calibration loop")
                 dbbc3.enablecal()
