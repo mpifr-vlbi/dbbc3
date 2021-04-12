@@ -35,6 +35,9 @@ import importlib
 import inspect
 
 
+class ValidationExit(Exception):
+    pass
+
 def getMatchingValidation(mode, majorVersion):
     '''
     Determines the validation sub-class to be used for the given mode and major version.
@@ -145,7 +148,7 @@ class DBBC3ValidationDefault(DBBC3Validation):
             if (self.ignoreErrors):
                 print ("Continuing because ignoreErrors was enabled")
             else:
-                sys.exit(1)
+                raise ValidationExit
 
     def validateIFLevel(self, board, downConversion=True, agc=True):
         '''
@@ -237,7 +240,7 @@ class DBBC3ValidationDefault(DBBC3Validation):
                         resolv = "Restart the DBBC3 control software (no reload of firmware, re-initialize)\n"
                         resolv += "If the problem persists retry restart up to 5 times.\n"
                         resolv += "If the problem persists do a full hardware restart."
-                        self.report(self.ERROR, check, msg , resolv)
+                        self.report(self.ERROR, check, msg , resolv, exit=True)
                         errors += 1
                 elif dev > 0.05:
                         msg = "Large differences (>5%%) in sampler powers for board=%s. %s %f%%" % (board, str(pow), dev*100)
