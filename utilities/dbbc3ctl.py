@@ -8,6 +8,7 @@ from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
 from dbbc3.DBBC3Validation import DBBC3Validation
 from cmd import Cmd
+from signal import signal, SIGINT
 
 from time import sleep
 
@@ -83,7 +84,11 @@ class Prompt(Cmd):
         if board == "all":
             boards = self.boards
         else:
-            boards = [board]
+            if int(board) in self.boards:
+                boards = [board]
+            else:
+                self.do_help("")
+                return([])
 
         return(boards)
         
@@ -106,6 +111,26 @@ class Prompt(Cmd):
         d3u.checkRecorderInterface(args[1], args[2])
         print ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
 
+    def _checkSamplerGain(self, fields):
+
+        boards = self.boards
+
+        if len(fields) == 3:
+            boards = self._resolveBoards(fields[2])
+        
+        for board in boards:
+            self.val.validateSamplerPower(board)
+    def _checkSamplerOffset(self, fields):
+
+        boards = self.boards
+
+        if len(fields) == 3:
+            boards = self._resolveBoards(fields[2])
+        
+        for board in boards:
+            self.val.validateSamplerOffsets(board)
+        
+
     def do_check(self, args):
 
         fields = args.split()
@@ -119,14 +144,10 @@ class Prompt(Cmd):
 
             if fields[1] == "phase":
                 self.val.validateSamplerPhases()
-            else:
-                if len(fields) == 3:
-                    boards = self._resolveBoards(fields[2])
-                for board in boards:
-                    if fields[1] == "offset":
-                        self.val.validateSamplerOffsets(board)
-                    elif fields[1] == "gain":
-                        self.val.validateSamplerPower(board)
+            elif fields[1] == "offset":
+                self._checkSamplerOffset(fields)
+            elif fields[1] == "gain":
+                self._checkSamplerGain(fields)
         elif fields[0] == "timesync":
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
@@ -143,11 +164,26 @@ class Prompt(Cmd):
                 val.validateBitStatistics(board)
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
-            
         
     def do_quit(self,args ):
-        sys.exit(0)
+        exitClean() 
 
+
+def exitClean():
+    if 'dbbc3' in vars() or 'dbbc3' in globals():
+        # re-enable the calibration loop
+        if (dbbc3.config.mode.startswith("OCT")):
+             dbbc3.enableloop()
+         
+        dbbc3.disconnect()
+    print ("Bye")
+    sys.exit()
+
+def signal_handler(sig, frame):
+    exitClean()
+
+# handle SIGINT (Ctrl-C)
+signal(SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
@@ -159,11 +195,6 @@ if __name__ == "__main__":
         parser.add_argument("-c", "--command", action='append', type=str,  help="Exectute the given command(s). If this option is specified  multiple times the commands will be processed in the order they appear on the command line.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
-
-        #parser.add_argument("--ignore-errors", dest='ignoreErrors',default=False, action='store_true', help="Ignore any errors and continue with the validation")
-        #parser.add_argument("-m", "--mode", required=False, default="OCT_D", help="The current DBBC3 mode (default: %(default)s)")
-        #parser.add_argument("-n", "--num-coreboards",  type=int, help="The number of activated core boards in the DBBC3 (default 8)")
-
         args = parser.parse_args()
         
         #prompt = Prompt(None, [0,1,2,3])
@@ -180,6 +211,9 @@ if __name__ == "__main__":
 
                 val = DBBC3Validation(dbbc3, ignoreErrors=True)
 
+                # for OCT mode disable the calibration loop to speed up processing
+                if (dbbc3.config.mode.startswith("OCT")):
+                    dbbc3.disableloop()
 
                 useBoards = []
                 if args.boards:
@@ -199,51 +233,16 @@ if __name__ == "__main__":
 
                 prompt.cmdloop()
 
-
-                for board in useBoards:
-                    val.validateIFLevel(board)
-
-
-                # load tap filters (extra script)
-                try: input = raw_input
-                except NameError: pass
-                response = input ("Do you want to load the tap filters now? [y/n]  ")
-                if (response == "y"):
-                    for board in useBoards:
-                        print ("=== Loading tap filters for board " + str(board+1))
-                        dbbc3.tap(board+1,"2000-4000_floating.flt")
-                        dbbc3.tap2(board+1,"0-2000_floating.flt")
-                    print ("=== Setting up calibration loop")
-                    dbbc3.enablecal()
-                    print ("=== Enabling calibration loop")
-                    dbbc3.enableloop()
-
-                    print ("=== Waiting for 2 minutes to allow adjusting the power levels")
-                    for remaining in range(120, 0, -1):
-                        sys.stdout.write("\r")
-                        sys.stdout.write("{:2d} seconds remaining.".format(remaining))
-                        sys.stdout.flush()
-                        sleep(1)
-                    
-                    dbbc3.disableloop()
-
-                print ("=== Setting up calibration loop")
-                dbbc3.enablecal()
-                print ("=== Enabling calibration loop")
-                dbbc3.enableloop()
-                
-                dbbc3.disconnect()
-                print ("=== Done")
-
         except Exception as e:
-               # make compatible with python 2 and 3
-               if hasattr(e, 'message'):
-                    print(e.message)
-               else:
-                    print(e)
+           
+           # make compatible with python 2 and 3
+           if hasattr(e, 'message'):
+                print(e.message)
+           else:
+                print(e)
+
+           exitClean()
                     
-               if 'dbbc3' in vars() or 'dbbc3' in globals():
-                       dbbc3.disconnect()
                 
 
         
