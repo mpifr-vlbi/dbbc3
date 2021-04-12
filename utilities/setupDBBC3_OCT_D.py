@@ -10,8 +10,25 @@ import re
 import sys
 import numpy as np
 import traceback
+from signal import signal, SIGINT
 
 from time import sleep
+
+def exitClean():
+    if 'dbbc3' in vars() or 'dbbc3' in globals():
+        # re-enable the calibration loop
+        dbbc3.enableloop()
+
+        dbbc3.disconnect()
+
+    print ("Bye")
+    sys.exit()
+
+def signal_handler(sig, frame):
+    exitClean()
+
+# handle SIGINT (Ctrl-C)
+signal(SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
@@ -129,8 +146,6 @@ if __name__ == "__main__":
                else:
                     print(e)
                     
-               if 'dbbc3' in vars() or 'dbbc3' in globals():
-                       dbbc3.disconnect()
-                
+               exitClean() 
 
         
