@@ -36,6 +36,8 @@ class DBBC3Config(object):
         # version dict (see DBBC3Commandset version() method for structure)
         self.cmdsetVersion = version
 
+        self.mode = self.cmdsetVersion["mode"]
+
         self.coreBoards = []
         self.host = ""
         self.port = 0
