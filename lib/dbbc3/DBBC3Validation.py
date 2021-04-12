@@ -21,7 +21,7 @@
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
@@ -30,9 +30,89 @@ import sys
 import numpy as np
 from datetime import datetime
 import time
+import importlib
 
+import inspect
+
+
+def getMatchingValidation(mode, majorVersion):
+    '''
+    Determines the validation sub-class to be used for the given mode and major version.
+
+    if mode is not given the default validation class (DBBC3ValidationDefault) is selected
+    if majorVersion is not given the latest implemented version for the activated mode will be used.
+
+    Args:
+        mode (str): the dbbc3 mode (e.g. OCT_D)
+        majorVersion (str): the command set major version
+
+    Returns:
+        str: The class name that implements the valdation methods for the given mode and major version
+
+
+    '''
+
+    # parse all class names of this module
+    current_module = sys.modules[__name__]
+
+
+    pattern = re.compile("DBBC3Validation_%s_(.*)"%(mode))
+
+    versions = []
+    for key in dir(current_module):
+        if isinstance( getattr(current_module, key), type ):
+            match = pattern.match(key)
+            if match:
+                versions.append(match.group(1))
+
+    # no versions found for this mode
+    if len(versions) == 0:
+        return("")
+
+    versions.sort()
+
+    if (majorVersion == ""):
+        # if no specific version was requested return the most recent one
+        pickVer = versions[-1]
+    else:
+        pickVer = versions[0]
+        for i in versions:
+            if int(i) <= int(majorVersion):
+                pickVer = i
+            else:
+                break
+
+    ret = "DBBC3Validation_%s_%s" % (mode,pickVer)
+    print ("Selecting validation version: %s" % ret)
+
+    return(ret)
 
 class DBBC3Validation(object):
+    '''
+    Base class for all DBBC3 validation implementations
+
+    Upon construction the appropriate sub-class implementing the valdation methods for the current version and mode is determined
+    and dynamically attached.
+
+
+    '''
+
+    def __new__(cls, dbbc3, ignoreErrors = False):
+        csClassName = getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
+        if (csClassName == ""):
+            csClassName = "DBBC3ValidationDefault"
+        
+        CsClass = getattr(importlib.import_module("dbbc3.DBBC3Validation"), csClassName)
+
+        return(super(DBBC3Validation, cls).__new__(CsClass))
+
+
+    def __init__(self, dbbc3, ignoreErrors):
+        self.dbbc3 = dbbc3
+        self.ignoreErrors = ignoreErrors
+
+
+class DBBC3ValidationDefault(DBBC3Validation):
 
     OK = "\033[1;32mOK\033[0m"
     INFO = "\033[1;34mINFO\033[0m"
@@ -41,9 +121,9 @@ class DBBC3Validation(object):
     RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
     
     def __init__(self, dbbc3, ignoreErrors = False):
-        self.dbbc3 = dbbc3
-        self.ignoreErrors = ignoreErrors
-        self.latLevel = ""
+        DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
+        
+        self.lastLevel = ""
         self.lastMessage = ""
         self.lstResolution = ""
 
@@ -470,6 +550,27 @@ class DBBC3Validation(object):
                         self.report(self.OK, check, "Reported time: %s" % str(ret))
 
 
+class DBBC3Validation_OCT_D_123(DBBC3ValidationDefault):
+        
+    def __init__(self, dbbc3, ignoreErrors):
+        '''
+        '''
+        DBBC3ValidationDefault.__init__(self, dbbc3, ignoreErrors)
+
+    def validateCalibrationLoop(self, exitOnError=False):
+        '''
+        '''
+
+        check =  "=== Checking that the calibration loop is enabled"
+        resolv = "Start the calibration loop by issuing the enableloop command"
+
+        self.dbbc3.sendCommand("core3hstats=1")
+
+        if not self.dbbc3.lastResponse.startswith("Control loop not running"):
+            self.report(self.OK, check, "The calibration loop is running")
+        else:
+            self.report(self.ERROR, check, "The calibration loop is not running", resolv,exit=exitOnError)
+        
 
 if __name__ == "__main__":
 
@@ -533,4 +634,3 @@ if __name__ == "__main__":
                 dbbc3.disconnect()
                 
 
-        
