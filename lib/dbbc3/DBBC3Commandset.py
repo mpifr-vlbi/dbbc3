@@ -20,7 +20,7 @@ of the DBBC3 for the various modes and versions
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottman[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
@@ -93,11 +93,9 @@ class DBBC3Commandset(object):
     Upon construction the appropriate sub-class implementing the command set for the given version and mode is determined 
     and dynamically attached.
 
-    if mode is not given the default command set (DBBC3CommandsetDefault) is loaded.
     if version is not given the latest implemented version for the activated mode will be used.
 
     Args:
-        mode (str): the dbbc3 mode (e.g. OCT_D)
         version (str): the command set version
 
     '''
@@ -206,8 +204,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
 # GENERAL DBBC3 commands
-    
-
     def version(self):
         ''' Returns the DBBC3 control software version.
 
