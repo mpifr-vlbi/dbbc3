@@ -96,6 +96,7 @@ class DBBC3Commandset(object):
     if version is not given the latest implemented version for the activated mode will be used.
 
     Args:
+        clas (object): the class to which to attach the DBBC3Commandset
         version (str): the command set version
 
     '''

@@ -36,6 +36,11 @@ import inspect
 
 
 class ValidationExit(Exception):
+    '''
+    Exception to be thrown when a validation fails and 
+    the exit parameter for the validation method is 
+    set to True
+    '''
     pass
 
 def getMatchingValidation(mode, majorVersion):
@@ -94,10 +99,8 @@ class DBBC3Validation(object):
     '''
     Base class for all DBBC3 validation implementations
 
-    Upon construction the appropriate sub-class implementing the valdation methods for the current version and mode is determined
-    and dynamically attached.
-
-
+    Upon construction the appropriate sub-class implementing the valdation methods for the
+    current version and mode is determined and returned.
     '''
 
     def __new__(cls, dbbc3, ignoreErrors = False):
@@ -111,11 +114,23 @@ class DBBC3Validation(object):
 
 
     def __init__(self, dbbc3, ignoreErrors):
+        '''
+        Constructor
+        '''
         self.dbbc3 = dbbc3
+        self.ignoreErrors = ignoreErrors
+
+    def setIgnoreErrors(ignoreErrors):
+        '''
+        Setter for the ignoreErrors parameter
+        '''
         self.ignoreErrors = ignoreErrors
 
 
 class DBBC3ValidationDefault(DBBC3Validation):
+    '''
+    Class that contains the validation methods common to all DBBC3 modes
+    '''
 
     OK = "\033[1;32mOK\033[0m"
     INFO = "\033[1;34mINFO\033[0m"
@@ -124,6 +139,9 @@ class DBBC3ValidationDefault(DBBC3Validation):
     RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
     
     def __init__(self, dbbc3, ignoreErrors = False):
+        '''
+        Constructor
+        '''
         DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
         
         self.lastLevel = ""
@@ -131,13 +149,11 @@ class DBBC3ValidationDefault(DBBC3Validation):
         self.lstResolution = ""
 
 
-    def setIgnoreErrors(ignoreErrors):
-        self.ignoreErrors = ignoreErrors
 
     def report(self, level, check="", result="", resolution= "", exit=False):
         '''
         Default method for reporting the outcome of validation actions. 
-        Should be overriding for customization
+        Should be overridden for customization
         '''
 
         print("[%s] - %s - %s" % (level, check, result))
