@@ -20,7 +20,7 @@
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
