@@ -21,7 +21,7 @@ of the DBBC3 for the various modes and versions
 
 __author__ = "Helge Rottmann"
 __copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
-__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
 import dbbc3.DBBC3Util as d3u

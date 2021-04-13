@@ -21,7 +21,7 @@
 
 __author__ = "Helge Rottmann"
 __copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
-__contact__ = "rottman[at]mpifr-bonn.mpg.de"
+__contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
 from datetime import datetime
