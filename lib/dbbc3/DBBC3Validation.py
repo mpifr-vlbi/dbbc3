@@ -127,6 +127,17 @@ class ValidationReport(object):
         
 
 
+class ValidationFactory(object):
+    
+
+    def create(self, dbbc3, ignoreErrors):
+
+        csClassName = getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
+        if (csClassName == ""):
+            csClassName = "DBBC3ValidationDefault"
+        CsClass = getattr(importlib.import_module("dbbc3.DBBC3Validation"), csClassName)
+        return(CsClass(dbbc3,ignoreErrors))
+
 def getMatchingValidation(mode, majorVersion):
     '''
     Determines the validation sub-class to be used for the given mode and major version.
@@ -175,37 +186,9 @@ def getMatchingValidation(mode, majorVersion):
                 break
 
     ret = "DBBC3Validation_%s_%s" % (mode,pickVer)
-    print ("Selecting validation version: %s" % ret)
-
     return(ret)
 
-class DBBC3Validation(object):
-    '''
-    Base class for all DBBC3 validation implementations
-
-    Upon construction the appropriate sub-class implementing the valdation methods for the
-    current version and mode is determined and returned.
-    '''
-
-    #def __new__(cls, dbbc3, ignoreErrors = False):
-    def __new__(cls, dbbc3, ignoreErrors, *args, **kwargs):
-        csClassName = getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
-        if (csClassName == ""):
-            csClassName = "DBBC3ValidationDefault"
-        
-        CsClass = getattr(importlib.import_module("dbbc3.DBBC3Validation"), csClassName)
-
-        return(super(DBBC3Validation, cls).__new__(CsClass, dbbc3, ignoreErrors, args, kwargs))
-
-
-    ##def __init__(self, dbbc3, ignoreErrors):
-    #    '''
-    #    Constructor
-    #    '''
-
-
-
-class DBBC3ValidationDefault(DBBC3Validation):
+class DBBC3ValidationDefault(object):
     '''
     Class that contains the validation methods common to all DBBC3 modes
     '''
@@ -223,7 +206,7 @@ class DBBC3ValidationDefault(DBBC3Validation):
         self.dbbc3 = dbbc3
         self.ignoreErrors = ignoreErrors
         self._clearResult()
-        DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
+        #DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
 
     def _clearResult (self):
     
