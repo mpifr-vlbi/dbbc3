@@ -6,7 +6,7 @@ import sys
 import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
-from dbbc3.DBBC3Validation import DBBC3Validation
+from dbbc3.DBBC3Validation import ValidationFactory
 from cmd import Cmd
 from signal import signal, SIGINT
 
@@ -55,7 +55,7 @@ def reportResult(rep):
 
 class Prompt(Cmd):
 
-    def __init__(self, dbbc3, boards):
+    def __init__(self, dbbc3, boards, val):
         Cmd.__init__(self)
         self.intro = 'Welcome to the DBBC3.  Type help or ? to list commands'
         self.prompt = '(dbbc3ctl): '
@@ -63,7 +63,7 @@ class Prompt(Cmd):
         self.cmdChains = []
         self.cmdList = []
         self.dbbc3 = dbbc3
-        self.val = DBBC3Validation(self.dbbc3, ignoreErrors=True)
+        self.val = val
         self.boards = boards
         self.parseCmdTree(commandTree)
         #print (self.cmdChains)
@@ -200,12 +200,12 @@ class Prompt(Cmd):
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                reportResult(val.validateBitStatistics(board))
+                reportResult(self.val.validateBitStatistics(board))
         elif fields[0] == "pps":
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                reportResult(val.validatePPS(board))
+                reportResult(self.val.validatePPS(board))
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
@@ -255,7 +255,9 @@ if __name__ == "__main__":
                 ver = dbbc3.version()
                 print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
-                val = DBBC3Validation(dbbc3, ignoreErrors=True)
+                valFactory = ValidationFactory()
+                val = valFactory.create(dbbc3, True)
+                #val = DBBC3Validation(dbbc3, ignoreErrors=True)
 
                 # for OCT mode disable the calibration loop to speed up processing
                 if (dbbc3.config.mode.startswith("OCT")):
@@ -271,7 +273,7 @@ if __name__ == "__main__":
 
                 print ("=== Using boards: %s" % str(useBoards))
 
-                prompt = Prompt(dbbc3, useBoards)
+                prompt = Prompt(dbbc3, useBoards, val)
 
                 if (args.command):
                     for command in args.command:
