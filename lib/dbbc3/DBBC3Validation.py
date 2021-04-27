@@ -219,29 +219,6 @@ class DBBC3ValidationDefault(object):
         '''
         self.ignoreErrors = ignoreErrors
 
-    def report(self, level, check="", result="", resolution= "", exit=False):
-        '''
-        Default method for reporting the outcome of validation actions. 
-        Should be overridden for customization
-        '''
-
-        res = {}
-        res["check"] = check
-        res["result"] = result
-        res["resolution"] = resolution
-        res["level"] = level
-
-        self.lastResult.append(res)
-
-        #print("[%s] - %s - %s" % (level, check, result))
-        #if resolution != "":
-        #        print ("[%s] \033[1;34m%s\033[0m" % (self.RESOLUTION, resolution))
-#
-#        if exit:
-#            if (self.ignoreErrors):
-#                print ("Continuing because ignoreErrors was enabled")
-#            else:
-#                raise ValidationExit
 
     def validateIFLevel(self, board, downConversion=True, agc=True):
         '''
@@ -268,11 +245,9 @@ class DBBC3ValidationDefault(object):
                 errorCount +=1
         if ret['inputType'] != 2 and downConversion==True:
                 msg = "Wrong IF input setting. Is %d, should be 2 to enable downconversion" % ret['inputType']
-                self.report(self.ERROR, check, "Wrong IF input setting. Is %d, should be 2 to enable downconversion" % ret['inputType'], exit=True)
                 rep.add(Item(Item.ERROR, check, msg, "", Item.FAIL, True))
                 errorCount +=1
         if ret['mode'] != "agc" and agc==True:
-                #self.report(self.ERROR, check, "Automatic gain control is disabled", exit=True)
                 rep.add(Item(Item.ERROR, check, "Automatic gain control is disabled", "", Item.FAIL, True))
                 errorCount +=1
         if ret['attenuation'] < 20:
@@ -285,7 +260,6 @@ class DBBC3ValidationDefault(object):
                 errorCount +=1
         if errorCount == 0:
             msg = "count = %d" % (ret['count'])
-            #self.report(self.OK, check, "count = %d" % (ret['count']))
             rep.add(Item(Item.INFO, check, msg, state=Item.OK))
         
         return(rep)
@@ -302,7 +276,6 @@ class DBBC3ValidationDefault(object):
 
         if (self.dbbc3.checkphase()):
                 rep.add(Item(Item.INFO, check, "", state=Item.OK))
-#                self.report(self.OK, check, "OK")
         else:
                 msg = "Restart the DBBC3 control software (no reload of firmware, re-initialize)\n"
                 msg += "If the problem persists retry restart up to 5 times.\n"
@@ -310,7 +283,6 @@ class DBBC3ValidationDefault(object):
                 msg += "If the problem persists do a full hardware restart."
 
                 rep.add(Item(Item.ERROR, check, self.dbbc3.lastResponse, msg, state=Item.FAIL, exit=True))
-#                self.report(self.ERROR, check, self.dbbc3.lastResponse, msg, exit=True)
 
         return(rep)
 
@@ -337,7 +309,6 @@ class DBBC3ValidationDefault(object):
         if pow is None:
                 self._resetIFSettings( board, retOrig)
                 rep.add(Item(Item.ERROR, check, self.dbbc3.lastResponse, "", state=Item.FAIL, exit=True))
-                #self.report(self.ERROR, check, self.dbbc3.lastResponse, exit=True)
 
         mean = np.mean(pow)
         if (mean == 0):
@@ -347,7 +318,6 @@ class DBBC3ValidationDefault(object):
 
                 self._resetIFSettings( board, retOrig)
                 rep.add(Item(Item.ERROR, check, "Sampler powers are 0 for board %s" % board, resolv, state=Item.FAIL, exit=True))
-                #self.report(self.ERROR, check, "Sampler powers are 0 for board %s" % board, resolv, exit=True)
         #if self.verbose:
         #       print "power values=%s mean=%f" % (str(pow), mean)
 
@@ -362,7 +332,6 @@ class DBBC3ValidationDefault(object):
                 resolv += "If the problem persists retry restart up to 5 times.\n"
                 resolv += "If the problem persists do a full hardware restart."
                 rep.add(Item(Item.ERROR, check, msg,  resolv, state=Item.FAIL, exit=True))
-                #self.report(self.ERROR, check, msg , resolv, exit=True)
                 errors += 1
         elif maxdev > 0.05:
                 msg = "Large differences (>5%%) in sampler powers for board=%s. %s %f%%" % (board, str(pow), maxdev*100)
@@ -370,12 +339,10 @@ class DBBC3ValidationDefault(object):
                 resolv += "If the problem persists retry restart up to 5 times.\n"
                 resolv += "Possibly do a gain calibration (cal_delay=boardNum). Consult the documentation"
                 rep.add(Item(Item.WARN, check, msg, resolv, state=Item.FAIL, exit=True))
-                #self.report(self.WARN, check, msg , resolv)
                 errors += 1
 
         if errors == 0:
                 rep.add(Item(Item.INFO, check, "sampler powers = %s" % (pow), "", state=Item.OK))
-                self.report(self.OK, check,  "sampler powers = %s" % (pow))
 
         # Finally reset the dbbcif settings to their original values
         self._resetIFSettings( board, retOrig)
@@ -428,7 +395,6 @@ class DBBC3ValidationDefault(object):
         #        print (self.dbbc3.lastResponse)
                 if bstats is None:
                         rep.add(Item(Item.ERROR, check, self.dbbc3.lastResponse, "", state=Item.FAIL, exit=True))
-#                        self.report (self.ERROR, check, self.dbbc3.lastResponse, exit=True)
 
                 # Checking difference lower against upper half
                 try:
@@ -439,7 +405,6 @@ class DBBC3ValidationDefault(object):
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
         
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
-                        #self.report(self.ERROR, check, msg, resolv, exit=True)
                         continue
 
                         
@@ -451,7 +416,6 @@ class DBBC3ValidationDefault(object):
                         resolv += "If the problem persists do a full hardware restart."
 
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
-                        #self.report(self.ERROR, check, msg, resolv, exit=True)
                 elif dev > 0.05:
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
@@ -460,12 +424,10 @@ class DBBC3ValidationDefault(object):
                         resolv += "If the problem persists do a full hardware restart."
                 
                         rep.add(Item(Item.WARN, check, msg, resolv, state=Item.FAIL, exit=False))
- #                       self.report(self.WARN, check, msg, resolv, exit=False)
 
                 if errorCount == 0:
                         
                         rep.add(Item(Item.INFO, check, "Asymmetry = %f%%" % (dev*100), "", state=Item.OK))
-                        #self.report(self.OK, check, "Asymmetry = %f%%" % (dev*100))
         return(rep)
 
     def validateSamplerOffsets(self, boardNum):
@@ -475,7 +437,6 @@ class DBBC3ValidationDefault(object):
         board = self.dbbc3.boardToChar(boardNum)
 
         
-        #self.report(self.INFO, "===Checking sampler offsets for board %s" % (board), "" , "")
         check = "===Checking sampler offsets for board %s" % (board)
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
@@ -496,7 +457,6 @@ class DBBC3ValidationDefault(object):
                 break
             elif (count == 10):
                 rep.add(Item(Item.WARN, check, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "", state=Item.FAIL))
-                #self.report(self.WARN, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "")
                 break
             else:
                 ret = self.dbbc3.dbbcif(board, 2, attenuation)
@@ -509,7 +469,6 @@ class DBBC3ValidationDefault(object):
             time.sleep(1)
             ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
         # if power cannot be regulated (e.g. no IF connected) give up
-#       self.report(self.WARN, "Too little IF power to perform
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, 2, "man")
@@ -529,7 +488,6 @@ class DBBC3ValidationDefault(object):
                 if bstats is None:
                         self._resetIFSettings(board, retOrig)
                         rep.add(Item(Item.ERROR, check, self.dbbc3.lastResponse, "", state=Item.FAIL, exit=True))
-                        #self.report (self.ERROR, check, self.dbbc3.lastResponse, exit=True)
 
                 # Checking difference lower against upper half
                 try:
@@ -541,7 +499,6 @@ class DBBC3ValidationDefault(object):
         
                         self._resetIFSettings(board, retOrig)
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
-                        #self.report(self.ERROR, check, msg, resolv, exit=True)
                         continue
 
                         
@@ -554,7 +511,6 @@ class DBBC3ValidationDefault(object):
 
                         self._resetIFSettings(board, retOrig)
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
-                        #self.report(self.ERROR, check, msg, resolv, exit=True)
                 elif dev > 0.05:
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
@@ -565,11 +521,9 @@ class DBBC3ValidationDefault(object):
                         self.dbbc3.dbbcif(board)
                         #print (self.dbbc3.lastResponse)
                         rep.add(Item(Item.WARN, check, msg, resolv, state=Item.FAIL, exit=False))
-                        #self.report(self.WARN, check, msg, resolv, exit=False)
 
                 if errorCount == 0:
                         rep.add(Item(Item.INFO, check, "Asymmetry = %f%%" % (dev*100), "", state=Item.OK))
-                        #self.report(self.OK, check, "Asymmetry = %f%%" % (dev*100))
 
         # Finally reset the dbbcif settings to their original values
         self._resetIFSettings(board, retOrig)
@@ -625,16 +579,13 @@ class DBBC3ValidationDefault(object):
                 msg = "Synthesizer of board %s is tuned to %d MHz but should be %d MHz" % (board, freq['actual'], targetFreq)
                 resolv = "Check your hardware"
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-#                self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
         # check freq against the user supplied value
         elif ((freq['actual'] != targetFreq) and (targetFreq > 0)):
                 msg = "Synthesizer of board %s is tuned to %d MHz but according to config it should be %d MHz" % (board, freq['actual'], targetFreq)
                 resolv = "Check the tuning frequencies in the dbbc3 config file"
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-#                self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
         else:
                 report.add(Item(Item.INFO, check, "Freq=%d MHz" % freq['actual'], "", Item.OK))
-                #self.report(self.OK, check, "Freq=%d MHz" % freq['actual'])
 
         return (report)
 
@@ -659,17 +610,14 @@ class DBBC3ValidationDefault(object):
                 msg = "The following boards report pps_delay=0: %s" % str(inactive)
                 resolv = "Check if these boards have been disabled in the DBBC3 config file"
                 report.add(Item(Item.WARN, check, msg, resolv, Item.FAIL, exit=False))
-                #self.report (self.WARN, check, msg, resolv, exit=False)
         if len(notSynced) > 0:
                 msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
                 resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
                 resolv += "If the problem persists probably you have a hardware issue."
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-                #self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
 
         if len(inactive) ==0 and len(notSynced) ==0:
                 report.add(Item(Item.INFO, check, "PPS delays: %s ns" % delays, "", Item.OK))
-                #self.report(self.OK, check, "PPS delays: %s" % delays)
 
         return (report)
 
@@ -695,10 +643,8 @@ class DBBC3ValidationDefault(object):
             resolv = "This is a bug. Contact the maintainer of the DBBC3 software"
                 
             report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-            #self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
         else:
             report.add(Item(Item.INFO, check, "PPS delays (1st block / 2nd block)  %s ns", "", Item.OK))
-            #self.report(self.OK, check, "PPS delays (1st block / 2nd block)  %s ns" % ret)
 
         return(report)
 
@@ -718,7 +664,6 @@ class DBBC3ValidationDefault(object):
         if not ret:
                 msg =   "No timestamp could be obtained for core board %s" % board.upper()
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-                #self.report (self.ERROR, check, msg, resolv, exit=exitOnError)
         else:
                 delta = datetime.utcnow() - ret
                 if delta.seconds > 10:
@@ -726,10 +671,8 @@ class DBBC3ValidationDefault(object):
                         resolv += "Run core3h_timesync and re-check\n"
                         resolv += "Check that the local computer is synchronised via NTP\n"
                         report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-                        #self.report (self.ERROR,check,  msg, resolv, exit=exitOnError)
                 else:
                         report.add(Item(Item.INFO, check, "Reported time: %s" % str(ret), "", Item.OK))
-                        #self.report(self.OK, check, "Reported time: %s" % str(ret))
 
         return(report)
 
@@ -753,10 +696,8 @@ class DBBC3Validation_OCT_D_123(DBBC3ValidationDefault):
 
         if not self.dbbc3.lastResponse.startswith("Control loop not running"):
             report.add(Item(Item.INFO, check, "The calibration loop is running", "", Item.OK))
-            #self.report(self.OK, check, "The calibration loop is running")
         else:
             report.add(Item(Item.ERROR, check,"The calibration loop is not running", "", Item.FAIL, exit=exitOnError))
-            #self.report(self.ERROR, check, "The calibration loop is not running", resolv,exit=exitOnError)
         
 
 if __name__ == "__main__":
