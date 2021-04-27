@@ -100,9 +100,11 @@ class Prompt(Cmd):
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
             if subcommand == "lock":
-                self.val.validateSynthesizerLock(board)
+                ret = self.val.validateSynthesizerLock(board)
             elif subcommand == "freq":
-                self.val.validateSynthesizerFreq(board)
+                ret = self.val.validateSynthesizerFreq(board)
+
+           reportResult(ret) 
         
     def _checkRecorder(self, args):
         if len(args) != 3:
@@ -119,7 +121,7 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            self.val.validateSamplerPower(board)
+            reportResult(self.val.validateSamplerPower(board))
     def _checkSamplerOffset(self, fields):
 
         boards = self.boards
@@ -128,7 +130,7 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            self.val.validateSamplerOffsets(board)
+            reportResults(self.val.validateSamplerOffsets(board))
         
 
     def do_check(self, args):
@@ -143,16 +145,16 @@ class Prompt(Cmd):
                 return
 
             if fields[1] == "phase":
-                self.val.validateSamplerPhases()
+                reportResult(self.val.validateSamplerPhases())
             elif fields[1] == "offset":
-                self._checkSamplerOffset(fields)
+                ret = self._checkSamplerOffset(fields)
             elif fields[1] == "gain":
-                self._checkSamplerGain(fields)
+                reportResult(self._checkSamplerGain(fields))
         elif fields[0] == "timesync":
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                self.val.validateTimesync(board)
+                reportResult(self.val.validateTimesync(board))
         elif fields[0] == "synthesizer":
             if len(fields) == 3:
                 boards = self._resolveBoards(fields[2])
@@ -161,9 +163,10 @@ class Prompt(Cmd):
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                val.validateBitStatistics(board)
+                reportResult(val.validateBitStatistics(board))
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
+        
         
     def do_quit(self,args ):
         exitClean() 
