@@ -52,8 +52,8 @@ if __name__ == "__main__":
                     
         finally:
                if 'dbbc3' in vars() or 'dbbc3' in globals():
-                       print ("Disconnecting")
                        dbbc3.disconnect()
+                       print ("===Disconnected")
                 
 
         
