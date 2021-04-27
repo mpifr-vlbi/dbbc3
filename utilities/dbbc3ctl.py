@@ -12,9 +12,46 @@ from signal import signal, SIGINT
 
 from time import sleep
 
-checkTree = {"recorder":"@host @interface", "system":"#board", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board" }
+checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"#board" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
+
+
+def reportResult(rep):
+    
+    if not rep:
+        return
+
+#
+    #OK = "\033[1;32mOK\033[0m"
+    #INFO = "\033[1;34mINFO\033[0m"
+    #WARN = "\033[1;35mWARN\033[0m"
+    #ERROR = "\033[1;31mERROR\033[0m"
+    #RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
+
+    for res in rep.result:
+        if ("OK" in res.state):
+            state = "\033[1;32m{0}\033[0m".format(res.state)
+        elif ("FAIL" in res.state):
+            state = "\033[1;31m{0}\033[0m".format(res.state)
+        
+        if ("ERROR" in res.level):
+            level = "\033[1;31m{0}\033[0m".format(res.level)
+        elif ("WARN" in res.level):
+            level = "\033[1;35m{0}\033[0m".format(res.level)
+
+        if "INFO" in res.level:
+            print("[{}] {} - {}".format(state,  res.action, res.message))
+        elif ("WARN" in res.level ):
+            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+        elif ("ERROR" in res.level ):
+            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+
+        if len(res.resolution) > 0:
+            print("\033[1;34m[{}] {}\033[0m".format("RESOLUTION",  res.resolution))
+        
+
+    
 
 class Prompt(Cmd):
 
@@ -104,7 +141,7 @@ class Prompt(Cmd):
             elif subcommand == "freq":
                 ret = self.val.validateSynthesizerFreq(board)
 
-           reportResult(ret) 
+            reportResult(ret)
         
     def _checkRecorder(self, args):
         if len(args) != 3:
@@ -130,7 +167,7 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            reportResults(self.val.validateSamplerOffsets(board))
+            reportResult(self.val.validateSamplerOffsets(board))
         
 
     def do_check(self, args):
@@ -164,12 +201,18 @@ class Prompt(Cmd):
                 boards = self._resolveBoards(fields[1])
             for board in boards:
                 reportResult(val.validateBitStatistics(board))
+        elif fields[0] == "pps":
+            if len(fields) == 2:
+                boards = self._resolveBoards(fields[1])
+            for board in boards:
+                reportResult(val.validatePPS(board))
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
         
     def do_quit(self,args ):
         exitClean() 
+
 
 
 def exitClean():
