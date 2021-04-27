@@ -37,16 +37,16 @@ class Prompt(Cmd):
           if isinstance(v, str) or isinstance(v, int) or isinstance(v, float):
             self.path.append(k)
             if (v =="#board"):
-                self.cmdChains.append("{} {}".format(" ".join(self.path), "all")) 
-                self.cmdList.append(("{} [all,{}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
+                self.cmdChains.append("{0} {1}".format(" ".join(self.path), "all")) 
+                self.cmdList.append(("{0} [all,{1}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
-                    self.cmdChains.append("{} {}".format(" ".join(self.path), board))
+                    self.cmdChains.append("{0} {1}".format(" ".join(self.path), board))
                 self.path.pop()
             # parameters 
             elif (v.startswith('@')):
                 subs = v.split(' ')
                 self.cmdChains.append(" ".join(self.path))
-                self.cmdList.append("{} {} ".format(" ".join(self.path)," ".join(subs)))
+                self.cmdList.append("{0} {1} ".format(" ".join(self.path)," ".join(subs)))
                 self.path.pop()
                         
           elif v is None:
@@ -58,7 +58,7 @@ class Prompt(Cmd):
             self.parseCmdTree(v)
             self.path.pop()
           else:
-            print ("###Type {} not recognized: {}.{}={}".format(type(v), ".".join(self.path),k, v))
+            print ("###Type {} not recognized: {0}.{1}={2}".format(type(v), ".".join(self.path),k, v))
 
         
     def completenames(self, text, *ignored):
@@ -238,12 +238,13 @@ if __name__ == "__main__":
 
         except Exception as e:
            
+           print (e)
            # make compatible with python 2 and 3
            if hasattr(e, 'message'):
-                print(e.message)
+                print("An error has occured: {0}".format(e.message))
            else:
                 print(e)
-
+#
            exitClean()
                     
                 

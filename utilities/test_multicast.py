@@ -28,7 +28,10 @@ mc = DBBC3Multicast(args.group, args.port, args.timeout)
 
 while(True):
     print ("polling")
-    ret = mc.poll()
+    mc.poll()
+
+    ret = mc.message
+
     out = json.dumps(ret, indent=2, sort_keys=True,separators=(', ', ': '))
     print (out)
 

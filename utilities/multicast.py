@@ -22,7 +22,7 @@ mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 while True:
-    print(sock.recv(1024))
+    #print(sock.recv(1024))
     valueArray = sock.recv(16384)
     offset = 0
     versionString = valueArray[offset:offset+32].decode("utf-8") 
