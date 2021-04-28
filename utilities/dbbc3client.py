@@ -26,19 +26,21 @@ if __name__ == "__main__":
                 ver = dbbc3.version()
                 print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
-#                readline.read_history_file(histfile)
-                # default history len is -1 (infinite), which may grow unruly
-#                readline.set_history_length(1000)
-                readline.set_auto_history(1)
-
-
                 while command.lower().strip() != 'quit':
-                        command= input(">> ")
-                        if (command.strip() == "exit"):
-                            print ("Type 'quit' to exit")
-                        else:
-                            dbbc3.sendCommand(command)
-                            print (dbbc3.lastResponse)
+                    # python2/python3 compatibility workaround
+                    try:
+                        input = raw_input
+                    except NameError:
+                        pass
+
+                    command= input(">> ")
+                    if (command.strip() == "exit"):
+                        print ("Type 'quit' to exit")
+                    elif (command.strip() == "quit"):
+                        sys.exit()
+                    else:
+                        dbbc3.sendCommand(command)
+                        print (dbbc3.lastResponse)
 
 
         except Exception as e:
@@ -48,8 +50,10 @@ if __name__ == "__main__":
                else:
                     print(e)
                     
+        finally:
                if 'dbbc3' in vars() or 'dbbc3' in globals():
                        dbbc3.disconnect()
+                       print ("===Disconnected")
                 
 
         

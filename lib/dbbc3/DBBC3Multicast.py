@@ -13,6 +13,7 @@ class DBBC3Multicast(object):
         self.group = group
         self.port = port
         self.message = {} 
+        self.activeIFs = []
 
         self._connect(timeout)
 
@@ -34,7 +35,7 @@ class DBBC3Multicast(object):
     def _connect(self, timeout):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.settimeout(timeout)
+        #self.sock.settimeout(timeout)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         self.sock.bind((self.group, self.port))
@@ -72,22 +73,25 @@ class DBBC3Multicast(object):
         #self.message["minorVersion"] = int(datetime.strptime(amended.strip().encode("utf-8"), '%B %d %Y').strftime('%y%m%d'))
         self.message["minorVersion"] = int(datetime.strptime(amended.strip(), '%B %d %Y').strftime('%y%m%d'))
         
-    def _parseGcomo(self, message):
+    def _parseGcomo(self, mc):
 #OK
         for i in range(0,8):
             gcomo = {}
-            shortArray = struct.unpack('HHH', message[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
-            if message[32+i*8] == 0:
+            shortArray = struct.unpack('HHH', mc[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
+            #print ("SHORTARRAY: ", shortArray)
+            if mc[self.gcomoOffset+i*8] == '\x00':
                 gcomo["mode"] = "man"
-        #        print(str(i+1) + " man" + str(shortArray))
             else:
                 gcomo["mode"] = "agc"
-        #        print(str(i+1) + " agc" + str(shortArray))
             gcomo["attenuation"] = int(shortArray[0])
             gcomo["count"] = int(shortArray[1])
             gcomo["target"] = int(shortArray[2])
 
+
             self.message["if_"+str(i+1)] = gcomo
+
+            if (gcomo["count"] != 0):
+                self.activeIFs.append(str(i+1))
             
 
     def _parseDC(self,message):
@@ -198,7 +202,10 @@ class DBBC3Multicast(object):
         # BBC Values
         offset = self.bbcOffset
         for i in range(0,128):
-            ifNum = int(math.floor(i /  16)) + 1
+            if i < 64:
+                    ifNum = int(math.floor(i /  8)) + 1
+            else:
+                    ifNum = int(math.floor(i /  72)) + 1
             bbc= {}
             bbcValue = struct.unpack('IBBBBIIIIHHHHHHHH', message[offset:offset+40])
             offset = offset + 40
@@ -311,6 +318,7 @@ class DBBC3Multicast(object):
         '''
 
         self.message = {}
+        self.activeIFs = []
 
         valueArray = self.sock.recv(16384)
 

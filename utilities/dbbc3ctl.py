@@ -6,19 +6,46 @@ import sys
 import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
-from dbbc3.DBBC3Validation import DBBC3Validation
+from dbbc3.DBBC3Validation import ValidationFactory
 from cmd import Cmd
 from signal import signal, SIGINT
 
 from time import sleep
 
-checkTree = {"recorder":"@host @interface", "system":"#board", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board" }
+checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"#board" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
 
+
+def reportResult(rep):
+    
+    if not rep:
+        return
+
+    for res in rep.result:
+        if ("OK" in res.state):
+            state = "\033[1;32m{0}\033[0m".format(res.state)
+        elif ("FAIL" in res.state):
+            state = "\033[1;31m{0}\033[0m".format(res.state)
+        
+        if ("ERROR" in res.level):
+            level = "\033[1;31m{0}\033[0m".format(res.level)
+        elif ("WARN" in res.level):
+            level = "\033[1;35m{0}\033[0m".format(res.level)
+
+        if "INFO" in res.level:
+            print("[{0}] {1} - {2}".format(state,  res.action, res.message))
+        elif ("WARN" in res.level ):
+            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+        elif ("ERROR" in res.level ):
+            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+
+        if len(res.resolution) > 0:
+            print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
+
 class Prompt(Cmd):
 
-    def __init__(self, dbbc3, boards):
+    def __init__(self, dbbc3, boards, val):
         Cmd.__init__(self)
         self.intro = 'Welcome to the DBBC3.  Type help or ? to list commands'
         self.prompt = '(dbbc3ctl): '
@@ -26,7 +53,7 @@ class Prompt(Cmd):
         self.cmdChains = []
         self.cmdList = []
         self.dbbc3 = dbbc3
-        self.val = DBBC3Validation(self.dbbc3, ignoreErrors=True)
+        self.val = val
         self.boards = boards
         self.parseCmdTree(commandTree)
         #print (self.cmdChains)
@@ -37,16 +64,16 @@ class Prompt(Cmd):
           if isinstance(v, str) or isinstance(v, int) or isinstance(v, float):
             self.path.append(k)
             if (v =="#board"):
-                self.cmdChains.append("{} {}".format(" ".join(self.path), "all")) 
-                self.cmdList.append(("{} [all,{}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
+                self.cmdChains.append("{0} {1}".format(" ".join(self.path), "all")) 
+                self.cmdList.append(("{0} [all,{1}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
-                    self.cmdChains.append("{} {}".format(" ".join(self.path), board))
+                    self.cmdChains.append("{0} {1}".format(" ".join(self.path), board))
                 self.path.pop()
             # parameters 
             elif (v.startswith('@')):
                 subs = v.split(' ')
                 self.cmdChains.append(" ".join(self.path))
-                self.cmdList.append("{} {} ".format(" ".join(self.path)," ".join(subs)))
+                self.cmdList.append("{0} {1} ".format(" ".join(self.path)," ".join(subs)))
                 self.path.pop()
                         
           elif v is None:
@@ -58,7 +85,7 @@ class Prompt(Cmd):
             self.parseCmdTree(v)
             self.path.pop()
           else:
-            print ("###Type {} not recognized: {}.{}={}".format(type(v), ".".join(self.path),k, v))
+            print ("###Type {} not recognized: {0}.{1}={2}".format(type(v), ".".join(self.path),k, v))
 
         
     def completenames(self, text, *ignored):
@@ -100,9 +127,11 @@ class Prompt(Cmd):
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
             if subcommand == "lock":
-                self.val.validateSynthesizerLock(board)
+                ret = self.val.validateSynthesizerLock(board)
             elif subcommand == "freq":
-                self.val.validateSynthesizerFreq(board)
+                ret = self.val.validateSynthesizerFreq(board)
+
+            reportResult(ret)
         
     def _checkRecorder(self, args):
         if len(args) != 3:
@@ -119,7 +148,7 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            self.val.validateSamplerPower(board)
+            reportResult(self.val.validateSamplerPower(board))
     def _checkSamplerOffset(self, fields):
 
         boards = self.boards
@@ -128,7 +157,7 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            self.val.validateSamplerOffsets(board)
+            reportResult(self.val.validateSamplerOffsets(board))
         
 
     def do_check(self, args):
@@ -143,16 +172,16 @@ class Prompt(Cmd):
                 return
 
             if fields[1] == "phase":
-                self.val.validateSamplerPhases()
+                reportResult(self.val.validateSamplerPhases())
             elif fields[1] == "offset":
-                self._checkSamplerOffset(fields)
+                ret = self._checkSamplerOffset(fields)
             elif fields[1] == "gain":
-                self._checkSamplerGain(fields)
+                reportResult(self._checkSamplerGain(fields))
         elif fields[0] == "timesync":
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                self.val.validateTimesync(board)
+                reportResult(self.val.validateTimesync(board))
         elif fields[0] == "synthesizer":
             if len(fields) == 3:
                 boards = self._resolveBoards(fields[2])
@@ -161,12 +190,19 @@ class Prompt(Cmd):
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
             for board in boards:
-                val.validateBitStatistics(board)
+                reportResult(self.val.validateBitStatistics(board))
+        elif fields[0] == "pps":
+            if len(fields) == 2:
+                boards = self._resolveBoards(fields[1])
+            for board in boards:
+                reportResult(self.val.validatePPS(board))
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
+        
     def do_quit(self,args ):
         exitClean() 
+
 
 
 def exitClean():
@@ -209,7 +245,9 @@ if __name__ == "__main__":
                 ver = dbbc3.version()
                 print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
-                val = DBBC3Validation(dbbc3, ignoreErrors=True)
+                valFactory = ValidationFactory()
+                val = valFactory.create(dbbc3, True)
+                #val = DBBC3Validation(dbbc3, ignoreErrors=True)
 
                 # for OCT mode disable the calibration loop to speed up processing
                 if (dbbc3.config.mode.startswith("OCT")):
@@ -225,7 +263,7 @@ if __name__ == "__main__":
 
                 print ("=== Using boards: %s" % str(useBoards))
 
-                prompt = Prompt(dbbc3, useBoards)
+                prompt = Prompt(dbbc3, useBoards, val)
 
                 if (args.command):
                     for command in args.command:
@@ -235,12 +273,13 @@ if __name__ == "__main__":
 
         except Exception as e:
            
+           print (e)
            # make compatible with python 2 and 3
            if hasattr(e, 'message'):
-                print(e.message)
+                print("An error has occured: {0}".format(e.message))
            else:
                 print(e)
-
+#
            exitClean()
                     
                 
