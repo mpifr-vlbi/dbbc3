@@ -27,14 +27,14 @@ def reportResult(rep):
             level = "\033[1;35m{0}\033[0m".format(res.level)
 
         if "INFO" in res.level:
-            print("[{}] {} - {}".format(state,  res.action, res.message))
+            print("[{0}] {1} - {2}".format(state,  res.action, res.message))
         elif ("WARN" in res.level ):
-            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
         elif ("ERROR" in res.level ):
-            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
 
         if len(res.resolution) > 0:
-            print("\033[1;34m[{}] {}\033[0m".format("RESOLUTION",  res.resolution))
+            print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
 
 parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in DDC_U mode")
 
