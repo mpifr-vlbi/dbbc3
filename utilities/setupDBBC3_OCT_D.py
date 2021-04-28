@@ -4,7 +4,7 @@ import argparse
 import subprocess
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
-from dbbc3.DBBC3Validation import DBBC3Validation
+from dbbc3.DBBC3Validation import ValidationFactory
 import dbbc3.DBBC3Util as d3u
 import re
 import sys
@@ -13,6 +13,33 @@ import traceback
 from signal import signal, SIGINT
 
 from time import sleep
+
+def reportResult(rep):
+
+    if not rep:
+        return
+
+    for res in rep.result:
+        if ("OK" in res.state):
+            state = "\033[1;32m{0}\033[0m".format(res.state)
+        elif ("FAIL" in res.state):
+            state = "\033[1;31m{0}\033[0m".format(res.state)
+
+        if ("ERROR" in res.level):
+            level = "\033[1;31m{0}\033[0m".format(res.level)
+        elif ("WARN" in res.level):
+            level = "\033[1;35m{0}\033[0m".format(res.level)
+
+        if "INFO" in res.level:
+            print("[{}] {} - {}".format(state,  res.action, res.message))
+        elif ("WARN" in res.level ):
+            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+        elif ("ERROR" in res.level ):
+            print("[{}]/[{}] {} - {}".format(state, level, res.action, res.message))
+
+        if len(res.resolution) > 0:
+            print("\033[1;34m[{}] {}\033[0m".format("RESOLUTION",  res.resolution))
+
 
 def exitClean():
     if 'dbbc3' in vars() or 'dbbc3' in globals():
@@ -53,7 +80,9 @@ if __name__ == "__main__":
                 ver = dbbc3.version()
                 print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
-                val = DBBC3Validation(dbbc3, ignoreErrors=args.ignoreErrors)
+                #val = DBBC3Validation(dbbc3, ignoreErrors=args.ignoreErrors)
+                val = ValidationFactory().create(dbbc3, args.ignoreErrors)
+                #val = valFactory.create(dbbc3, args.ignoreErrors)
 
                 print ("=== Disabling calibration loop")
                 dbbc3.disableloop()
@@ -80,7 +109,7 @@ if __name__ == "__main__":
 
 
                 print ("=== Checking sampler phase synchronisation")
-                val.validateSamplerPhases()
+                reportResult(val.validateSamplerPhases())
 
                 print ("=== Checking state of recorder interfaces" )
                 print ("=== recorder1 eth3: %s" % d3u.checkRecorderInterface ("recorder1", "eth3"))
@@ -94,13 +123,13 @@ if __name__ == "__main__":
                 
                 for board in useBoards:
 
-                    val.validateTimesync(board)
+                    reportResult(val.validateTimesync(board))
                     #print ("IF before offset check", dbbc3.dbbcif(board))
-                    val.validateSynthesizerLock(board)
-                    val.validateSynthesizerFreq(board)
-                    val.validateIFLevel(board)
-                    val.validateSamplerPower(board)
-                    val.validateSamplerOffsets(board)
+                    reportResult(val.validateSynthesizerLock(board))
+                    reportResult(val.validateSynthesizerFreq(board))
+                    reportResult(val.validateIFLevel(board))
+                    reportResult(val.validateSamplerPower(board))
+                    reportResult(val.validateSamplerOffsets(board))
                #     print ("IF after offset check", dbbc3.dbbcif(board))
 
 
@@ -129,7 +158,7 @@ if __name__ == "__main__":
 
                 print ("=== Now re-checking the bit statistics (should be proper 2-bit)")
                 for board in useBoards:
-                    val.validateBitStatistics(board)
+                    reportResult(val.validateBitStatistics(board))
 
                 print ("=== Setting up calibration loop")
                 dbbc3.enablecal()
