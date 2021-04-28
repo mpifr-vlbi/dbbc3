@@ -22,13 +22,6 @@ def reportResult(rep):
     if not rep:
         return
 
-#
-    #OK = "\033[1;32mOK\033[0m"
-    #INFO = "\033[1;34mINFO\033[0m"
-    #WARN = "\033[1;35mWARN\033[0m"
-    #ERROR = "\033[1;31mERROR\033[0m"
-    #RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
-
     for res in rep.result:
         if ("OK" in res.state):
             state = "\033[1;32m{0}\033[0m".format(res.state)
@@ -49,9 +42,6 @@ def reportResult(rep):
 
         if len(res.resolution) > 0:
             print("\033[1;34m[{}] {}\033[0m".format("RESOLUTION",  res.resolution))
-        
-
-    
 
 class Prompt(Cmd):
 
