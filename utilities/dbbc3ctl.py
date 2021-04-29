@@ -110,12 +110,15 @@ class Prompt(Cmd):
     def _resolveBoards(self, board):
         if board == "all":
             boards = self.boards
-        else:
+        elif board.isdigit():
             if int(board) in self.boards:
                 boards = [board]
             else:
                 self.do_help("")
                 return([])
+        else:
+            self.do_help("")
+            return([])
 
         return(boards)
         
