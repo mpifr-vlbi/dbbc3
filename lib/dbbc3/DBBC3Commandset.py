@@ -2367,6 +2367,63 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.core3hread = types.MethodType (self.core3hread.__func__, clas)
         clas.core3hwrite = types.MethodType (self.core3hwrite.__func__, clas)
 
+    def pps_delay(self, board=None):
+        '''
+        Retrieves the delay of the internally generated vs. the external 1PPS signal
+
+        The delay is calculated as the time difference internal - external 1PPS and is returned in ns.
+
+        In case the method is called without the optional board parameter the PPS delays are returned
+        for all the core boards present in the current system.
+
+        If the optional board parameter is used one delay value will be returned for each of the
+        PPS groups each serving 4 BBCs. Group 1: BBCs 1-4; group 2: BBCs 5-8 etc.
+
+        Args:
+            board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
+
+        Returns:
+            if called without the optional board parameter:
+                list: list holding the delays of the internal-external PPS in nanoseconds for each core3H board
+            if called with the optional board parameter:
+                list: list containing the internal-external PPS delay of the two PPS groups.
+        '''
+
+        cmd = "pps_delay"
+
+        if (board is not None):
+            boardNum = self.boardToDigit(board)+1
+
+            cmd += "=%d" % boardNum;
+            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
+            patStr = "pps_delay\[%d\]/" % boardNum
+            numVals = int(self.config.maxBoardBBCs / 4)
+            retVals = numVals
+        else:
+            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+            patStr = "pps_delay/"
+            numVals = 8
+            retVals = self.config.numCoreBoards
+
+        ret = self.sendCommand(cmd)
+
+        for i in range(numVals):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(retVals):
+                    # convert into signed 
+                    delay = int(match.group(2+i*2))
+                    if delay > 500000000:
+                        delay = int(match.group(2+i*2)) - 1000000000
+                    delays.append(delay)
+        return(delays)
+
     def dbbctp0 (self, bbc, tp0=None):
         '''
         Set the TP0 value for a given or all of the BBCs
@@ -3047,32 +3104,6 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(None)
 
-    def pps_delay(self):
-        '''
-        Returns the delay between internal and external PPS.
-
-        The PPS delay is obtained for all 8 core3h boards and is returned in ns
-        '''
-
-        cmd = "pps_delay"
-        ret = self.sendCommand(cmd)
-
-        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-        patStr = "pps_delay/"
-        for i in range(8):
-                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
-        patStr = patStr[:-1] + ";"
-        pattern = re.compile(patStr)
-
-        delays = []
-        
-        for line in ret.split("\n"):
-            match = pattern.match(line)
-            if match:
-                for i in range(self.config.numCoreBoards):
-                    delays.append(int(match.group(2+i*2)))
-                
-        return(delays)
 
     def core3hread(self, board, block, bbc, register):
         '''
@@ -3185,62 +3216,6 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
             clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
             clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
-    def pps_delay(self, board=None):
-        '''
-        Retrieves the delay of the internally generated vs. the external 1PPS signal
-
-        The delay is calculated as the time difference internal - external 1PPS and is returned in ns.
-
-        In case the method is called without the optional board parameter the PPS delays are returned
-        for all the core boards present in the current system.
-
-        If the optional board parameter is used two delays will be returned one for the first
-        group serving BBCs 1-4 and the second serving BBCs 5-8 of the specified board.
-
-        Args:
-            board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
-
-        Returns:
-            if called without the optional board parameter:
-                list: list holding the delays of the internal-external PPS in nanoseconds for each core3H board
-            if called with the optional board parameter:
-                list: two-element list containing the internal-external PPS delay of the two PPS groups.
-        '''
-
-        cmd = "pps_delay"
-
-        if (board is not None):
-            boardNum = self.boardToDigit(board)+1
-
-            cmd += "=%d" % boardNum;
-            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
-            patStr = "pps_delay\[%d\]/" % boardNum
-            numVals = int(self.config.maxBoardBBCs / 4)
-            retVals = numVals
-        else:
-            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-            patStr = "pps_delay/"
-            numVals = 8
-            retVals = self.config.numCoreBoards
-
-        ret = self.sendCommand(cmd)
-
-        for i in range(numVals):
-                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
-        patStr = patStr[:-1] + ";"
-        pattern = re.compile(patStr)
-
-        delays = []
-        for line in ret.split("\n"):
-            match = pattern.match(line)
-            if match:
-                for i in range(retVals):
-                    # convert into signed 
-                    delay = int(match.group(2+i*2))
-                    if delay > 500000000:
-                        delay = int(match.group(2+i*2)) - 1000000000
-                    delays.append(delay)
-        return(delays)
 
 
     
@@ -3306,6 +3281,36 @@ class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
         '''
         '''
         DBBC3Commandset_DDC_Common.__init__(self,clas)
+
+    def pps_delay(self):
+        '''
+        Determines the delay between the internal vs. the external PPS.
+        A positive value indicates that the internal PPS is delayed with respect to the external signal.
+        All delays are in units of ns.
+
+        Returns: 
+            list (float): List containing the pps delays for all 8 core3h boards (unit: ns)
+        '''
+
+        cmd = "pps_delay"
+        ret = self.sendCommand(cmd)
+
+        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+        patStr = "pps_delay/"
+        for i in range(8):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(self.config.numCoreBoards):
+                    delays.append(int(match.group(2+i*2)))
+                
+        return(delays)
 
 
 class DBBC3Commandset_DSC_110(DBBC3CommandsetDefault):
