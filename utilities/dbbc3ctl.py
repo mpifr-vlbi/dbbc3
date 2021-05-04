@@ -12,7 +12,7 @@ from signal import signal, SIGINT
 
 from time import sleep
 
-checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"#board" }
+checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
 
@@ -74,6 +74,10 @@ class Prompt(Cmd):
                 subs = v.split(' ')
                 self.cmdChains.append(" ".join(self.path))
                 self.cmdList.append("{0} {1} ".format(" ".join(self.path)," ".join(subs)))
+                self.path.pop()
+            else:
+                self.cmdChains.append(" ".join(self.path))
+                self.cmdList.append("{0}".format(" ".join(self.path)))
                 self.path.pop()
                         
           elif v is None:
@@ -195,10 +199,7 @@ class Prompt(Cmd):
             for board in boards:
                 reportResult(self.val.validateBitStatistics(board))
         elif fields[0] == "pps":
-            if len(fields) == 2:
-                boards = self._resolveBoards(fields[1])
-            for board in boards:
-                reportResult(self.val.validatePPS(board))
+            reportResult(self.val.validatePPS())
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
