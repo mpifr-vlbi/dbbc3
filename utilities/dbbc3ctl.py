@@ -12,7 +12,7 @@ from signal import signal, SIGINT
 
 from time import sleep
 
-checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"" }
+checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
 
@@ -131,6 +131,23 @@ class Prompt(Cmd):
             if (cmd.startswith(topic)):
                 print (cmd)
 
+    def _checkSystemDDC_U(self, boards):
+
+        print ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
+        reportResult(val.validateSamplerPhases())
+
+        for board in boards:
+            print ("=== Checking board {0}".format(board))
+            reportResult(val.validatePPS())
+            reportResult(val.validateTimesync(board))
+            reportResult(val.validateSynthesizerLock(board))
+            reportResult(val.validateSynthesizerFreq(board))
+            reportResult(val.validateIFLevel(board))
+            reportResult(val.validateSamplerPower(board))
+            reportResult(val.validateSamplerOffsets(board))
+
+            reportResult(val.validateBitStatistics(board)) 
+
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
             if subcommand == "lock":
@@ -200,6 +217,12 @@ class Prompt(Cmd):
                 reportResult(self.val.validateBitStatistics(board))
         elif fields[0] == "pps":
             reportResult(self.val.validatePPS())
+        elif fields[0] == "system":
+            if (self.dbbc3.config.mode == "DDC_U"):
+                self._checkSystemDDC_U(fields[1])
+            else:
+                print ("'check system' not yet supported for the current mode")
+            
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
