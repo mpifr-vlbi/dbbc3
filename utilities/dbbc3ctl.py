@@ -68,6 +68,7 @@ class Prompt(Cmd):
                 self.cmdList.append(("{0} [all,{1}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
                     self.cmdChains.append("{0} {1}".format(" ".join(self.path), board))
+                print (self.path)
                 self.path.pop()
             # parameters 
             elif (v.startswith('@')):
@@ -133,6 +134,7 @@ class Prompt(Cmd):
 
     def _checkSystemDDC_U(self, boards):
 
+        print (boards)
         print ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
         reportResult(val.validateSamplerPhases())
 
@@ -157,6 +159,14 @@ class Prompt(Cmd):
 
             reportResult(ret)
         
+    def _noteSamplerTest(self):
+        print ("==============================================")
+        print ("NOTE: the following tests should be done with")
+        print ("noise only fed to the IF inputs of the DBBC3.")
+        print ("Injecting additional tones can lead to false")
+        print ("results in the validation of the sampler states.")
+
+        print ("==============================================")
     def _checkRecorder(self, args):
         if len(args) != 3:
             self.do_help("check recorder")
@@ -166,6 +176,7 @@ class Prompt(Cmd):
 
     def _checkSamplerGain(self, fields):
 
+        self._noteSamplerTest()
         boards = self.boards
 
         if len(fields) == 3:
@@ -175,6 +186,7 @@ class Prompt(Cmd):
             reportResult(self.val.validateSamplerPower(board))
     def _checkSamplerOffset(self, fields):
 
+        self._noteSamplerTest()
         boards = self.boards
 
         if len(fields) == 3:
@@ -218,8 +230,12 @@ class Prompt(Cmd):
         elif fields[0] == "pps":
             reportResult(self.val.validatePPS())
         elif fields[0] == "system":
+            
+            if len(fields) == 2:
+                boards = self._resolveBoards(fields[1])
             if (self.dbbc3.config.mode == "DDC_U"):
-                self._checkSystemDDC_U(fields[1])
+                self._noteSamplerTest()
+                self._checkSystemDDC_U(boards)
             else:
                 print ("'check system' not yet supported for the current mode")
             
@@ -250,7 +266,7 @@ signal(SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
-        parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in OCT_D mode")
+        parser = argparse.ArgumentParser(description="DBBC3 Control and Monitoring Client")
 
         parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: 4000)")
         parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
@@ -260,8 +276,6 @@ if __name__ == "__main__":
         
         args = parser.parse_args()
         
-        #prompt = Prompt(None, [0,1,2,3])
-        #prompt.cmdloop()
         
         try:
 
@@ -281,6 +295,7 @@ if __name__ == "__main__":
                     dbbc3.disableloop()
 
                 useBoards = []
+                print (dbbc3.config.numCoreBoards)
                 if args.boards:
                     for board in args.boards:
                         useBoards.append(dbbc3.boardToDigit(board))
