@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
+import time
+import threading
 import subprocess
+import itertools
 import sys
 import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
@@ -43,6 +46,51 @@ def reportResult(rep):
         if len(res.resolution) > 0:
             print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
 
+class Spinner:
+
+    def __init__(self, message, delay=0.1):
+        self.spinner = itertools.cycle(['-', '/', '|', '\\'])
+        self.delay = delay
+        self.busy = False
+        self.spinner_visible = False
+        sys.stdout.write(message)
+
+    def write_next(self):
+        with self._screen_lock:
+            if not self.spinner_visible:
+                sys.stdout.write(next(self.spinner))
+                self.spinner_visible = True
+                sys.stdout.flush()
+
+    def remove_spinner(self, cleanup=False):
+        with self._screen_lock:
+            if self.spinner_visible:
+                sys.stdout.write('\b')
+                self.spinner_visible = False
+                if cleanup:
+                    sys.stdout.write(' ')       # overwrite spinner with blank
+                    sys.stdout.write('\r')      # move to next line
+                sys.stdout.flush()
+
+    def spinner_task(self):
+        while self.busy:
+            self.write_next()
+            time.sleep(self.delay)
+            self.remove_spinner()
+
+    def __enter__(self):
+        if sys.stdout.isatty():
+            self._screen_lock = threading.Lock()
+            self.busy = True
+            self.thread = threading.Thread(target=self.spinner_task)
+            self.thread.start()
+
+    def __exit__(self, exception, value, tb):
+        if sys.stdout.isatty():
+            self.busy = False
+            self.remove_spinner(cleanup=True)
+        else:
+            sys.stdout.write('\r')
 class Prompt(Cmd):
 
     def __init__(self, dbbc3, boards, val):
@@ -68,7 +116,7 @@ class Prompt(Cmd):
                 self.cmdList.append(("{0} [all,{1}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
                     self.cmdChains.append("{0} {1}".format(" ".join(self.path), board))
-                print (self.path)
+                #print (self.path)
                 self.path.pop()
             # parameters 
             elif (v.startswith('@')):
@@ -134,9 +182,10 @@ class Prompt(Cmd):
 
     def _checkSystemDDC_U(self, boards):
 
-        print (boards)
         print ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
-        reportResult(val.validateSamplerPhases())
+        with Spinner(""):
+            rep = val.validateSamplerPhases()
+        reportResult(rep)
 
         for board in boards:
             print ("=== Checking board {0}".format(board))
@@ -295,7 +344,7 @@ if __name__ == "__main__":
                     dbbc3.disableloop()
 
                 useBoards = []
-                print (dbbc3.config.numCoreBoards)
+                #print (dbbc3.config.numCoreBoards)
                 if args.boards:
                     for board in args.boards:
                         useBoards.append(dbbc3.boardToDigit(board))
