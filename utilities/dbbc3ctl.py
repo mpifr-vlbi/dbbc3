@@ -321,9 +321,15 @@ if __name__ == "__main__":
         parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
         parser.add_argument("-y", "--yes", help="Answer yes to all interactive confirmations.")
         parser.add_argument("-c", "--command", action='append', type=str,  help="Exectute the given command(s). If this option is specified  multiple times the commands will be processed in the order they appear on the command line.")
+
+        parser.add_argument("-l", "--loop", type=int, help="Execute the commands given by the -c option N times; For repeating indefinetly give -1")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
         args = parser.parse_args()
+
+        if (args.loop and not args.command):
+            print ("Looping is only done on commands supplied by the -c option. Ignoring the --loop switch")
+            args.loop = None
         
         
         try:
@@ -356,9 +362,19 @@ if __name__ == "__main__":
 
                 prompt = Prompt(dbbc3, useBoards, val)
 
+                count = 0
                 if (args.command):
-                    for command in args.command:
-                        prompt.onecmd(command)
+                    if not args.loop:
+                        loop = 1
+                    elif args.loop == -1:
+                        loop = 1e10
+                    else:
+                        loop = args.loop
+                            
+                    while count < loop:
+                        for command in args.command:
+                            prompt.onecmd(command)
+                        count += 1
 
                     exitClean()
                     
