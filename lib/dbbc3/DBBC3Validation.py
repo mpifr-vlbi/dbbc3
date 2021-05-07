@@ -470,36 +470,8 @@ class DBBC3ValidationDefault(object):
                 lower = att
             prevAtt = att
 
-        #print (ret)
-            
-        # set attenuator to max. value
-        #attenuation = 63
-        #ret = self.dbbc3.dbbcif(board, 2, attenuation)
-
-        # check that IF settings have been changed (workaround for bug)
-        #count = 0
-        #while True:
-        #    ret = self.dbbc3.dbbcif(board)
-        #    if (ret["attenuation"] == 63):
-        #        break
-        #    elif (count == 10):
-        #        rep.add(Item(Item.WARN, check, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "", state=Item.FAIL))
-        #        break
-        #    else:
-        #        ret = self.dbbc3.dbbcif(board, 2, attenuation)
-        #        count += 1
-
-        # sampler offsets should be checked with IF power of approx. 5000
-       # print (ret["count"], ret["attenuation"])
-        #while (ret["count"] < 5000 and ret["attenuation"] > 0):
-       #     print (ret["count"], ret["attenuation"])
-        #    time.sleep(1)
-        #    ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
-        # if power cannot be regulated (e.g. no IF connected) give up
-
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
-        #print ("Modified IF settings: ", ret)
             
         # Reset the core3h thresholds (needed in case the calibration has been running)
         # core3h=1,regwrite core3 1 0xA4A4A4A4
@@ -533,8 +505,8 @@ class DBBC3ValidationDefault(object):
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100) 
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
-                        resolv += "If the problem persists retry restart up to 5 times.\n"
-                        resolv += "If the problem persists do a full hardware restart."
+                        resolv += "Make sure pure noise is inserted (no tones!).\n"
+                        resolv += "If the problem persists re-calibration of the system might be required.\n"
 
                         self._resetIFSettings(board, retOrig)
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
@@ -542,8 +514,8 @@ class DBBC3ValidationDefault(object):
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
-                        resolv += "If the problem persists retry restart up to 5 times.\n"
-                        resolv += "If the problem persists do a full hardware restart."
+                        resolv += "Make sure pure noise is inserted (no tones!).\n"
+                        resolv += "If the problem persists re-calibration of the system might be required.\n"
                 
                         self.dbbc3.dbbcif(board)
                         #print (self.dbbc3.lastResponse)
@@ -554,7 +526,6 @@ class DBBC3ValidationDefault(object):
 
         # Finally reset the dbbcif settings to their original values
         self._resetIFSettings(board, retOrig)
-#        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
         return(rep)
 
 
