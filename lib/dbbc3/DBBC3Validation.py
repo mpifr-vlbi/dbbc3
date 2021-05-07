@@ -287,10 +287,38 @@ class DBBC3ValidationDefault(object):
 
         return(rep)
 
+    def _regulatePower(self, board, targetCount):
+
+        upper = 64
+        lower = 0
+        prevAtt = -1
+        
+        retOrig = self.dbbc3.dbbcif(board)
+        ret = retOrig
+        # regulate power within +-10% of target
+        while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
+            print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
+            att = int(floor((upper + lower)/2))
+            if (att == prevAtt):
+                return(False)
+                
+            print (upper, lower, att)
+            self.dbbc3.dbbcif(board, retOrig["inputType"], att)
+            time.sleep(1)
+            ret = self.dbbc3.dbbcif(board)
+            if (ret["count"] < targetCount):
+                upper = att
+            else:
+                lower = att
+            prevAtt = att
+
+        return True
+
     def validateSamplerPower(self, boardNum):
 
         rep = ValidationReport(self.ignoreErrors)
 
+        targetCount = 32000
         errors = 0
         board = self.dbbc3.boardToChar(boardNum)
         check = "===Checking sampler gains for board %s" % (board)
@@ -298,9 +326,11 @@ class DBBC3ValidationDefault(object):
         # sampler gains should be checked with IF power close to target (32000)
         retOrig = self.dbbc3.dbbcif(board)
 
-        #ret = dict(retOrig)
-        #while (ret["count"] < 30000):
-        #   ret = self.dbbc3.dbbcif(board, 1, "agc", 32000)
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, 2, "man")
@@ -450,25 +480,11 @@ class DBBC3ValidationDefault(object):
         lower = 0
         prevAtt = -1
         
-        # regulate power within +-10% of target
-        while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
-            #print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
-            att = int(floor((upper + lower)/2))
-            if (att == prevAtt):
-                rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
-                # reset the dbbcif settings to their original values
-                self._resetIFSettings(board, retOrig)
-                return(rep)
-                
-            #print (upper, lower, att)
-            self.dbbc3.dbbcif(board, retOrig["inputType"], att)
-            time.sleep(1)
-            ret = self.dbbc3.dbbcif(board)
-            if (ret["count"] < targetCount):
-                upper = att
-            else:
-                lower = att
-            prevAtt = att
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
