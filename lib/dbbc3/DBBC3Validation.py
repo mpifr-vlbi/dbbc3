@@ -29,6 +29,7 @@ import re
 import sys
 import numpy as np
 from datetime import datetime
+from math import floor
 import time
 import importlib
 
@@ -436,42 +437,68 @@ class DBBC3ValidationDefault(object):
 
         board = self.dbbc3.boardToChar(boardNum)
 
-        
+
         check = "===Checking sampler offsets for board %s" % (board)
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
+        #print (retOrig)
+        ret = retOrig
         #print ("Original IF settings: ", retOrig)
 
-        #ret = dict(retOrig)
-        #attenuation = ret["attenuation"]
+        targetCount = 5000
+        upper = 64
+        lower = 0
+        prevAtt = -1
         
+        # regulate power within +-10% of target
+        while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
+            #print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
+            att = int(floor((upper + lower)/2))
+            if (att == prevAtt):
+                rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+                # reset the dbbcif settings to their original values
+                self._resetIFSettings(board, retOrig)
+                return(rep)
+                
+            #print (upper, lower, att)
+            self.dbbc3.dbbcif(board, retOrig["inputType"], att)
+            time.sleep(1)
+            ret = self.dbbc3.dbbcif(board)
+            if (ret["count"] < targetCount):
+                upper = att
+            else:
+                lower = att
+            prevAtt = att
+
+        #print (ret)
+            
         # set attenuator to max. value
-        attenuation = 63
-        ret = self.dbbc3.dbbcif(board, 2, attenuation)
+        #attenuation = 63
+        #ret = self.dbbc3.dbbcif(board, 2, attenuation)
 
         # check that IF settings have been changed (workaround for bug)
-        count = 0
-        while True:
-            ret = self.dbbc3.dbbcif(board)
-            if (ret["attenuation"] == 63):
-                break
-            elif (count == 10):
-                rep.add(Item(Item.WARN, check, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "", state=Item.FAIL))
-                break
-            else:
-                ret = self.dbbc3.dbbcif(board, 2, attenuation)
-                count += 1
+        #count = 0
+        #while True:
+        #    ret = self.dbbc3.dbbcif(board)
+        #    if (ret["attenuation"] == 63):
+        #        break
+        #    elif (count == 10):
+        #        rep.add(Item(Item.WARN, check, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "", state=Item.FAIL))
+        #        break
+        #    else:
+        #        ret = self.dbbc3.dbbcif(board, 2, attenuation)
+        #        count += 1
 
         # sampler offsets should be checked with IF power of approx. 5000
        # print (ret["count"], ret["attenuation"])
-        while (ret["count"] < 5000 and ret["attenuation"] > 0):
+        #while (ret["count"] < 5000 and ret["attenuation"] > 0):
        #     print (ret["count"], ret["attenuation"])
-            time.sleep(1)
-            ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
+        #    time.sleep(1)
+        #    ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
         # if power cannot be regulated (e.g. no IF connected) give up
 
         # Now freeze the attenuation
-        ret = self.dbbc3.dbbcif(board, 2, "man")
+        ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
         #print ("Modified IF settings: ", ret)
             
         # Reset the core3h thresholds (needed in case the calibration has been running)
