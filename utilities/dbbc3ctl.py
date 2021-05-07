@@ -360,6 +360,9 @@ if __name__ == "__main__":
                     for command in args.command:
                         prompt.onecmd(command)
 
+                    exitClean()
+                    
+
                 prompt.cmdloop()
 
         except Exception as e:
