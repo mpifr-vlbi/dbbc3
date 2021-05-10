@@ -5,7 +5,9 @@ import time
 import threading
 import subprocess
 import itertools
+import logging
 import sys
+from datetime import datetime
 import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
@@ -18,6 +20,8 @@ from time import sleep
 checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
+
+logger = None
 
 
 def reportResult(rep):
@@ -37,11 +41,11 @@ def reportResult(rep):
             level = "\033[1;35m{0}\033[0m".format(res.level)
 
         if "INFO" in res.level:
-            print("[{0}] {1} - {2}".format(state,  res.action, res.message))
+            logger.info("[{0}] {1} - {2}".format(state,  res.action, res.message))
         elif ("WARN" in res.level ):
-            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.warn("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
         elif ("ERROR" in res.level ):
-            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.error("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
 
         if len(res.resolution) > 0:
             print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
@@ -182,13 +186,13 @@ class Prompt(Cmd):
 
     def _checkSystemDDC_U(self, boards):
 
-        print ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
+        logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
         with Spinner(""):
             rep = val.validateSamplerPhases()
         reportResult(rep)
 
         for board in boards:
-            print ("=== Checking board {0}".format(board))
+            logger.info ("=== Checking board {0}".format(board))
             reportResult(val.validatePPS())
             reportResult(val.validateTimesync(board))
             reportResult(val.validateSynthesizerLock(board))
@@ -216,12 +220,13 @@ class Prompt(Cmd):
         print ("results in the validation of the sampler states.")
 
         print ("==============================================")
+
     def _checkRecorder(self, args):
         if len(args) != 3:
             self.do_help("check recorder")
             return
         d3u.checkRecorderInterface(args[1], args[2])
-        print ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
+        logger.info ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
 
     def _checkSamplerGain(self, fields):
 
@@ -310,6 +315,27 @@ def exitClean():
 def signal_handler(sig, frame):
     exitClean()
 
+def setupLogger():
+    global logger
+
+    logger = logging.getLogger(__name__)
+
+    logger.setLevel(logging.DEBUG)
+    # create console handler
+    ch = logging.StreamHandler()
+    # create formatter and add it to the handlers
+    scnformatter = logging.Formatter('%(message)s')
+    ch.setFormatter(scnformatter)
+    logger.addHandler(ch)
+
+    # add the handlers to the logger
+    if (args.log):
+        # create file handler
+        fh = logging.FileHandler("dbbc3ctl_%s.log" % (datetime.now().strftime("%Y%m%d_%H%M%S")))
+        logformatter = logging.Formatter('%(asctime)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+        fh.setFormatter(logformatter)
+        logger.addHandler(fh)
+
 # handle SIGINT (Ctrl-C)
 signal(SIGINT, signal_handler)
 
@@ -321,25 +347,30 @@ if __name__ == "__main__":
         parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
         parser.add_argument("-y", "--yes", help="Answer yes to all interactive confirmations.")
         parser.add_argument("-c", "--command", action='append', type=str,  help="Exectute the given command(s). If this option is specified  multiple times the commands will be processed in the order they appear on the command line.")
-
-        parser.add_argument("-l", "--loop", type=int, help="Execute the commands given by the -c option N times; For repeating indefinetly give -1")
+        parser.add_argument("-r", "--repeat",
+             type=int,
+             help="Repeat the commands given by the -c option N times; For repeating indefinetly give -1")
+        parser.add_argument("-l", "--log",
+             action='store_true',
+             help="Write log output to file.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
         args = parser.parse_args()
 
-        if (args.loop and not args.command):
-            print ("Looping is only done on commands supplied by the -c option. Ignoring the --loop switch")
-            args.loop = None
-        
-        
+        if (args.repeat and not args.command):
+            print ("Looping is only done on commands supplied by the -c option. Ignoring the --repeat switch")
+            args.repeat = None
+
+        setupLogger()
+
         try:
 
-                print ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
+                logger.debug ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
                 dbbc3 = DBBC3(host=args.ipaddress, port=args.port)
-                print ("===Connected")
+                logger.info ("===Connected")
 
                 ver = dbbc3.version()
-                print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
+                logger.info ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
                 valFactory = ValidationFactory()
                 val = valFactory.create(dbbc3, True)
@@ -358,18 +389,18 @@ if __name__ == "__main__":
                     for board in range(dbbc3.config.numCoreBoards):
                         useBoards.append(dbbc3.boardToDigit(board))
 
-                print ("=== Using boards: %s" % str(useBoards))
+                logger.info( "=== Using boards: %s" % str(useBoards))
 
                 prompt = Prompt(dbbc3, useBoards, val)
 
                 count = 0
                 if (args.command):
-                    if not args.loop:
+                    if not args.repeat:
                         loop = 1
-                    elif args.loop == -1:
+                    elif args.repeat == -1:
                         loop = 1e10
                     else:
-                        loop = args.loop
+                        loop = args.repeat
                             
                     while count < loop:
                         for command in args.command:
@@ -383,7 +414,6 @@ if __name__ == "__main__":
 
         except Exception as e:
            
-           print (e)
            # make compatible with python 2 and 3
            if hasattr(e, 'message'):
                 print("An error has occured: {0}".format(e.message))
