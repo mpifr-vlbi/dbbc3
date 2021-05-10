@@ -24,28 +24,45 @@ commandTree = {"check": checkTree }
 logger = None
 
 
+def decorateEmit(fn):
+    # add methods we need to the class
+    def new(*args):
+        levelno = args[0].levelno
+        level = ""
+        if(levelno >= logging.CRITICAL):
+            color = '\x1b[31;1m'
+            level = "[{}]".format(args[0].levelname)
+        elif(levelno >= logging.ERROR):
+            color = '\x1b[31;1m'
+            level = "[{}]".format(args[0].levelname)
+        elif(levelno >= logging.WARNING):
+            color = '\x1b[35;1m'
+            level = "[{}]".format(args[0].levelname)
+        else:
+            color = '\x1b[0m'
+
+        args[0].msg = args[0].msg.replace("OK", "\033[1;32mOK\033[0m")
+        args[0].msg = args[0].msg.replace("RESOLUTION", "\033[1;34mRESOLUTION\033[0m")
+
+        # color the levelname
+        args[0].msg = "{}{}\x1b[0m{}".format(color, level, args[0].msg)
+
+        return fn(*args)
+    return new
+
 def reportResult(rep):
     
     if not rep:
         return
 
     for res in rep.result:
-        if ("OK" in res.state):
-            state = "\033[1;32m{0}\033[0m".format(res.state)
-        elif ("FAIL" in res.state):
-            state = "\033[1;31m{0}\033[0m".format(res.state)
-        
-        if ("ERROR" in res.level):
-            level = "\033[1;31m{0}\033[0m".format(res.level)
-        elif ("WARN" in res.level):
-            level = "\033[1;35m{0}\033[0m".format(res.level)
 
         if "INFO" in res.level:
-            logger.info("[{0}] {1} - {2}".format(state,  res.action, res.message))
+            logger.info("[{0}] {1} - {2}".format(res.state,  res.action, res.message))
         elif ("WARN" in res.level ):
-            logger.warn("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.warn("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
         elif ("ERROR" in res.level ):
-            logger.error("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.error("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
 
         if len(res.resolution) > 0:
             print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
@@ -53,7 +70,8 @@ def reportResult(rep):
 class Spinner:
 
     def __init__(self, message, delay=0.1):
-        self.spinner = itertools.cycle(['-', '/', '|', '\\'])
+        self.spinner = itertools.cycle(['-', "-",'/', '|', '\\'])
+        self.spinner = itertools.cycle(['-', '\\', '|','/'])
         self.delay = delay
         self.busy = False
         self.spinner_visible = False
@@ -198,8 +216,12 @@ class Prompt(Cmd):
             reportResult(val.validateSynthesizerLock(board))
             reportResult(val.validateSynthesizerFreq(board))
             reportResult(val.validateIFLevel(board))
-            reportResult(val.validateSamplerPower(board))
-            reportResult(val.validateSamplerOffsets(board))
+            with Spinner(""):
+                rep = val.validateSamplerPower(board)
+            reportResult(rep)
+            with Spinner(""):
+                rep = val.validateSamplerOffsets(board)
+            reportResult(rep)
 
             reportResult(val.validateBitStatistics(board)) 
 
@@ -247,7 +269,9 @@ class Prompt(Cmd):
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            reportResult(self.val.validateSamplerOffsets(board))
+            with Spinner(""):
+                ret = self.val.validateSamplerOffsets(board)
+            reportResult(ret)
         
 
     def do_check(self, args):
@@ -327,20 +351,22 @@ def setupLogger():
     logger = logging.getLogger(__name__)
 
     logger.setLevel(logging.DEBUG)
-    # create console handler
-    ch = logging.StreamHandler()
-    # create formatter and add it to the handlers
-    scnformatter = logging.Formatter('%(message)s')
-    ch.setFormatter(scnformatter)
-    logger.addHandler(ch)
-
-    # add the handlers to the logger
     if (args.log):
         # create file handler
         fh = logging.FileHandler("dbbc3ctl_%s.log" % (datetime.now().strftime("%Y%m%d_%H%M%S")))
         logformatter = logging.Formatter('%(asctime)s - %(message)s', "%Y-%m-%d %H:%M:%S")
         fh.setFormatter(logformatter)
         logger.addHandler(fh)
+
+    # create console handler
+    ch = logging.StreamHandler()
+    # create formatter and add it to the handlers
+    scnformatter = logging.Formatter('%(message)s')
+    ch.setFormatter(scnformatter)
+    ch.emit = decorateEmit(ch.emit)
+    # add the handlers to the logger
+    logger.addHandler(ch)
+
 
 # handle SIGINT (Ctrl-C)
 signal(SIGINT, signal_handler)
