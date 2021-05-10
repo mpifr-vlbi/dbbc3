@@ -303,7 +303,13 @@ class Prompt(Cmd):
 
 
 def exitClean():
+
+    # reset to the state upon creating the Validation instance
+    if 'val' in vars() or 'val' in globals():
+        val.restoreState()
+
     if 'dbbc3' in vars() or 'dbbc3' in globals():
+
         # re-enable the calibration loop
         if (dbbc3.config.mode.startswith("OCT")):
              dbbc3.enableloop()
