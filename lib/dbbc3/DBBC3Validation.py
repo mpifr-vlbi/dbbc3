@@ -204,16 +204,38 @@ class DBBC3ValidationDefault(object):
         '''
         Constructor
         '''
+        self.state = None
         self.dbbc3 = dbbc3
         self.ignoreErrors = ignoreErrors
-        self._clearResult()
+        self._saveState()
         #DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
 
-    def _clearResult (self):
-    
-        self.lastResult = []
-
         
+    def _saveState(self):
+        '''
+        Saves the initial state (e.g. IF settings)
+        '''
+        if not self.dbbc3:
+            return
+
+        self.state = {}
+        for board in range(self.dbbc3.config.numCoreBoards):
+            ret = self.dbbc3.dbbcif(board)
+            self.state["IF_{0}".format(board)] = ret
+
+
+    def restoreState(self):
+        '''
+        Restores the state of the DBBC3 according to the
+        state that was previously saved upon
+        initialization of the Validation class
+        '''
+
+        for board in range(self.dbbc3.config.numCoreBoards):
+            ifstate = self.state["IF_{0}".format(board)]
+            self.dbbc3.dbbcif(board, ifstate["inputType"], ifstate["mode"], ifstate["target"])
+        
+
     def setIgnoreErrors(self,ignoreErrors):
         '''
         Setter for the ignoreErrors parameter
@@ -300,16 +322,16 @@ class DBBC3ValidationDefault(object):
             lower = 0
             upper = ret["attenuation"]
 
-        print ("init: ", upper, lower, ret["count"])
+#        print ("init: ", upper, lower, ret["count"])
 
         # regulate power within +-10% of target
         while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
-            print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
+#            print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
             att = int(floor((upper + lower)/2))
             if (att == prevAtt):
                 return(False)
                 
-            print (upper, lower, att)
+#            print (upper, lower, att)
             prevCounts = ret["count"]
             
             # set the attenuation level
