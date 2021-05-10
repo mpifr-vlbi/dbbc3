@@ -289,12 +289,19 @@ class DBBC3ValidationDefault(object):
 
     def _regulatePower(self, board, targetCount):
 
-        upper = 64
-        lower = 0
         prevAtt = -1
         
         retOrig = self.dbbc3.dbbcif(board)
         ret = retOrig
+        if (ret["count"] > targetCount):
+            upper = 64
+            lower = ret["attenuation"]
+        else:
+            lower = 0
+            upper = ret["attenuation"]
+
+        print ("init: ", upper, lower, ret["count"])
+
         # regulate power within +-10% of target
         while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
             print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
@@ -303,9 +310,14 @@ class DBBC3ValidationDefault(object):
                 return(False)
                 
             print (upper, lower, att)
+            prevCounts = ret["count"]
+            
+            # set the attenuation level
             self.dbbc3.dbbcif(board, retOrig["inputType"], att)
-            time.sleep(1)
+            time.sleep(2)
+            # re-read the new count level
             ret = self.dbbc3.dbbcif(board)
+
             if (ret["count"] < targetCount):
                 upper = att
             else:
