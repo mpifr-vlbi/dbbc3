@@ -325,7 +325,7 @@ class DBBC3ValidationDefault(object):
 #        print ("init: ", upper, lower, ret["count"])
 
         # regulate power within +-10% of target
-        while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
+        while (abs(ret["count"] - targetCount) > 0.5 * targetCount ):
 #            print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
             att = int(floor((upper + lower)/2))
             if (att == prevAtt):
