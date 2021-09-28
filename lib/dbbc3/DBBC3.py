@@ -186,14 +186,14 @@ class DBBC3(object):
             core3h boards this method is used to determine the number of boards.
 
             Note: This does not catch cases where the core3h board is installed but
-            disbaled by a prefix of 30 in the configuration file.
+            disabled by a prefix of 30 in the configuration file.
             '''
 
             for board in range(8):
                 if not self.dbbcif(board):
-                    break
+                    return(board)
 
-            return(board)
+            return(8)
 
         def boardToChar(self, board):
             '''

@@ -29,6 +29,7 @@ import re
 import sys
 import numpy as np
 from datetime import datetime
+from math import floor
 import time
 import importlib
 
@@ -203,16 +204,38 @@ class DBBC3ValidationDefault(object):
         '''
         Constructor
         '''
+        self.state = None
         self.dbbc3 = dbbc3
         self.ignoreErrors = ignoreErrors
-        self._clearResult()
+        self._saveState()
         #DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
 
-    def _clearResult (self):
-    
-        self.lastResult = []
-
         
+    def _saveState(self):
+        '''
+        Saves the initial state (e.g. IF settings)
+        '''
+        if not self.dbbc3:
+            return
+
+        self.state = {}
+        for board in range(self.dbbc3.config.numCoreBoards):
+            ret = self.dbbc3.dbbcif(board)
+            self.state["IF_{0}".format(board)] = ret
+
+
+    def restoreState(self):
+        '''
+        Restores the state of the DBBC3 according to the
+        state that was previously saved upon
+        initialization of the Validation class
+        '''
+
+        for board in range(self.dbbc3.config.numCoreBoards):
+            ifstate = self.state["IF_{0}".format(board)]
+            self.dbbc3.dbbcif(board, ifstate["inputType"], ifstate["mode"], ifstate["target"])
+        
+
     def setIgnoreErrors(self,ignoreErrors):
         '''
         Setter for the ignoreErrors parameter
@@ -286,10 +309,50 @@ class DBBC3ValidationDefault(object):
 
         return(rep)
 
+    def _regulatePower(self, board, targetCount):
+
+        prevAtt = -1
+        
+        retOrig = self.dbbc3.dbbcif(board)
+        ret = retOrig
+        if (ret["count"] > targetCount):
+            upper = 64
+            lower = ret["attenuation"]
+        else:
+            lower = 0
+            upper = ret["attenuation"]
+
+#        print ("init: ", upper, lower, ret["count"])
+
+        # regulate power within +-10% of target
+        while (abs(ret["count"] - targetCount) > 0.1 * targetCount ):
+#            print (ret["count"], ret["attenuation"],targetCount, abs(ret["count"] - targetCount))
+            att = int(floor((upper + lower)/2))
+            if (att == prevAtt):
+                return(False)
+                
+#            print (upper, lower, att)
+            prevCounts = ret["count"]
+            
+            # set the attenuation level
+            self.dbbc3.dbbcif(board, retOrig["inputType"], att)
+            time.sleep(2)
+            # re-read the new count level
+            ret = self.dbbc3.dbbcif(board)
+
+            if (ret["count"] < targetCount):
+                upper = att
+            else:
+                lower = att
+            prevAtt = att
+
+        return True
+
     def validateSamplerPower(self, boardNum):
 
         rep = ValidationReport(self.ignoreErrors)
 
+        targetCount = 32000
         errors = 0
         board = self.dbbc3.boardToChar(boardNum)
         check = "===Checking sampler gains for board %s" % (board)
@@ -297,9 +360,11 @@ class DBBC3ValidationDefault(object):
         # sampler gains should be checked with IF power close to target (32000)
         retOrig = self.dbbc3.dbbcif(board)
 
-        #ret = dict(retOrig)
-        #while (ret["count"] < 30000):
-        #   ret = self.dbbc3.dbbcif(board, 1, "agc", 32000)
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, 2, "man")
@@ -436,43 +501,27 @@ class DBBC3ValidationDefault(object):
 
         board = self.dbbc3.boardToChar(boardNum)
 
-        
+
         check = "===Checking sampler offsets for board %s" % (board)
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
+        #print (retOrig)
+        ret = retOrig
         #print ("Original IF settings: ", retOrig)
 
-        #ret = dict(retOrig)
-        #attenuation = ret["attenuation"]
+        targetCount = 5000
+        upper = 64
+        lower = 0
+        prevAtt = -1
         
-        # set attenuator to max. value
-        attenuation = 63
-        ret = self.dbbc3.dbbcif(board, 2, attenuation)
-
-        # check that IF settings have been changed (workaround for bug)
-        count = 0
-        while True:
-            ret = self.dbbc3.dbbcif(board)
-            if (ret["attenuation"] == 63):
-                break
-            elif (count == 10):
-                rep.add(Item(Item.WARN, check, "Failed to set the power levels for verifying sampler offsets. Skipping test.", "", state=Item.FAIL))
-                break
-            else:
-                ret = self.dbbc3.dbbcif(board, 2, attenuation)
-                count += 1
-
-        # sampler offsets should be checked with IF power of approx. 5000
-       # print (ret["count"], ret["attenuation"])
-        while (ret["count"] < 5000 and ret["attenuation"] > 0):
-       #     print (ret["count"], ret["attenuation"])
-            time.sleep(1)
-            ret = self.dbbc3.dbbcif(board, 2, ret["attenuation"]-1)
-        # if power cannot be regulated (e.g. no IF connected) give up
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
 
         # Now freeze the attenuation
-        ret = self.dbbc3.dbbcif(board, 2, "man")
-        #print ("Modified IF settings: ", ret)
+        ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
             
         # Reset the core3h thresholds (needed in case the calibration has been running)
         # core3h=1,regwrite core3 1 0xA4A4A4A4
@@ -506,8 +555,8 @@ class DBBC3ValidationDefault(object):
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>10%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100) 
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
-                        resolv += "If the problem persists retry restart up to 5 times.\n"
-                        resolv += "If the problem persists do a full hardware restart."
+                        resolv += "Make sure pure noise is inserted (no tones!).\n"
+                        resolv += "If the problem persists re-calibration of the system might be required.\n"
 
                         self._resetIFSettings(board, retOrig)
                         rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
@@ -515,8 +564,8 @@ class DBBC3ValidationDefault(object):
                         errorCount += 1
                         msg = "Asymmetric bit statistics (>5%%) for board %s sampler %d. %s. %f%%" % (board, samplerNum, str(bstats), dev*100)  
                         resolv = "Restart the DBBC3 control software (no reload of firmware only reinitialize)\n"
-                        resolv += "If the problem persists retry restart up to 5 times.\n"
-                        resolv += "If the problem persists do a full hardware restart."
+                        resolv += "Make sure pure noise is inserted (no tones!).\n"
+                        resolv += "If the problem persists re-calibration of the system might be required.\n"
                 
                         self.dbbc3.dbbcif(board)
                         #print (self.dbbc3.lastResponse)
@@ -527,7 +576,6 @@ class DBBC3ValidationDefault(object):
 
         # Finally reset the dbbcif settings to their original values
         self._resetIFSettings(board, retOrig)
-#        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
         return(rep)
 
 

@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
+import time
+import threading
 import subprocess
+import itertools
+import logging
 import sys
+from datetime import datetime
 import dbbc3.DBBC3Util as d3u
 from dbbc3.DBBC3 import DBBC3
 from dbbc3.DBBC3Config import DBBC3Config
@@ -12,10 +17,38 @@ from signal import signal, SIGINT
 
 from time import sleep
 
-checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"#board" }
+checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
 printTree = {"setup":"#board"}
 commandTree = {"check": checkTree }
 
+logger = None
+
+
+def decorateEmit(fn):
+    # add methods we need to the class
+    def new(*args):
+        levelno = args[0].levelno
+        level = ""
+        if(levelno >= logging.CRITICAL):
+            color = '\x1b[31;1m'
+            level = "[{}]".format(args[0].levelname)
+        elif(levelno >= logging.ERROR):
+            color = '\x1b[31;1m'
+            level = "[{}]".format(args[0].levelname)
+        elif(levelno >= logging.WARNING):
+            color = '\x1b[35;1m'
+            level = "[{}]".format(args[0].levelname)
+        else:
+            color = '\x1b[0m'
+
+        args[0].msg = args[0].msg.replace("OK", "\033[1;32mOK\033[0m")
+        args[0].msg = args[0].msg.replace("RESOLUTION", "\033[1;34mRESOLUTION\033[0m")
+
+        # color the levelname
+        args[0].msg = "{}{}\x1b[0m{}".format(color, level, args[0].msg)
+
+        return fn(*args)
+    return new
 
 def reportResult(rep):
     
@@ -23,26 +56,63 @@ def reportResult(rep):
         return
 
     for res in rep.result:
-        if ("OK" in res.state):
-            state = "\033[1;32m{0}\033[0m".format(res.state)
-        elif ("FAIL" in res.state):
-            state = "\033[1;31m{0}\033[0m".format(res.state)
-        
-        if ("ERROR" in res.level):
-            level = "\033[1;31m{0}\033[0m".format(res.level)
-        elif ("WARN" in res.level):
-            level = "\033[1;35m{0}\033[0m".format(res.level)
 
         if "INFO" in res.level:
-            print("[{0}] {1} - {2}".format(state,  res.action, res.message))
+            logger.info("[{0}] {1} - {2}".format(res.state,  res.action, res.message))
         elif ("WARN" in res.level ):
-            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.warn("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
         elif ("ERROR" in res.level ):
-            print("[{0}]/[{1}] {2} - {3}".format(state, level, res.action, res.message))
+            logger.error("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
 
         if len(res.resolution) > 0:
             print("\033[1;34m[{0}] {1}\033[0m".format("RESOLUTION",  res.resolution))
 
+class Spinner:
+
+    def __init__(self, message, delay=0.1):
+        self.spinner = itertools.cycle(['-', "-",'/', '|', '\\'])
+        self.spinner = itertools.cycle(['-', '\\', '|','/'])
+        self.delay = delay
+        self.busy = False
+        self.spinner_visible = False
+        sys.stdout.write(message)
+
+    def write_next(self):
+        with self._screen_lock:
+            if not self.spinner_visible:
+                sys.stdout.write(next(self.spinner))
+                self.spinner_visible = True
+                sys.stdout.flush()
+
+    def remove_spinner(self, cleanup=False):
+        with self._screen_lock:
+            if self.spinner_visible:
+                sys.stdout.write('\b')
+                self.spinner_visible = False
+                if cleanup:
+                    sys.stdout.write(' ')       # overwrite spinner with blank
+                    sys.stdout.write('\r')      # move to next line
+                sys.stdout.flush()
+
+    def spinner_task(self):
+        while self.busy:
+            self.write_next()
+            time.sleep(self.delay)
+            self.remove_spinner()
+
+    def __enter__(self):
+        if sys.stdout.isatty():
+            self._screen_lock = threading.Lock()
+            self.busy = True
+            self.thread = threading.Thread(target=self.spinner_task)
+            self.thread.start()
+
+    def __exit__(self, exception, value, tb):
+        if sys.stdout.isatty():
+            self.busy = False
+            self.remove_spinner(cleanup=True)
+        else:
+            sys.stdout.write('\r')
 class Prompt(Cmd):
 
     def __init__(self, dbbc3, boards, val):
@@ -68,12 +138,17 @@ class Prompt(Cmd):
                 self.cmdList.append(("{0} [all,{1}]".format(" ".join(self.path), ",".join([str(board) for board in self.boards]) )))
                 for board in self.boards:
                     self.cmdChains.append("{0} {1}".format(" ".join(self.path), board))
+                #print (self.path)
                 self.path.pop()
             # parameters 
             elif (v.startswith('@')):
                 subs = v.split(' ')
                 self.cmdChains.append(" ".join(self.path))
                 self.cmdList.append("{0} {1} ".format(" ".join(self.path)," ".join(subs)))
+                self.path.pop()
+            else:
+                self.cmdChains.append(" ".join(self.path))
+                self.cmdList.append("{0}".format(" ".join(self.path)))
                 self.path.pop()
                         
           elif v is None:
@@ -110,12 +185,15 @@ class Prompt(Cmd):
     def _resolveBoards(self, board):
         if board == "all":
             boards = self.boards
-        else:
+        elif board.isdigit():
             if int(board) in self.boards:
                 boards = [board]
             else:
                 self.do_help("")
                 return([])
+        else:
+            self.do_help("")
+            return([])
 
         return(boards)
         
@@ -123,6 +201,29 @@ class Prompt(Cmd):
         for cmd in self.cmdList:
             if (cmd.startswith(topic)):
                 print (cmd)
+
+    def _checkSystemDDC_U(self, boards):
+
+        logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
+        with Spinner(""):
+            rep = val.validateSamplerPhases()
+        reportResult(rep)
+
+        for board in boards:
+            logger.info ("=== Checking board {0}".format(board))
+            reportResult(val.validatePPS())
+            reportResult(val.validateTimesync(board))
+            reportResult(val.validateSynthesizerLock(board))
+            reportResult(val.validateSynthesizerFreq(board))
+            reportResult(val.validateIFLevel(board))
+            with Spinner(""):
+                rep = val.validateSamplerPower(board)
+            reportResult(rep)
+            with Spinner(""):
+                rep = val.validateSamplerOffsets(board)
+            reportResult(rep)
+
+            reportResult(val.validateBitStatistics(board)) 
 
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
@@ -133,15 +234,25 @@ class Prompt(Cmd):
 
             reportResult(ret)
         
+    def _noteSamplerTest(self):
+        print ("==============================================")
+        print ("NOTE: the following tests should be done with")
+        print ("noise only fed to the IF inputs of the DBBC3.")
+        print ("Injecting additional tones can lead to false")
+        print ("results in the validation of the sampler states.")
+
+        print ("==============================================")
+
     def _checkRecorder(self, args):
         if len(args) != 3:
             self.do_help("check recorder")
             return
         d3u.checkRecorderInterface(args[1], args[2])
-        print ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
+        logger.info ("=== %s %s: %s" % (args[1], args[2], d3u.checkRecorderInterface (args[1], args[2])))
 
     def _checkSamplerGain(self, fields):
 
+        self._noteSamplerTest()
         boards = self.boards
 
         if len(fields) == 3:
@@ -151,13 +262,16 @@ class Prompt(Cmd):
             reportResult(self.val.validateSamplerPower(board))
     def _checkSamplerOffset(self, fields):
 
+        self._noteSamplerTest()
         boards = self.boards
 
         if len(fields) == 3:
             boards = self._resolveBoards(fields[2])
         
         for board in boards:
-            reportResult(self.val.validateSamplerOffsets(board))
+            with Spinner(""):
+                ret = self.val.validateSamplerOffsets(board)
+            reportResult(ret)
         
 
     def do_check(self, args):
@@ -192,10 +306,17 @@ class Prompt(Cmd):
             for board in boards:
                 reportResult(self.val.validateBitStatistics(board))
         elif fields[0] == "pps":
+            reportResult(self.val.validatePPS())
+        elif fields[0] == "system":
+            
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
-            for board in boards:
-                reportResult(self.val.validatePPS(board))
+            if (self.dbbc3.config.mode == "DDC_U"):
+                self._noteSamplerTest()
+                self._checkSystemDDC_U(boards)
+            else:
+                print ("'check system' not yet supported for the current mode")
+            
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
         
@@ -206,7 +327,13 @@ class Prompt(Cmd):
 
 
 def exitClean():
+
+    # reset to the state upon creating the Validation instance
+    if 'val' in vars() or 'val' in globals():
+        val.restoreState()
+
     if 'dbbc3' in vars() or 'dbbc3' in globals():
+
         # re-enable the calibration loop
         if (dbbc3.config.mode.startswith("OCT")):
              dbbc3.enableloop()
@@ -218,32 +345,64 @@ def exitClean():
 def signal_handler(sig, frame):
     exitClean()
 
+def setupLogger():
+    global logger
+
+    logger = logging.getLogger(__name__)
+
+    logger.setLevel(logging.DEBUG)
+    if (args.log):
+        # create file handler
+        fh = logging.FileHandler("dbbc3ctl_%s.log" % (datetime.now().strftime("%Y%m%d_%H%M%S")))
+        logformatter = logging.Formatter('%(asctime)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+        fh.setFormatter(logformatter)
+        logger.addHandler(fh)
+
+    # create console handler
+    ch = logging.StreamHandler()
+    # create formatter and add it to the handlers
+    scnformatter = logging.Formatter('%(message)s')
+    ch.setFormatter(scnformatter)
+    ch.emit = decorateEmit(ch.emit)
+    # add the handlers to the logger
+    logger.addHandler(ch)
+
+
 # handle SIGINT (Ctrl-C)
 signal(SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
-        parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in OCT_D mode")
+        parser = argparse.ArgumentParser(description="DBBC3 Control and Monitoring Client")
 
         parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: 4000)")
         parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
         parser.add_argument("-y", "--yes", help="Answer yes to all interactive confirmations.")
         parser.add_argument("-c", "--command", action='append', type=str,  help="Exectute the given command(s). If this option is specified  multiple times the commands will be processed in the order they appear on the command line.")
+        parser.add_argument("-r", "--repeat",
+             type=int,
+             help="Repeat the commands given by the -c option N times; For repeating indefinetly give -1")
+        parser.add_argument("-l", "--log",
+             action='store_true',
+             help="Write log output to file.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
         args = parser.parse_args()
-        
-        #prompt = Prompt(None, [0,1,2,3])
-        #prompt.cmdloop()
-        
+
+        if (args.repeat and not args.command):
+            print ("Looping is only done on commands supplied by the -c option. Ignoring the --repeat switch")
+            args.repeat = None
+
+        setupLogger()
+
         try:
 
-                print ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
+                logger.debug ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
                 dbbc3 = DBBC3(host=args.ipaddress, port=args.port)
-                print ("===Connected")
+                logger.info ("===Connected")
 
                 ver = dbbc3.version()
-                print ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
+                logger.info ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
                 valFactory = ValidationFactory()
                 val = valFactory.create(dbbc3, True)
@@ -254,6 +413,7 @@ if __name__ == "__main__":
                     dbbc3.disableloop()
 
                 useBoards = []
+                #print (dbbc3.config.numCoreBoards)
                 if args.boards:
                     for board in args.boards:
                         useBoards.append(dbbc3.boardToDigit(board))
@@ -261,19 +421,31 @@ if __name__ == "__main__":
                     for board in range(dbbc3.config.numCoreBoards):
                         useBoards.append(dbbc3.boardToDigit(board))
 
-                print ("=== Using boards: %s" % str(useBoards))
+                logger.info( "=== Using boards: %s" % str(useBoards))
 
                 prompt = Prompt(dbbc3, useBoards, val)
 
+                count = 0
                 if (args.command):
-                    for command in args.command:
-                        prompt.onecmd(command)
+                    if not args.repeat:
+                        loop = 1
+                    elif args.repeat == -1:
+                        loop = 1e10
+                    else:
+                        loop = args.repeat
+                            
+                    while count < loop:
+                        for command in args.command:
+                            prompt.onecmd(command)
+                        count += 1
+
+                    exitClean()
+                    
 
                 prompt.cmdloop()
 
         except Exception as e:
            
-           print (e)
            # make compatible with python 2 and 3
            if hasattr(e, 'message'):
                 print("An error has occured: {0}".format(e.message))
