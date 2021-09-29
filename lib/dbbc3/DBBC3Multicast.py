@@ -13,7 +13,7 @@ class DBBC3Multicast(object):
         self.group = group
         self.port = port
         self.message = {} 
-        self.activeIFs = []
+        #self.activeIFs = []
 
         self._connect(timeout)
 
@@ -75,6 +75,7 @@ class DBBC3Multicast(object):
         
     def _parseGcomo(self, mc):
 #OK
+        #self.activeIFs = []
         for i in range(0,8):
             gcomo = {}
             shortArray = struct.unpack('HHH', mc[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
@@ -90,8 +91,8 @@ class DBBC3Multicast(object):
 
             self.message["if_"+str(i+1)] = gcomo
 
-            if (gcomo["count"] != 0):
-                self.activeIFs.append(str(i+1))
+            #if (gcomo["count"] != 0):
+            #    self.activeIFs.append(str(i+1))
             
 
     def _parseDC(self,message):
@@ -318,7 +319,7 @@ class DBBC3Multicast(object):
         '''
 
         self.message = {}
-        self.activeIFs = []
+        #self.activeIFs = []
 
         valueArray = self.sock.recv(16384)
 
