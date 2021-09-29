@@ -80,7 +80,7 @@ class DBBC3Multicast(object):
             gcomo = {}
             shortArray = struct.unpack('HHH', mc[self.gcomoOffset+i*8+2:self.gcomoOffset+i*8+8])
             #print ("SHORTARRAY: ", shortArray)
-            if mc[self.gcomoOffset+i*8] == '\x00':
+            if int(mc[self.gcomoOffset+i*8]) == 0:
                 gcomo["mode"] = "man"
             else:
                 gcomo["mode"] = "agc"
