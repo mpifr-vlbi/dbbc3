@@ -60,6 +60,20 @@ class DBBC3Multicast(object):
         self.bbcOffset = self.core3hOffset + 8*24
 
 
+    def _calcStatsPercentage(self, stats):
+
+        total = float(sum(stats))
+        perc = []
+        for level in stats:
+            if total == 0:
+                value = 0.0
+            else:
+                value = float(level)/total*100.0
+            perc.append(value)
+
+#        print ("Stats:", stats, total, perc)
+        return(tuple(perc))
+
     def _parseVersion(self, message):
 
         versionString = message[0:32].decode("utf-8").split(",")
@@ -150,6 +164,11 @@ class DBBC3Multicast(object):
             s1["stats"] = bstatArray_1
             s2["stats"] = bstatArray_2
             s3["stats"] = bstatArray_3
+
+            s0["statsFrac"] = self._calcStatsPercentage(bstatArray_0)
+            s1["statsFrac"] = self._calcStatsPercentage(bstatArray_1)
+            s2["statsFrac"] = self._calcStatsPercentage(bstatArray_2)
+            s3["statsFrac"] = self._calcStatsPercentage(bstatArray_3)
 
             corrArray = struct.unpack('III', message[offset:offset+12])
             offset += 12
