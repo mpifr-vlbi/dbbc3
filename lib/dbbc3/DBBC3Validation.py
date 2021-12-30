@@ -371,7 +371,7 @@ class DBBC3ValidationDefault(object):
         #print (self.dbbc3.lastResponse)
 
         pow= self.dbbc3.core3h_core3_power(boardNum)
-        if pow is None:
+        if not pow:
                 self._resetIFSettings( board, retOrig)
                 rep.add(Item(Item.ERROR, check, self.dbbc3.lastResponse, "", state=Item.FAIL, exit=True))
 
