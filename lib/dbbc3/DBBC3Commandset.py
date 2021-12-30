@@ -937,19 +937,21 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         
         boardNum = self.boardToDigit(board)+1
 
-        vsiStr = str(vsi)
-        if (not vsiStr.isdigit()):
-            ValueError("core3h_vsi_bitmask: vsi must be numeric")
+        if vsi is not None:
+            vsiStr = str(vsi)
+            if (not vsiStr.isdigit()):
+                ValueError("core3h_vsi_bitmask: vsi must be numeric")
 
-        if vsiStr and not mask:
-            ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
+            if mask is None:
+                ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
+        else:
+            if mask is not None:
+                ValueError("core3h_vsi_bitmask: no vsi was specified")
 
-        if not vsiStr and mask:
-            ValueError("core3h_vsi_bitmask: no vsi was specified")
-
-        valStr = self._valueToHex(bitmask)
-        if (int(valStr, 16) > 0xffffffff):
-            raise ValueError("core3h_vdif_bitmask: the supplied bitmask is longer than 32 bit")
+        if mask is not None:
+            valStr = self._valueToHex(mask)
+            if (int(valStr, 16) > 0xffffffff):
+                raise ValueError("core3h_vdif_bitmask: the supplied mask is longer than 32 bit")
     
         cmd = "core3h=%d,vsi_bitmask" % (boardNum)
         ret = self.sendCommand(cmd)
@@ -1376,7 +1378,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         first user data field contain the Extended Data Version (EDV) number.
         See: https://vlbi.org/vdif/ for details
 
-        d0 - d3 are optional. If not specified the current value of the field is kept.
+        d0 - d3 are optional. If not specified the current value of the fields are reported
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A") 
