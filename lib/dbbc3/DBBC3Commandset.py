@@ -243,7 +243,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             'timestamp' (time.struct_time): the timestamp
             'timestampAsString' (str): the timestamp in string representation %Y-%m-%dT%H:%M:%S
 
-        In the OCT mode the dict contains the following additional fields::
+        In the OCT mode (version 110) the dict contains the following additional fields::
 
             'seconds'(int): seconds since the beginning of the current year
             'halfYearsSince2000' (int): number of half years since the year 2000
@@ -2254,6 +2254,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_delay(self, board, sampler, value=512):
         '''
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler delay for the specified board and sampler.
 
         The allowed range is 0-1023 which corresponds to -60ps to +60ps with a stepping size of 120fs.
@@ -2282,6 +2287,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_offset(self, board, sampler, value=128):
         '''
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler offset value for the specified board and sampler.
 
         The allowed range is 0-255 which corresponds to -20mV to +20mV with a stepping size of 156microV.
@@ -2310,6 +2320,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_gain(self, board, sampler, value=512):
         '''
+        :warning::
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler gain value for the specified board and sampler.
 
         The allowed range is 0-255 which corresponds to -0.5dB to +0.5dB with a stepping size of 0.004dB.
@@ -3260,12 +3275,186 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         DBBC3CommandsetDefault.__init__(self,clas)
 
         clas.tap = types.MethodType (self.tap.__func__, clas)
+        clas.samplerstats = types.MethodType (self.samplerstats.__func__, clas)
+        clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
+        clas.time = types.MethodType (self.time.__func__, clas)
+        clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
+
+    def checkphase(self, board=None):
+        '''
+        Checks the delay phase calibration for the specified board or for all boards if the board parameter is not specified.
+
+        Returns:
+            bool: True if all samplers are in sync, False otherwise
+        '''
+
+        cmd = "checkphase"
+        if board is not None :
+            boardNum = self.boardToDigit(board) +1
+            cmd += "=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        if "successful" in ret:
+                return(True)
+        else:
+                return(False)
+
+    def core3hstats(self, board):
+        '''
+        Retrieves the power levels and bit statistics of the two FIR filters
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            dictionary with the following structure::
+
+            ["filter1"]["power"] (int): the power value for filter 1
+            ["filter1"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter1"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["power"] (int): the power value for filter 1
+            ["filter2"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+
+        '''
+        stats = {'filter1': {}, 'filter2': {}}
+        boardNum = self.boardToDigit(board) +1
+        cmd = "core3hstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Filter\s*(\d)\s*:\s*(\d+)")
+        pattern["bstat"] = re.compile("\s*(\d{2})\s*:\s*(\d+)\s+(\d+\.\d+)\%")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                continue
+            elif "Bstat" in line:
+                parse = "bstat"
+                stats["filter1"]["bstat_val"] = []
+                stats["filter2"]["bstat_val"] = []
+                stats["filter1"]["bstat_frac"] = []
+                stats["filter2"]["bstat_frac"] = []
+                continue
+            
+            if parse == "bstat":
+                if "Filter 1" in line:
+                    filter = 1
+                elif "Filter 2" in line:
+                    filter = 2
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power": 
+                        stats["filter%s" % (match.group(1))]["power"] = int(match.group(2))
+                    elif parse == "bstat":
+                        stats["filter%s" % (filter)]["bstat_val"].append(int(match.group(2)))
+                        stats["filter%s" % (filter)]["bstat_frac"].append(float(match.group(3)))
+        return (stats)
+
+
+    def samplerstats(self, board):
+        '''
+        Retrieves and validates sampler statistics: gain, offset and delay.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: 
+            2-D dictionary with the following structure::
+
+            ["power"]["val"] (list of int): a list of 4 power values; one for each sampler
+            ["power"]["state"] (list of str): a list of 4 power states; one for each sampler
+            ["offset"]["val"] (list of int): a list of 4 offset values; one for each sampler
+            ["offset"]["frac"] (list of float): a list of 4 offset fractional values; one for each sampler
+            ["offset"]["state"] (list of str): a list of 4 offset states; one for each sampler
+            ["delay"]["val"] (list of int): a list of 3 delay values; one for each sampler pair (0-1, 1-2, 2-3)
+            ["delay"]["state"] (list of str): a list of 3 delay states; one for each sampler pair (0-1, 1-2, 2-3)
+
+            any state other than "OK" indicates an error
+
+        '''
+        
+        stats = {}
+        boardNum = self.boardToDigit(board) +1 
+        cmd = "samplerstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\[(.*)\]")
+        pattern["offset"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\s+(\d+\.\d+)\%\[(.*)\]")
+        pattern["delay"] = re.compile("\s*Sampler\s*(\d\-\d)\s*:\s*(\d+)\[(.*)\]")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                stats["power"] = {}
+                stats["power"]["val"] = []
+                stats["power"]["state"] = []
+                continue
+            elif "Offset" in line:
+                parse = "offset"
+                stats["offset"] = {}
+                stats["offset"]["val"] = []
+                stats["offset"]["frac"] = []
+                stats["offset"]["state"] = []
+                continue
+            elif "Delay" in line:
+                parse = "delay"
+                stats["delay"] = {}
+                stats["delay"]["val"] = []
+                stats["delay"]["state"] = []
+                continue
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power" or parse == "delay":
+                        stats[parse]["val"].append (int(match.group(2)))
+                        stats[parse]["state"].append(match.group(3))
+                    elif parse == "offset":
+                        stats["offset"]["val"].append (int(match.group(2)))
+                        stats["offset"]["frac"].append (float(match.group(3)))
+                        stats["offset"]["state"].append(match.group(4))
+
+        return (stats)
+
+    def time(self):
+        '''
+        Returns the VDIF time for all boards present in the DBBC3 
+
+        Returns:
+            List of dictionaries each element representing one board (0=A) with the following structure:
+                "epoch" (int): the VDIF epoch
+                "second" (int): the second since the beginning of the epoch
+
+        Raises:
+            DBBC3Exception: in case no time information could be obtained
+        '''
+
+        resp = []
+        ret = self.sendCommand("time")
+
+        pattern = re.compile("\s*Board\[(\d)\]\s*:\s*Epoch:\s*(\d+),\s*Second:\s*(\d+)")
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                resp.append({"epoch": match.group(2), "second": match.group(3)})
+        
+        if not resp:
+            raise DBBC3Exception("time: Did not receive any time information")
+        
+        return (resp)
 
     def tap(self, board, filterNum, filterFile):
         '''
         Sets the tap filters when in OCT mode. 
-
-        tap=board_nr,filter_nr,file_name
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -3284,8 +3473,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         if filterNum not in [1,2]:
             raise ValueError("tap: filterNum must be 1 or 2")
 
-        boardNum = self.boardToDigit(board)
-        #print (board, boardNum)
+        boardNum = self.boardToDigit(board) +1
         cmd = "tap=%d,%s,%s" % (boardNum, filterNum, filterFile)
         ret = self.sendCommand(cmd)
 
