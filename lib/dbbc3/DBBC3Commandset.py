@@ -591,7 +591,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             ValueError: In case an illegal state argument has been supplied
         '''
 
-        print ("state: ", state)
+        #print ("state: ", state)
         resp = {}
         boardNum = self.boardToDigit(board)
 
@@ -1200,7 +1200,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
         if "succeeded" in ret:
-            print (ret)
+            #print (ret)
             timestamp = d3u.parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
@@ -3253,7 +3253,50 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
-            
+class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
+
+    def __init__(self, clas):
+
+        DBBC3CommandsetDefault.__init__(self,clas)
+
+        clas.tap = types.MethodType (self.tap.__func__, clas)
+
+    def tap(self, board, filterNum, filterFile):
+        '''
+        Sets the tap filters when in OCT mode. 
+
+        tap=board_nr,filter_nr,file_name
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            filterNum: the filter number to set; valid inputs are 1 or 2
+            filterFile: the file containing the filter coefficients. The file needs to be present in the config folder: C:\DBBC_CONF\OCT_D_120\.
+
+        Returns:
+            boolean: True if the tap filter was loaded correctly, False otherwise
+
+        Raises:
+            ValueError: in case an illegal value for filterNum has been given.
+            ValueError: in case the file containing the filter coeeficients does not exist."
+        '''
+
+
+        if filterNum not in [1,2]:
+            raise ValueError("tap: filterNum must be 1 or 2")
+
+        boardNum = self.boardToDigit(board)
+        #print (board, boardNum)
+        cmd = "tap=%d,%s,%s" % (boardNum, filterNum, filterFile)
+        ret = self.sendCommand(cmd)
+
+        if "Error" in ret:
+            raise ValueError("tap: Error in the call parameters. (check that filterFile exist on the DBBC3)" )
+        
+        if "Taps loaded correctly" in ret:
+            return(True)
+        else:
+            return(False)
+
 class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
     '''
     Implementation of the DBBC3 commandset for the
