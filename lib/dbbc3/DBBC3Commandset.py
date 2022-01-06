@@ -1432,7 +1432,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
-            outputId (int): the index of the Core3h output (starting at 0)
+            outputId (int): the index of the Core3h output device (starting at 0)
             ip (str): the destination IP address 
             port (int, optional): the destination IP port number (default = 46227)
             threadId (int): the id of the tread for which to set the destination
@@ -1442,7 +1442,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
                 "ip" (str): the IP address
                 "port" (int): the port 
-                "output" (int): the index of the core3h output (starting at 0)
+                "output" (int): the index of the core3h output port (starting at 0)
                 "thread_0" (dict, optional): dictionary holding destination "ip" and "port" for thread 0 (if defined)
                 "thread_1" (dict, optional): dictionary holding destination "ip" and "port" for thread 1 (if defined)
                 "...."
@@ -1554,16 +1554,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Sets a parameter of the 10Gb ethernet device.
 
         valid parameters are:
-        ip: IP address
-        mac: MAC address
-        nm: netmask
-        port:  UDP port
-        gateway: IP adress of gateway
+        "ip": IP address
+        "mac": MAC address
+        "nm": netmask
+        "port":  UDP port
+        "gateway": IP adress of gateway
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
-            key (str): the name of the parameter to set
+            key (str): the name of the parameter to set (see above)
             value (str): the new parameter value
 
         '''
@@ -2075,7 +2075,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board) +1
-        boardId = self.boardToChar(board)
 
         self._validateSamplerNum(sampler)
 
@@ -3280,7 +3279,118 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.samplerstats = types.MethodType (self.samplerstats.__func__, clas)
         clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
         clas.time = types.MethodType (self.time.__func__, clas)
-        clas.checkphase = types.MethodType (self.checkphase.__func__, clas)
+        clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
+        clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
+        clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
+
+    def core3h_sampler_offset(self, board):
+        '''
+        Obtains the offset statistics for each of the four samplers of the specified board.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            list: list containing the sampler offsets; the values will be None in case of error
+            None if the core board is not connected
+        '''
+        boardNum = self.boardToDigit(board) +1
+
+        # sampler_offset
+        # Sampler offset levels:
+        # Offset at sampler 0 = 63860074
+        # Offset at sampler 1 = 63739766
+        # Offset at sampler 2 = 64068670
+        # Offset at sampler 3 = 64170648
+
+        res = [None] *4
+        ret = self.sendCommand("core3h=%d,sampler_offset"  % (boardNum))
+
+        if "not connected" in ret:
+                return(None)
+
+        pattern = re.compile("\s*Offset\s+at\s+sampler\s+(\d)\s*=\s*(\d+)")
+
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if match:
+                res[int(match.group(1))] = int(match.group(2))
+
+        return (res)
+
+
+    def core3h_sampler_power(self, board):
+        '''
+        Obtains the power levels for each of the four samplers of the specified board.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            list: list containing the sampler powers; the values will be None in case of error
+            None if the core board is not connected
+        '''
+        boardNum = self.boardToDigit(board) +1
+
+        # Sampler power levels:
+        # Power at sampler 0 = 106798846
+        # Power at sampler 1 = 107664014
+        # Power at sampler 2 = 106424473
+        # Power at sampler 3 = 107536015
+
+        res = [None] *4
+        ret = self.sendCommand("core3h=%d,sampler_power"  % (boardNum))
+
+        if "not connected" in ret:
+                return(None)
+
+        pattern = re.compile("\s*Power\s+at\s+sampler\s+(\d)\s*=\s*(\d+)")
+
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if match:
+                res[int(match.group(1))] = int(match.group(2))
+
+        return (res)
+
+    def core3h_core3_bstat(self, board, filter):
+        '''
+        Obtains the 2-bit statistics for the selected core board and filter
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+            filter (int): the selected filter (can be 0 or 1)
+
+        Returns:
+            list: list containing the count of the 4 levels or None if the core board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+
+        #self._validateSamplerNum(sampler)
+
+        bstats = []
+        ret = self.sendCommand("core3h=%d,core3_bstat %d" % (boardNum, filter))
+
+        if "not connected" in ret:
+                return(None)
+
+          #P("11") = 9.64% (6171370)
+          #P("10") = 41.70% (26691866)
+          #P("01") = 40.36% (25836378)
+          #P("00") = 8.28% (5300386)
+
+        pattern = re.compile("\s*P\(\"(\d\d)\"\)\s*=\s*(\d+\.\d+)%\s+\((\d+)\)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                bstats.append(int(match.group(3)))
+
+        return (bstats)
 
     def checkphase(self, board=None):
         '''
