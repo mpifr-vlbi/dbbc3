@@ -725,7 +725,7 @@ class DBBC3ValidationDefault(object):
         return(report)
 
 
-class DBBC3Validation_OCT_D_123(DBBC3ValidationDefault):
+class DBBC3Validation_OCT_D_110(DBBC3ValidationDefault):
         
     def __init__(self, dbbc3, ignoreErrors):
         '''
@@ -734,6 +734,7 @@ class DBBC3Validation_OCT_D_123(DBBC3ValidationDefault):
 
     def validateCalibrationLoop(self, exitOnError=False):
         '''
+        Validates that the calibration loop is running
         '''
         report = ValidationReport(self.ignoreErrors)
 
@@ -746,6 +747,132 @@ class DBBC3Validation_OCT_D_123(DBBC3ValidationDefault):
             report.add(Item(Item.INFO, check, "The calibration loop is running", "", Item.OK))
         else:
             report.add(Item(Item.ERROR, check,"The calibration loop is not running", "", Item.FAIL, exit=exitOnError))
+
+class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
+
+    def __init__(self, dbbc3, ignoreErrors):
+        '''
+        '''
+        DBBC3Validation_OCT_D_110.__init__(self, dbbc3, ignoreErrors)
+
+    def validateSamplerPower(self, boardNum):
+        '''
+        Validates the sampler powers (gains)
+
+        Returns:
+            ValidationReport: the report containing the validation results
+        '''
+
+        rep = ValidationReport(self.ignoreErrors)
+
+        targetCount = 32000
+        errors = 0
+        board = self.dbbc3.boardToChar(boardNum)
+        check = "===Checking sampler powers (gains) for board %s" % (board)
+
+        # sampler gains should be checked with IF power close to target (32000)
+        retOrig = self.dbbc3.dbbcif(board)
+
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
+
+        # Now freeze the attenuation
+        ret = self.dbbc3.dbbcif(board, 2, "man")
+
+        # TODO: Check with Sven whether this is neccesary for OCT_D_124
+        # Reset the core3h thresholds (needed in case the calibration has been running)
+        # core3h=1,regwrite core3 1 0xA4A4A4A4
+        self.dbbc3.core3h_regwrite(board, "core3", 1, 0xA4A4A4A4)
+
+        ret = self.dbbc3.samplerstats(board)
+        # 'offset': {'val':offset [63384378, 64164764, 65276968, 65609344], 'frac': [49.52, 50.13, 51.0, 51.26], 'state': ['OK', 'OK', 'NOT OK', 'NOT OK']}
+
+        for samplerNum in range(self.dbbc3.config.numSamplers):
+
+            errorCount = 0
+
+            if ret["power"]["state"][samplerNum] != "OK":
+                errorCount += 1
+                msg = "Offset too large for sampler %d: %f" % (samplerNum, ret["power"]["frac"][samplerNum])
+                resolv = "Make sure pure noise is inserted (no tones!).\n"
+                resolv += "If the problem persists re-calibration of the system might be required.\n"
+
+                self._resetIFSettings(board, retOrig)
+                rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
+
+        if errorCount == 0:
+            rep.add(Item(Item.INFO, check, "Sampler powers: %s" % (ret["power"]["val"]) , "", state=Item.OK))
+
+        # Finally reset the dbbcif settings to their original values
+        self._resetIFSettings(board, retOrig)
+        return(rep)
+
+
+        # Finally reset the dbbcif settings to their original values
+        self._resetIFSettings( board, retOrig)
+#        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
+
+        return rep
+    def validateSamplerOffsets(self, boardNum):
+        '''
+        Validates the sampler offsets
+
+        Returns:
+            ValidationReport: the report containing the validation results
+        '''
+
+        rep = ValidationReport(self.ignoreErrors)
+
+        board = self.dbbc3.boardToChar(boardNum)
+
+
+        check = "===Checking sampler offsets for board %s" % (board)
+        # save the original IF settings
+        retOrig = self.dbbc3.dbbcif(board)
+        ret = retOrig
+
+        targetCount = 5000
+
+        if (self._regulatePower(board, targetCount) == False):
+            # reset the dbbcif settings to their original values
+            self._resetIFSettings( board, retOrig)
+            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+            return (rep)
+
+        # Now freeze the attenuation
+        ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
+
+        # TODO: Check with Sven whether this is neccesary for OCT_D_124
+        # Reset the core3h thresholds (needed in case the calibration has been running)
+        # core3h=1,regwrite core3 1 0xA4A4A4A4
+        self.dbbc3.core3h_regwrite(board, "core3", 1, 0xA4A4A4A4)
+
+        ret = self.dbbc3.samplerstats(board)
+        # 'offset': {'val': [63384378, 64164764, 65276968, 65609344], 'frac': [49.52, 50.13, 51.0, 51.26], 'state': ['OK', 'OK', 'NOT OK', 'NOT OK']}
+
+        for samplerNum in range(self.dbbc3.config.numSamplers):
+
+            errorCount = 0
+            check = "===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
+
+            if ret["offset"]["state"][samplerNum] != "OK":
+                errorCount += 1
+                msg = "Offset too large for sampler %d: %f%%" % (samplerNum, ret["offset"]["frac"][samplerNum])
+                resolv = "Make sure pure noise is inserted (no tones!).\n"
+                resolv += "If the problem persists re-calibration of the system might be required.\n"
+
+                self._resetIFSettings(board, retOrig)
+                rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
+
+        if errorCount == 0:
+            rep.add(Item(Item.INFO, check, "Sampler offsets: %s frac: %s" % ( ret["offset"]["val"],  ret["offset"]["frac"]) , "", state=Item.OK))
+
+        # Finally reset the dbbcif settings to their original values
+        self._resetIFSettings(board, retOrig)
+        return(rep)
         
 
 if __name__ == "__main__":
