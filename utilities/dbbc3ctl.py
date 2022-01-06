@@ -335,7 +335,8 @@ def exitClean():
     if 'dbbc3' in vars() or 'dbbc3' in globals():
 
         # re-enable the calibration loop
-        if (dbbc3.config.mode.startswith("OCT")):
+        if (dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and int(dbbc3.config.cmdsetVersion['majorVersion']) < 120):
+             logger.info("=== Re-enabling  calibration loop")
              dbbc3.enableloop()
          
         dbbc3.disconnect()
@@ -397,19 +398,19 @@ if __name__ == "__main__":
 
         try:
 
-                logger.debug ("===Trying to connect to %s:%d" % (args.ipaddress, args.port))
+                logger.debug ("=== Trying to connect to %s:%d" % (args.ipaddress, args.port))
                 dbbc3 = DBBC3(host=args.ipaddress, port=args.port)
-                logger.info ("===Connected")
+                logger.info ("=== Connected")
 
                 ver = dbbc3.version()
                 logger.info ("=== DBBC3 is running: mode=%s version=%s(%s)" % (ver['mode'], ver['majorVersion'], ver['minorVersion']))
 
                 valFactory = ValidationFactory()
                 val = valFactory.create(dbbc3, True)
-                #val = DBBC3Validation(dbbc3, ignoreErrors=True)
 
-                # for OCT mode disable the calibration loop to speed up processing
-                if (dbbc3.config.mode.startswith("OCT")):
+                # for OCT_D mode prior to version 120 disable the calibration loop to speed up processing
+                if (ver['mode'] == "OCT_D" and int(ver['majorVersion']) < 120):
+                    logger.info( "=== Disabling calibration loop  to speed up command processing")
                     dbbc3.disableloop()
 
                 useBoards = []
