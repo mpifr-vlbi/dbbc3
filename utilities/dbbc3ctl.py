@@ -202,6 +202,27 @@ class Prompt(Cmd):
             if (cmd.startswith(topic)):
                 print (cmd)
 
+    def _checkSystemOCT_D(self, boards):
+        logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
+        with Spinner(""):
+            rep = val.validateSamplerPhases()
+        reportResult(rep)
+        for board in boards:
+            logger.info ("=== Checking board {0}".format(board))
+    #        reportResult(val.validatePPS())
+            reportResult(val.validateTimesync(board))
+            reportResult(val.validateSynthesizerLock(board))
+            reportResult(val.validateSynthesizerFreq(board))
+            reportResult(val.validateIFLevel(board))
+            with Spinner(""):
+                rep = val.validateSamplerPower(board)
+            reportResult(rep)
+            with Spinner(""):
+                rep = val.validateSamplerOffsets(board)
+            reportResult(rep)
+
+            reportResult(val.validateBitStatistics(board))
+
     def _checkSystemDDC_U(self, boards):
 
         logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
@@ -314,6 +335,9 @@ class Prompt(Cmd):
             if (self.dbbc3.config.mode == "DDC_U"):
                 self._noteSamplerTest()
                 self._checkSystemDDC_U(boards)
+            elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
+                self._noteSamplerTest()
+                self._checkSystemOCT_D(boards)
             else:
                 print ("'check system' not yet supported for the current mode")
             
