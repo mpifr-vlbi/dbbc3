@@ -355,7 +355,7 @@ class DBBC3ValidationDefault(object):
         targetCount = 32000
         errors = 0
         board = self.dbbc3.boardToChar(boardNum)
-        check = "===Checking sampler gains for board %s" % (board)
+        check = "=== Checking sampler gains for board %s" % (board)
 
         # sampler gains should be checked with IF power close to target (32000)
         retOrig = self.dbbc3.dbbcif(board)
@@ -453,7 +453,7 @@ class DBBC3ValidationDefault(object):
 
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
-                check = "===Checking bit statistics for board %s sampler %d" % (board, samplerNum)
+                check = "=== Checking bit statistics for board %s sampler %d" % (board, samplerNum)
                 errorCount = 0
 
                 bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
@@ -502,7 +502,7 @@ class DBBC3ValidationDefault(object):
         board = self.dbbc3.boardToChar(boardNum)
 
 
-        check = "===Checking sampler offsets for board %s" % (board)
+        check = "=== Checking sampler offsets for board %s" % (board)
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
         #print (retOrig)
@@ -530,7 +530,7 @@ class DBBC3ValidationDefault(object):
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
                 errorCount = 0
-                check = "===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
+                check = "=== Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
 
                 bstats = self.dbbc3.core3h_core3_bstat(boardNum, samplerNum)
         #        print (self.dbbc3.lastResponse)
@@ -581,7 +581,7 @@ class DBBC3ValidationDefault(object):
 
     def _reportLock(self, board, value, report):
         
-        check = "===Checking synthesizer lock state of board %s" % (board)
+        check = "=== Checking synthesizer lock state of board %s" % (board)
         error = 0 
         if (value == True): 
                 report.add(Item(Item.INFO, check, "Locked", "", Item.OK))
@@ -620,7 +620,7 @@ class DBBC3ValidationDefault(object):
         board = self.dbbc3.boardToChar(board)
         freq = self.dbbc3.synthFreq(board)
 
-        check = "===Checking GCoMo synthesizer frequency of board %s" % (board)
+        check = "=== Checking GCoMo synthesizer frequency of board %s" % (board)
 
         # verify that synth is tuned to the freq specified in the config
         if freq['actual'] != freq['target']:
@@ -645,7 +645,7 @@ class DBBC3ValidationDefault(object):
         inactive = []
         notSynced = []
 
-        check = "===Checking 1PPS synchronisation"
+        check = "=== Checking 1PPS synchronisation"
         delays = self.dbbc3.pps_delay()
 
         for i in range(len(delays)):
@@ -768,7 +768,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         targetCount = 32000
         errors = 0
         board = self.dbbc3.boardToChar(boardNum)
-        check = "===Checking sampler powers (gains) for board %s" % (board)
+        check = "=== Checking sampler powers (gains) for board %s" % (board)
 
         # sampler gains should be checked with IF power close to target (32000)
         retOrig = self.dbbc3.dbbcif(board)
@@ -828,8 +828,6 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
 
         board = self.dbbc3.boardToChar(boardNum)
 
-
-        check = "===Checking sampler offsets for board %s" % (board)
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
         ret = retOrig
@@ -837,6 +835,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         targetCount = 5000
 
         if (self._regulatePower(board, targetCount) == False):
+            check = "=== Checking sampler offsets for board %s" % (board)
             # reset the dbbcif settings to their original values
             self._resetIFSettings( board, retOrig)
             rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
@@ -856,7 +855,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
             errorCount = 0
-            check = "===Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
+            check = "=== Checking sampler offsets for board %s sampler %d" % (board, samplerNum)
 
             if ret["offset"]["state"][samplerNum] != "OK":
                 errorCount += 1
@@ -867,8 +866,8 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
                 self._resetIFSettings(board, retOrig)
                 rep.add(Item(Item.ERROR, check, msg, resolv, state=Item.FAIL, exit=True))
 
-        if errorCount == 0:
-            rep.add(Item(Item.INFO, check, "Sampler offsets: %s frac: %s" % ( ret["offset"]["val"],  ret["offset"]["frac"]) , "", state=Item.OK))
+            if errorCount == 0:
+                rep.add(Item(Item.INFO, check, "Sampler offsets: %s frac: %s" % ( ret["offset"]["val"][samplerNum],  ret["offset"]["frac"][samplerNum]) , "", state=Item.OK))
 
         # Finally reset the dbbcif settings to their original values
         self._resetIFSettings(board, retOrig)
