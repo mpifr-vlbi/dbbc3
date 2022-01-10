@@ -2168,6 +2168,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def adb3l_reset(self):
         ''' 
         Resets all ADB3L boards and sets the registers to default values
+
+        Returns:
+            None
         '''
         self.sendCommand("adb3l=reset")
         return
@@ -2175,6 +2178,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def adb3l_reseth(self):
         '''
         Resets all ADB3L boards, but does NOT change/reset any register settings
+
+        Returns:
+            None
         '''
         self.sendCommand("adb3l=reseth")
         return 
@@ -2189,6 +2195,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int, optional): sampler number (0-3)
+
+        Returns:
+            None
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2270,6 +2279,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             sampler (int): sampler number (0-3)
             value (int, optional): the delay value in steps of 120fs. Default is 512 (=0ps)
 
+        Returns:
+            None
+
         Raises:
             ValueError: in case the specified sampler is out of range
             ValueError: in case the specified value parameter is out of range
@@ -2303,6 +2315,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             sampler (int): sampler number (0-3)
             value (int, optional): the offset value in steps of 156 microV. Default is 128 (=0 mV)
 
+        Returns:
+            None
+
         Raises:
             ValueError: in case the specified sampler is out of range
             ValueError: in case the specified value parameter is out of range
@@ -2335,6 +2350,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int): sampler number (0-3)
             value (int, optional): the offset value in steps of 0.004dB. Default is 128 (=0 dB)
+
+        Returns:
+            None
 
         Raises:
             ValueError: in case the specified sampler is out of range
@@ -3282,6 +3300,37 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
         clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
         clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
+        clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
+
+    def pps_delay(self):
+        '''
+        Determines the delay between the internal vs. the external PPS.
+        A positive value indicates that the internal PPS is delayed with respect to the external signal.
+        All delays are in units of ns.
+
+        Returns:
+            list (float): List containing the pps delays for all 8 core3h boards (unit: ns)
+        '''
+
+        cmd = "pps_delay"
+        ret = self.sendCommand(cmd)
+
+        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+        patStr = "pps_delay/"
+        for i in range(8):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(self.config.numCoreBoards):
+                    delays.append(int(match.group(2+i*2)))
+
+        return(delays)
 
     def core3h_sampler_offset(self, board):
         '''
@@ -3396,6 +3445,11 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Checks the delay phase calibration for the specified board or for all boards if the board parameter is not specified.
 
+        :warning::
+            Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to 
+            phase shifting of the sampler outputs. During scans the delay output of the :py:func:`samplerstats` command can be
+            used to evaluate the sampler synchronisation state.
+
         Returns:
             bool: True if all samplers are in sync, False otherwise
         '''
@@ -3472,6 +3526,11 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
     def samplerstats(self, board):
         '''
         Retrieves and validates sampler statistics: gain, offset and delay.
+
+        :warning::
+            The reported delay states can be incorrect in case reduced band widths are
+            inserted into the DBBC3; in particular if low parts of he input bands are missing.
+            In this case use :py:func:`checkphase` to validate sampler synchronisation.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
