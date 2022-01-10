@@ -574,7 +574,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Enables/disables the synthesizer output that serves the given board.
     
-        :warning::
+        Warning:
             Disabling the output will switch of the downconversion stage of the DBBC3.
 
         If called without the state argument the current output setting is reported.
@@ -1771,9 +1771,10 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         time synchronization. For this to work the input stage of the data path
         and the timers are not reset.
 
-        Warning:  Time synchronization will not be correct
-        anymore in the rare but possible case that a data sample with a 1PPS
-        flag is lost during the reset process.
+        Warning: 
+            Time synchronization will not be correct
+            anymore in the rare but possible case that a data sample with a 1PPS
+            flag is lost during the reset process.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1804,7 +1805,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         its initial state, i.e. as it was directly after the programming of the FPGA and
         lets the FiLa10G system boot again.
 
-        Warning: all previously configured settings and states are lost when rebooting!
+        Warning:
+            All previously configured settings and states are lost when rebooting!
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -2264,7 +2266,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_delay(self, board, sampler, value=512):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -2300,7 +2302,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_offset(self, board, sampler, value=128):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -2336,7 +2338,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_gain(self, board, sampler, value=512):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3100,7 +3102,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def mag_thr(self, bbc, threshold=None):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3141,7 +3143,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def core3hread(self, board, block, bbc, register):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3177,7 +3179,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def core3hwrite(self, board, block, bbc, register, value):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3445,7 +3447,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Checks the delay phase calibration for the specified board or for all boards if the board parameter is not specified.
 
-        :warning::
+        Warning:
             Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to 
             phase shifting of the sampler outputs. During scans the delay output of the :py:func:`samplerstats` command can be
             used to evaluate the sampler synchronisation state.
