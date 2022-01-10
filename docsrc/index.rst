@@ -41,7 +41,7 @@ DBBC3 Module Reference
 ----------------------
 
     * :mod:`dbbc3.DBBC3`
-    * :mod:`dbbc3.DBBC3Commandset`
+    * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121`
