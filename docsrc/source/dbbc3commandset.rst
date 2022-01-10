@@ -1,8 +1,5 @@
 :py:mod:`DBBC3Commandset` Module
 ********************************
-.. toctree::
-   ddcv124
-
 .. inheritance-diagram:: dbbc3.DBBC3Commandset
    :parts: 1
 
