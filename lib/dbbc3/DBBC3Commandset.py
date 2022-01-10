@@ -3527,7 +3527,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Retrieves and validates sampler statistics: gain, offset and delay.
 
-        :warning::
+        Warning: 
             The reported delay states can be incorrect in case reduced band widths are
             inserted into the DBBC3; in particular if low parts of he input bands are missing.
             In this case use :py:func:`checkphase` to validate sampler synchronisation.
