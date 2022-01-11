@@ -331,7 +331,7 @@ class DBBC3ValidationDefault(object):
             if (att == prevAtt):
                 return(False)
                 
-#            print (upper, lower, att)
+            #print (upper, lower, att)
             prevCounts = ret["count"]
             
             # set the attenuation level
@@ -816,23 +816,26 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
 #        self.dbbc3.dbbcif(board, retOrig["inputType"], retOrig["mode"], retOrig["target"])
 
         return rep
-    def validateSamplerOffsets(self, boardNum):
+
+    def validateSamplerOffsets(self, board, targetCount=32000):
         '''
         Validates the sampler offsets
 
+        Parameters:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            targetCount (int, optional): the total power count at which the validation should be carried out. Defaults to 32000.
+        
         Returns:
             ValidationReport: the report containing the validation results
         '''
 
         rep = ValidationReport(self.ignoreErrors)
 
-        board = self.dbbc3.boardToChar(boardNum)
+        board = self.dbbc3.boardToChar(board)
 
         # save the original IF settings
         retOrig = self.dbbc3.dbbcif(board)
         ret = retOrig
-
-        targetCount = 5000
 
         if (self._regulatePower(board, targetCount) == False):
             check = "=== Checking sampler offsets for board %s" % (board)
@@ -843,11 +846,6 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
-
-        # TODO: Check with Sven whether this is neccesary for OCT_D_124
-        # Reset the core3h thresholds (needed in case the calibration has been running)
-        # core3h=1,regwrite core3 1 0xA4A4A4A4
-        self.dbbc3.core3h_regwrite(board, "core3", 1, 0xA4A4A4A4)
 
         ret = self.dbbc3.samplerstats(board)
         # 'offset': {'val': [63384378, 64164764, 65276968, 65609344], 'frac': [49.52, 50.13, 51.0, 51.26], 'state': ['OK', 'OK', 'NOT OK', 'NOT OK']}
