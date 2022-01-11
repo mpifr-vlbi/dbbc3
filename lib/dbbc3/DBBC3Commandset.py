@@ -2429,14 +2429,12 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         If the optional board parameter is used one delay value will be returned for each of the
         PPS groups each serving 4 BBCs. Group 1: BBCs 1-4; group 2: BBCs 5-8 etc.
 
-        Args:
+        Parameters:
             board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
 
         Returns:
-            if called without the optional board parameter:
-                list: list holding the delays of the internal-external PPS in nanoseconds for each core3H board
-            if called with the optional board parameter:
-                list: list containing the internal-external PPS delay of the two PPS groups.
+            list: list holding the delays of the internal-external PPS in nanoseconds. One value for each Core3H board if called without the optional board parameter.
+            list: list holding the delays of the internal-external PPS in nanoseconds. Two values for the two PPS groups if called with the optional board parameter.
         '''
 
         cmd = "pps_delay"
@@ -3314,6 +3312,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
         clas.time = types.MethodType (self.time.__func__, clas)
         clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
+        clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
         clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
         clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
@@ -3352,6 +3351,10 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Obtains the offset statistics for each of the four samplers of the specified board.
 
+        Note:
+            Usage of :py:func:`core3h_sampler_offset` is deprecated. Use :py:func:`samplerstats` to obtain
+            the statistics, power, offset and delay of the individual samplers.
+
         Args:
             board (int or str): can be given as a number (0 = board A) or as char e.g. A
 
@@ -3389,6 +3392,10 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Obtains the power levels for each of the four samplers of the specified board.
 
+        Note:
+            Usage of :py:func:`core3h_sampler_power` is deprecated. Use :py:func:`samplerstats` to obtain
+            the statistics, power, offset and delay of the individual samplers.
+
         Args:
             board (int or str): can be given as a number (0 = board A) or as char e.g. A
 
@@ -3420,9 +3427,57 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
 
         return (res)
 
+    def core3h_core3_power(self, board):
+        '''
+        Obtains the power statistics of the selected board for both filters.
+
+        The powers reported separately for the two VSI channels resulting 
+        in a total of 4 values:
+            * filter 0: 0a & 0b 
+            * filter 1: 1a & 1b 
+
+        Note:
+            Usage of :py:func:`core3h_core3_power` is deprecated. Use :py:func:`core3hstats` to obtain
+            bit statistics and power levels of the filtered outputs.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            dict : dictionary containing the powers for the two filters (split up over two VSI channels), None in case the core3 board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+
+        pow = {}
+        ret = self.sendCommand("core3h=%d,core3_power" % (boardNum))
+
+        if "not connected" in ret:
+                return None
+
+        #CORE3 filter power levels:
+        #Power at filter 0a = 62066749
+        #Power at filter 1a = 299796534
+        #Power at filter 0b = 110171088
+        #Power at filter 1b = 300520436
+
+        pattern = re.compile("\s*Power\s+at\s+filter\s+([01][ab])\s+=\s+(\d+)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                pow[match.group(1)] = int(match.group(2))
+
+        return(pow)
+
     def core3h_core3_bstat(self, board, filter):
         '''
         Obtains the 2-bit statistics for the selected core board and filter
+
+        Note:
+            Usage of :py:func:`core3h_core3_bstat` is deprecated. Use :py:func:`core3hstats` to obtain
+            bit statistics and power levels of the filtered outputs.
 
         Args:
             board (int or str): can be given as a number (0 = board A) or as char e.g. A
@@ -3484,6 +3539,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
     def core3hstats(self, board):
         '''
         Retrieves the power levels and bit statistics of the two FIR filters
+
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
