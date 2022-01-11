@@ -463,7 +463,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Checks whether all samplers of all core boards are in sync
 
-        In case one or more samplers are not in sync query the lastResponse statement to receive information on the failed board(s)
+        Warning:
+            Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to 
+            phase shifting of the sampler outputs.
+
+        In case one or more samplers are not in sync use lastResponse to receive information on the failed board(s)
 
         Returns:
             bool: True if all samplers are in sync, False otherwise
@@ -738,8 +742,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Reads the value of the device register
 
-        Note: not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
-        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
+        Note:
+            Not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -769,8 +774,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Reads the decimal value of the device register
 
-        Note: not all devices have readbale registers. See DBBC3 documentation for the core3h "devices" command.
-        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
+        Note:
+            Not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -792,7 +798,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Writes a value into the device register
 
-        Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
+        Note:
+            Not all devices have writeable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -823,7 +831,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Updates only certain bits of the value of a device register
 
-        Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
+        Note:
+             Not all devices have writable registers. See DBBC3 documentation for "devices" command
 
         The bitmask must be in hexadecimal format.
 
@@ -1010,8 +1019,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         TODO: update the documentation
         TODO: Find out about "vsi1-2-3-4-5-6-7-8"
 
-        Note: it is recommended to execute :py:func:`core3h_reset`
-        (with or without the keepsync option) after changing the input source
+        Note:
+            It is recommended to execute :py:func:`core3h_reset`
+            (with or without the keepsync option) after changing the input source
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1056,16 +1066,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             
         Split mode requires an input width of at least 2 bit.
 
-        Note: raw and vdif format can be applied independently to each split
-        stream with the help of the :py:func:`core3h_start` command syntax
+        Note:
+            Raw and vdif format can be applied independently to each split
+            stream with the help of the :py:func:`core3h_start` command syntax
 
-        Note: in order to specify a correct VDIF frame setup you have to take
-        into account that the effective input width is halved when the 
-        split mode is enabled.
+        Note:
+            In order to specify a correct VDIF frame setup you have to take
+            into account that the effective input width is halved when the 
+            split mode is enabled.
 
-        Note: A restriction of the split mode is that only output0 is capable
-        of producing multi-threaded VDIF data. At output1 the data will 
-        always be forced to be single-threaded, regardless of the chosen frame setup.
+        Note:
+            A restriction of the split mode is that only output0 is capable
+            of producing multi-threaded VDIF data. At output1 the data will 
+            always be forced to be single-threaded, regardless of the chosen frame setup.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1306,8 +1319,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         If the method is called without supplying the stationID parameter the
         current station ID will be reported.
 
-        Note: setting this value directly affects the header data of 
-        the VDIF data format
+        Note: 
+            Setting this value directly affects the header data of 
+            the VDIF data format
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -3531,7 +3545,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
 
         Warning: 
             The reported delay states can be incorrect in case reduced band widths are
-            inserted into the DBBC3; in particular if low parts of he input bands are missing.
+            inserted into the DBBC3; in particular if low parts of the input bands are missing.
             In this case use :py:func:`checkphase` to validate sampler synchronisation.
 
         Args:
