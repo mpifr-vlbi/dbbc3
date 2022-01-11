@@ -209,7 +209,7 @@ class Prompt(Cmd):
         reportResult(rep)
         for board in boards:
             logger.info ("=== Checking board {0}".format(board))
-    #        reportResult(val.validatePPS())
+            reportResult(val.validatePPS())
             reportResult(val.validateTimesync(board))
             reportResult(val.validateSynthesizerLock(board))
             reportResult(val.validateSynthesizerFreq(board))
