@@ -2467,6 +2467,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
                 for i in range(retVals):
                     # convert into signed 
                     delay = int(match.group(2+i*2))
+                    # account for negative delays
                     if delay > 500000000:
                         delay = int(match.group(2+i*2)) - 1000000000
                     delays.append(delay)
