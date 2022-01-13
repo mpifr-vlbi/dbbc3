@@ -642,29 +642,22 @@ class DBBC3ValidationDefault(object):
 
         report = ValidationReport(self.ignoreErrors)
 
-        inactive = []
         notSynced = []
 
         check = "=== Checking 1PPS synchronisation"
         delays = self.dbbc3.pps_delay()
 
         for i in range(len(delays)):
-                if delays[i] == 0:
-                        inactive.append(self.dbbc3.boardToChar(i))
-                elif delays[i] > 200:
+                if delays[i] > 200:
                         notSynced.append(self.dbbc3.boardToChar(i))
 
-        if len(inactive) > 0:
-                msg = "The following boards report pps_delay=0: %s" % str(inactive)
-                resolv = "Check if these boards have been disabled in the DBBC3 config file"
-                report.add(Item(Item.WARN, check, msg, resolv, Item.FAIL, exit=False))
         if len(notSynced) > 0:
                 msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
                 resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
                 resolv += "If the problem persists probably you have a hardware issue."
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
 
-        if len(inactive) ==0 and len(notSynced) ==0:
+        if len(notSynced) ==0:
                 report.add(Item(Item.INFO, check, "PPS delays: %s ns" % delays, "", Item.OK))
 
         return (report)
