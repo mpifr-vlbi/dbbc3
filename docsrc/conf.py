@@ -250,3 +250,7 @@ inheritance_graph_attrs = dict(rankdir="TB", size='"18.0, 18.0"',
                                fontsize=14, ratio="compress")
 autodoc_default_options = {
 }
+
+# insert a custom css (must bde located in your html_static_path directory
+def setup(app):
+    app.add_css_file('mycss.css')

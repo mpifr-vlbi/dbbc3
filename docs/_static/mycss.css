@@ -1,3 +1,7 @@
+.wy-nav-content {
+max-width: 100% !important;
+}
+
 img.inheritance {
-  max-width: none;
+  max-width: 100%;
 }
