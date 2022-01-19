@@ -508,6 +508,8 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
         nIdx = self._parseAdb3l(valueArray, nIdx)
         nIdx = self._parseCore3h(valueArray, nIdx)
 
+        return(self.message)
+
 
     def _parseIFMask(self, mc, offset):
         '''
