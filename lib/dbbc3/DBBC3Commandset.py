@@ -3696,9 +3696,15 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         
         return (resp)
 
-    def tap(self, board, filterNum, filterFile):
+    def tap(self, board, filterNum=None, filterFile=None):
         '''
         Sets the tap filters when in OCT mode. 
+
+        If called without the filterNum parameter the current filter setup is returned as a dictionary
+        with the following structure:
+            'filter1_file' (str): the currently loaded filter definition file for filter 1
+            'filter2_file' (str): the currently loaded filter definition file for filter 2
+
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -3706,28 +3712,52 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
             filterFile: the file containing the filter coefficients. The file needs to be present in the config folder: C:\DBBC_CONF\OCT_D_120\.
 
         Returns:
+            dict: in case the method is called without the filterNum parameter (see description for structure)
             boolean: True if the tap filter was loaded correctly, False otherwise
 
         Raises:
             ValueError: in case an illegal value for filterNum has been given.
-            ValueError: in case the file containing the filter coeeficients does not exist."
+            ValueError: in case no filter file has been specified
+            DBBC3Exception: in case the file containing the filter coeeficients does not exist."
         '''
 
-
-        if filterNum not in [1,2]:
-            raise ValueError("tap: filterNum must be 1 or 2")
-
         boardNum = self.boardToDigit(board) +1
-        cmd = "tap=%d,%s,%s" % (boardNum, filterNum, filterFile)
+        cmd = "tap=%d" % (boardNum)
+
+        reportMode = False
+        if filterNum:
+            if filterNum not in [1,2]:
+                raise ValueError("tap: filterNum must be 1 or 2")
+
+            if not filterFile:
+                raise ValueError("tap: missing required parameter filterFile")
+
+            cmd += ",%s,%s" % (filterNum, filterFile)
+        else:
+            reportMode = True
+
         ret = self.sendCommand(cmd)
 
-        if "Error" in ret:
-            raise ValueError("tap: Error in the call parameters. (check that filterFile exist on the DBBC3)" )
-        
-        if "Taps loaded correctly" in ret:
-            return(True)
+        if reportMode:
+            #>> tap=1
+            #Board[1], Filter 1 has file "[c:/DBBC_CONF/OCT_D_120/2000-4000_64taps.flt]" loaded
+            #Board[1], Filter 2 has file "[c:/DBBC_CONF/OCT_D_120/0-2000_64taps.flt]" loaded;
+            resp = {}
+            pattern = re.compile(".*Filter\s+(\d+)\s+has\s+file\s+\"\[(.+)\]\"\s+loaded")
+            for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                    resp["filter%s_file" % (match.group(1))] = match.group(2)
+            return (resp)
+            
         else:
-            return(False)
+            if "Error" in ret:
+                raise DBBC3Exception("tap: Error in the call parameters. (check that filterFile exist on the DBBC3)" )
+            
+            if "Taps loaded correctly" in ret:
+                return(True)
+            else:
+                return(False)
 
 class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
     '''
