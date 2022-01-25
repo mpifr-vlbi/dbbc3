@@ -783,13 +783,14 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         ret = self.dbbc3.samplerstats(board)
         # 'offset': {'val':offset [63384378, 64164764, 65276968, 65609344], 'frac': [49.52, 50.13, 51.0, 51.26], 'state': ['OK', 'OK', 'NOT OK', 'NOT OK']}
 
+
         for samplerNum in range(self.dbbc3.config.numSamplers):
 
             errorCount = 0
 
             if ret["power"]["state"][samplerNum] != "OK":
                 errorCount += 1
-                msg = "Offset too large for sampler %d: %f" % (samplerNum, ret["power"]["frac"][samplerNum])
+                msg = "Offset too large for sampler %d: %f" % (samplerNum, ret["power"]["val"][samplerNum])
                 resolv = "Make sure pure noise is inserted (no tones!).\n"
                 resolv += "If the problem persists re-calibration of the system might be required.\n"
 
