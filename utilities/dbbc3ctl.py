@@ -60,7 +60,7 @@ def reportResult(rep):
         if "INFO" in res.level:
             logger.info("[{0}] {1} - {2}".format(res.state,  res.action, res.message))
         elif ("WARN" in res.level ):
-            logger.warn("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
+            logger.warning("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
         elif ("ERROR" in res.level ):
             logger.error("[{0}]/[{1}] {2} - {3}".format(res.state, res.level, res.action, res.message))
 
