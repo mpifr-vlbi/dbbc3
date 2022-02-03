@@ -27,40 +27,62 @@ args = None
 
 
 class PlotCounts ():
-    def __init__(self, ax, activeBoards):
+    def __init__(self, ax, activeBoards, maxX=100):
         self.ax = ax
-       # self.dt = dt
-       # self.maxt = maxt
+        self.maxt = maxX
         self.activeBoards = activeBoards
-        self.ydata = collections.deque(maxlen=100)
-#               self.counts[board] = collections.deque(maxlen=100)
-        self.lines = []
 
-        self.tdata = [0]
-        count = 1
+        self.maxY = 0
+        self.minY = 100000
+
+        self.lines = []
+        self.ydata = []
+
+        count = 0
         colors = ['red','green', 'orange','blue', 'pink', 'violett', 'brown', 'gray']
         for board in self.activeBoards:
             if board:
-                self.ydata.append([0])
-                line = Line2D(self.tdata,  [0], color=colors[count], label="board {}".format(count))
+                self.ydata.append(collections.deque([], maxlen=self.maxt))
+                line = Line2D([],  [], color=colors[count], label="board {}".format(count+1))
                 self.ax.add_line(line)
                 self.lines.append(line)
 
             count +=1
+        self.ax.legend(handles=self.lines, fontsize='x-small', loc=4, frameon=True)
         self.ax.set_ylim(30000, 35000)
-        #self.ax.set_xlim(0, self.maxt)
-        self.ax.set_xlim(-100, 0)
+        self.ax.set_xlim(-1*maxX, 0)
 
     def update(self, y):
-        print (y)
-        lastt = self.tdata[-1]
 
-       # t = self.tdata[-1] + self.dt
+        margin = 1000
+        yminVals = []
+        ymaxVals = []
         
+        resize=False
         for i in range(len(self.lines)):
             self.ydata[i].append(y[i])
             self.tdata = list(range(-1*len(self.ydata[i])+1,1,1))
             self.lines[i].set_data(self.tdata, list(self.ydata[i]))
+
+            ymaxVals.append( max(self.ydata[i]))
+            if y[i] != 0:
+                yminVals.append( min(self.ydata[i]))
+
+
+        ymax = max (ymaxVals)
+        ymin = min (yminVals)
+#        print (ymin, ymax, yminVals, ymaxVals, self.minY, self.maxY)
+
+        if ymax > self.maxY or ymax + 2*margin <  self.maxY:
+            self.maxY = ymax + margin
+            resize = True
+        if ymin < self.minY or ymin - 2*margin > self.minY:
+            self.minY = ymin - margin
+            resize = True
+        if resize:
+            self.ax.set_ylim(self.minY, self.maxY)
+            self.ax.figure.canvas.resize_event()
+            
 
         return self.lines
 
@@ -94,6 +116,7 @@ class MainWindow():
     def __init__(self, parent=None):
 
             self.root = Tk()
+            self.root.title ("dbbcmon")
             self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
             self.messageVars={}
@@ -103,23 +126,14 @@ class MainWindow():
             mcFactory = DBBC3MulticastFactory()
             self.mc = mcFactory.create()
 
-            #self.counts = {} 
-            #self.power = {} 
-            self.pltCounts = {}
-            self.pltPower = {}
-            self.pltSamplerStats = {}
-            #for board in self.activeBoards:
-            #    self.counts[board] = collections.deque(maxlen=100)
-            #    self.power[board] = collections.deque(maxlen=100)
-           # 
-
             # start multicast polling in its own thread
             self.q = queue.Queue(maxsize=1)
             mcThread = threading.Thread(target=thread_mcPoll, args=("mc", self.mc,  self.q), daemon = True)
             mcThread.start()
             
-            # start the main widget updater loop (repeats every 1s)
-            self.updateMessage()
+            # obtain initial mc message
+            self.lastMessage = self.q.get(block=True)
+            self._initVars(self.lastMessage)
 
             # determine the currently activated boards
             self.setActiveBoards()
@@ -128,11 +142,14 @@ class MainWindow():
             self.majorVersion = int(self.messageVars["majorVersion"].get())
 
             self._setupWidgets()
-            #self.update2()
+
+            # start the main widget updater loop (repeats every 1s)
+            self.updateMessage()
+
+
             self.root.mainloop()
             
     def on_closing(self):
-#        if messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.root.quit()
             self.root.destroy()
 
@@ -155,9 +172,6 @@ class MainWindow():
                 self.activeBoards = np.array(list(self.lastMessage["boardActive"]), dtype=bool)
             else:
                 self.activeBoards = present
-            
-        print ("present: ", present)
-        print ("Active: ", self.activeBoards)
 
     def busy(self):
         self.root.config(cursor="watch")
@@ -175,22 +189,6 @@ class MainWindow():
 
         return(perc)
             
-
-    def updateTabIF(self):
-        # update tabIF (if visible)
-        if self.notebook.index(self.notebook.select()) == 0:
-            for board in self.activeBoards:
-                fig = self.pltPower[board].figure
-                self.pltCounts[board].set_xdata(list(range(-1*len(self.counts[board])+1,1,1)))
-                self.pltCounts[board].set_ydata(list(self.counts[board]))
-                self.pltPower[board].set_xdata(list(range(-1*len(self.power[board])+1,1,1)))
-                self.pltPower[board].set_ydata(list(self.power[board]))
-                #print (self.pltPower[board].figure.axes)
-            for axis in fig.axes:
-                axis.relim()
-                axis.autoscale_view()
-        #self.canvasCounts.draw()
-
     def updateTabSampler(self):
 
         # update tabSampler (if visible)
@@ -246,41 +244,57 @@ class MainWindow():
         #self.canvasSampler.draw()
 
 
-    def update2(self):
-        print("update2")
-        self.root.after(2000, self.update2)
-
     def updateMessage(self):
 
-        print ("updateMessage")
         # obtain new message from multicast reader thread
         self.lastMessage = self.q.get(block=True)
 
-        #serialize the message
+        # serialize the mc message and auto-populate StringVars
         self._initVars(self.lastMessage)
 
-        print (self.messageVars["if_1_count"].get())
-
         # update the state of the various widgets
-        #self._setWidgetStates()
-        self.root.after(1000, self.updateMessage)
+        self._setWidgetStates()
 
-        #self.updateTabIF() 
-#       #self.updateTabSampler() 
-        #print (self.messageVars["if_1_count"].get())
-        #print ("update")
+        self.root.after(1000, self.updateMessage)
     
     def _setWidgetStates(self):
 
-        for board in self.activeBoards:
+        for board in range(8):
+
+            if not self.activeBoards[board]:
+                continue
             board += 1
+
             # IF dashboard
             key = "if_{}_mode".format(board)
-            val = self.messageVars[key].get()
-            if val == 'agc':
+            if self.messageVars[key].get() == 'agc':
                 self.messageComp[key].configure(style="OK.TButton")
             else:
                 self.messageComp[key].configure(style="WARN.TButton")
+
+            key = "if_{}_attenuation".format(board)
+            att = int(self.messageVars[key].get())
+            if att > 20 and att < 41:
+                self.messageComp[key].configure(style="OK.TButton")
+            else:
+                self.messageComp[key].configure(style="WARN.TButton")
+
+            key = "if_{}_count".format(board)
+            att = self.messageVars[key].get()
+            if abs(int(self.messageVars[key].get()) - int(self.messageVars["if_{}_target".format(board)].get())) < 1000:
+                self.messageComp[key].configure(style="OK.TButton")
+            else:
+                self.messageComp[key].configure(style="WARN.TButton")
+
+            # DC dashboard
+            if self.messageVars["if_{}_synth_status".format(board)].get() ==  "on":
+                # check lock state for boards with enabled DC
+                key = "if_{}_synth_lock".format(board)
+                if self.messageVars[key].get() == 'locked':
+                    self.messageComp[key].configure(style="OK.TButton")
+                else:
+                    self.messageComp[key].configure(style="ERROR.TButton")
+
 
             # sampler dashboard
             #for s in range(4):
@@ -414,10 +428,9 @@ class MainWindow():
         ax.set_ylim([30000,40000])
         ax.set_xlim([-100,0])
         ax.grid(True)
-        ax.legend(fontsize='x-small', loc=2)
 
-        pltCounts = PlotCounts(ax, self.activeBoards)
-        self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=1000, blit=True)
+        pltCounts = PlotCounts(ax, self.activeBoards, 30)
+        self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
         self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
         self.canvasCounts.get_tk_widget().pack()
         self.canvasCounts.draw()
@@ -572,7 +585,7 @@ class MainWindow():
         Label(frmIf, text="mode").grid(row=4,column=0, sticky=W)
         Label(frmIf, text="attenuation").grid(row=5,column=0, sticky=W)
         Label(frmSynth, text="enabled").grid(row=2,column=0, sticky=W)
-        Label(frmSynth, text="locked").grid(row=3,column=0, sticky=W)
+        Label(frmSynth, text="synth").grid(row=3,column=0, sticky=W)
         Label(frmSynth, text="frequency").grid(row=4,column=0, sticky=W)
 
 
@@ -601,9 +614,9 @@ class MainWindow():
             self.messageComp["if_{}_attenuation".format(b)].grid(row=5,column=i+1, sticky=E+W)
 
             # frmSynth
-            self.messageComp["if_{}_synth_status".format(b)] = Button(frmSynth, relief=SUNKEN,state=DISABLED, disabledforeground="black", textvariable=self.messageVars["if_{}_synth_status".format(b)])
-            self.messageComp["if_{}_synth_lock".format(b)] = Button(frmSynth, relief=SUNKEN,state=DISABLED, disabledforeground="black", textvariable=self.messageVars["if_{}_synth_lock".format(b)])
-            self.messageComp["if_{}_synth_frequency".format(b)] = Button(frmSynth, relief=SUNKEN,state=DISABLED, disabledforeground="black", textvariable=self.messageVars["if_{}_synth_frequency".format(b)])
+            self.messageComp["if_{}_synth_status".format(b)] = ttk.Button(frmSynth, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_synth_status".format(b)])
+            self.messageComp["if_{}_synth_lock".format(b)] = ttk.Button(frmSynth, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_synth_lock".format(b)])
+            self.messageComp["if_{}_synth_frequency".format(b)] = ttk.Button(frmSynth, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_synth_frequency".format(b)])
 
             self.messageComp["if_{}_synth_status".format(b)].grid(row=2,column=i+1,sticky=E+W)
             self.messageComp["if_{}_synth_lock".format(b)].grid(row=3,column=i+1,sticky=E+W)
@@ -613,15 +626,15 @@ class MainWindow():
             #for s in range(4):
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="OK.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
-#
+
         self._setupTabIF()
 
         #self._setupTabSampler()
         # frmSampler setup
-        Label(frmSampler, text="sampler 0 state").grid(row=2,column=0, sticky=W)
-        Label(frmSampler, text="sampler 1 state").grid(row=3,column=0, sticky=W)
-        Label(frmSampler, text="sampler 2 state").grid(row=4,column=0, sticky=W)
-        Label(frmSampler, text="sampler 3 state").grid(row=5,column=0, sticky=W)
+        #Label(frmSampler, text="sampler 0 state").grid(row=2,column=0, sticky=W)
+        #Label(frmSampler, text="sampler 1 state").grid(row=3,column=0, sticky=W)
+        #Label(frmSampler, text="sampler 2 state").grid(row=4,column=0, sticky=W)
+        #Label(frmSampler, text="sampler 3 state").grid(row=5,column=0, sticky=W)
 
 
         
