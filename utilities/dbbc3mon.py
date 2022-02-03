@@ -26,66 +26,45 @@ from abc import ABC
 args = None
 
 
-class Generic2DPlot (ABC):
-
-    def __init__(self, ax, maxt=2, dt=0.02):
-        self.ax = ax
-        self.dt = dt
-        self.maxt = maxt
-        self.tdata = [0]
-        self.ydata = [0]
-        self.line = Line2D(self.tdata, self.ydata)
-        self.ax.add_line(self.line)
-        self.ax.set_ylim(-.1, 1.1)
-        self.ax.set_xlim(0, self.maxt)
-
-
 class PlotCounts ():
-    def __init__(self, ax, activeBoards, maxt=2, dt=0.02):
+    def __init__(self, ax, activeBoards):
         self.ax = ax
-        self.dt = dt
-        self.maxt = maxt
+       # self.dt = dt
+       # self.maxt = maxt
         self.activeBoards = activeBoards
-        self.ydata = []
+        self.ydata = collections.deque(maxlen=100)
+#               self.counts[board] = collections.deque(maxlen=100)
         self.lines = []
 
         self.tdata = [0]
+        count = 1
+        colors = ['red','green', 'orange','blue', 'pink', 'violett', 'brown', 'gray']
         for board in self.activeBoards:
             if board:
                 self.ydata.append([0])
-                line = Line2D(self.tdata, [0])
+                line = Line2D(self.tdata,  [0], color=colors[count], label="board {}".format(count))
                 self.ax.add_line(line)
                 self.lines.append(line)
-        self.ax.set_ylim(0, 35000)
-        self.ax.set_xlim(0, self.maxt)
+
+            count +=1
+        self.ax.set_ylim(30000, 35000)
+        #self.ax.set_xlim(0, self.maxt)
+        self.ax.set_xlim(-100, 0)
 
     def update(self, y):
+        print (y)
         lastt = self.tdata[-1]
-        #if lastt > self.tdata[0] + self.maxt:  # reset the arrays
-        #    self.tdata = [self.tdata[-1]]
-            #self.ydata = [self.ydata[-1]]
-        #    self.ax.set_xlim(self.tdata[0], self.tdata[0] + self.maxt)
-            #self.ax.set_ylim(min(self.ydata), max(self.ydata))
-            #self.ax.figure.canvas.draw()
 
-        t = self.tdata[-1] + self.dt
-        self.tdata.append(t)
+       # t = self.tdata[-1] + self.dt
+        
         for i in range(len(self.lines)):
-            self.ydata[i].append(y+i*1000)
-            self.lines[i].set_data(self.tdata, self.ydata[i])
-        #return self.lines,
+            self.ydata[i].append(y[i])
+            self.tdata = list(range(-1*len(self.ydata[i])+1,1,1))
+            self.lines[i].set_data(self.tdata, list(self.ydata[i]))
+
         return self.lines
 
 
-#def emitter(p=0.1):
-#    """Return a random value in [0, 1) with probability p, else 0."""
-#    while True:
-#        v = np.random.rand(1)
-#        if v > p:
-#            yield 0.
-#        else:
-#            yield np.random.rand(1)
-#
 def thread_mcPoll(name, mc, q):
     """
     Thread that polls the latest multicast message
@@ -106,49 +85,57 @@ def thread_mcPoll(name, mc, q):
             # estimate total power from count values
             res["if_{}".format(board)]["power"] = float(mc.message["if_{}".format(board)]["count"]) / 1420.0 + float(mc.message["if_{}".format(board)]["attenuation"]) / 2.0
 
+#        print (res)
+
         q.put(res)
 
 class MainWindow():
 
     def __init__(self, parent=None):
 
-        self.root = Tk()
+            self.root = Tk()
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.messageVars={}
+            self.messageVars={}
+            self.messageComp = {}
 
-        if (args.boards):
-            self.activeBoards = list(args.boards)
-        else:
-            self.activeBoards = [0,1,2,3,4,5,6,7]
+            # get the Multicast instance matching the currently loaded firmware
+            mcFactory = DBBC3MulticastFactory()
+            self.mc = mcFactory.create()
 
-        self.counts = {} 
-        self.power = {} 
-        self.pltCounts = {}
-        self.pltPower = {}
-        self.pltSamplerStats = {}
-        #self.canvasSampler = {}
-        for board in self.activeBoards:
-            self.counts[board] = collections.deque(maxlen=100)
-            self.power[board] = collections.deque(maxlen=100)
-        
-        mcFactory = DBBC3MulticastFactory()
-        self.mc = mcFactory.create()
+            #self.counts = {} 
+            #self.power = {} 
+            self.pltCounts = {}
+            self.pltPower = {}
+            self.pltSamplerStats = {}
+            #for board in self.activeBoards:
+            #    self.counts[board] = collections.deque(maxlen=100)
+            #    self.power[board] = collections.deque(maxlen=100)
+           # 
 
-        # start multicast polling in its own thread
-        self.q = queue.Queue(maxsize=1)
-        mcThread = threading.Thread(target=thread_mcPoll, args=("mc", self.mc,  self.q), daemon = True)
-        mcThread.start()
-        
-        # start the message parsing loop (1 sec)
-        self.updateMessage()
+            # start multicast polling in its own thread
+            self.q = queue.Queue(maxsize=1)
+            mcThread = threading.Thread(target=thread_mcPoll, args=("mc", self.mc,  self.q), daemon = True)
+            mcThread.start()
+            
+            # start the main widget updater loop (repeats every 1s)
+            self.updateMessage()
 
-        self.setActiveBoards()
+            # determine the currently activated boards
+            self.setActiveBoards()
 
-        self._setupWidgets()
-        self._setupTabIF() 
-        #self.update2()
-        self.root.mainloop()
-        
+            self.mode = self.messageVars["mode"].get()
+            self.majorVersion = int(self.messageVars["majorVersion"].get())
+
+            self._setupWidgets()
+            #self.update2()
+            self.root.mainloop()
+            
+    def on_closing(self):
+#        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.root.quit()
+            self.root.destroy()
+
     def setActiveBoards(self):
 
          # check if active / present boards are broadcasted over multicast
@@ -420,31 +407,6 @@ class MainWindow():
         tabIF.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabIF, text='Total Power') 
 
-        # tabIF 
-#        fig,axes = plt.subplots(2,1,constrained_layout=True)
-#        for board in self.activeBoards:
-#            print(self.activeBoards, board)
-            #self.pltCounts[board], = axes[0].plot([0],[32000], label=str(board), animated=False)
-            #self.pltPower[board], = axes[1].plot([0],[1000], label=str(board), animated=False)
-#            self.pltCounts[board], = axes[0].plot([0],[32000], label=str(board), animated=True)
-#            self.pltPower[board], = axes[1].plot([0],[1000], label=str(board), animated=True)
-
-#        axes[0].set_title ("Counts", fontsize=16)
-#        axes[0].set_ylabel("counts", fontsize=11)
-#        axes[0].set_xlabel("time[s]", fontsize=11)
-#        axes[0].set_ylim([30000,40000])
-#        axes[0].set_xlim([-100,0])
-#        axes[0].grid(True)
-#        axes[0].legend(fontsize='x-small', loc=2)
-#        axes[1].set_title ("Total power", fontsize=16)
-#        axes[1].set_ylabel("dBm", fontsize=11)
-#        axes[1].set_xlabel("time[s]", fontsize=11)
-##        axes[1].set_ylim([0,100])
-#        axes[1].set_xlim([-100,0])
-#        axes[1].grid(True)
-#        axes[1].legend(fontsize='x-small', loc=2)
-#
-
         fig, ax = plt.subplots()
         ax.set_title ("Counts", fontsize=16)
         ax.set_ylabel("counts", fontsize=11)
@@ -454,15 +416,26 @@ class MainWindow():
         ax.grid(True)
         ax.legend(fontsize='x-small', loc=2)
 
-        #pltCounts = PlotCounts(ax, self.activeBoards)
-        #self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.genCounts, interval=500, blit=True)
-        #self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
-        #self.canvasCounts.get_tk_widget().pack()
-        #self.canvasCounts.draw()
+        pltCounts = PlotCounts(ax, self.activeBoards)
+        self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=1000, blit=True)
+        self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
+        self.canvasCounts.get_tk_widget().pack()
+        self.canvasCounts.draw()
 #
-    def genCounts(self):
+    def getCounts(self):
+        '''
+        Generator method to supply the FuncAnimation with the latest dbbc if counts
+        '''
+
+        counts = []
         
-        yield (float(self.messageVars["if_{}_count".format(1)].get()))
+        for i in range(1, 9):
+            if (self.activeBoards[i-1]):
+                print (i)
+                counts.append(float(self.messageVars["if_{}_count".format(i)].get()))
+            
+        
+        yield counts
 
     def _setupTabSampler(self):
 
@@ -533,6 +506,10 @@ class MainWindow():
         #self.canvasSampler.draw()
 
     def _setupWidgets(self):
+        '''
+        Define the widget layout common to all DBBC3 multicast modes.
+        '''
+
 
         # define styles
         self.style = ttk.Style()
@@ -555,13 +532,23 @@ class MainWindow():
         menubar.add_command(label="Exit", command=self.root.quit)
         self.root.config(menu=menubar)
 
+        #Notebook tab container
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.grid(row=10, column=10, rowspan=100, sticky=E+W+S+N)
 
-        Label(self.root, textvariable=self.messageVars["time"]).grid(row=1, column=0)
+        # define the frames
+        frmInfo = LabelFrame(self.root, text="DBBC3")
+        frmInfo.grid(row=5,column=0, sticky=E+W+N+S, padx=2,pady=2)
+
+        frmTime = LabelFrame(self.root, text="Last Multicast")
+        frmTime.grid(row=5,column=10, sticky=E+W+N+S, padx=2,pady=2)
+
         frmIf = LabelFrame(self.root, text="IF Power")
         frmIf.grid(row=10,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
         frmSynth = LabelFrame(self.root, text="Downconversion")
         frmSynth.grid(row=20,column=0, sticky=E+W+N+S, padx=2,pady=2)
+
 
         frmSampler = LabelFrame(self.root, text="Sampler")
         frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
@@ -569,8 +556,15 @@ class MainWindow():
         frmBBC = LabelFrame(self.root, text="BBCs")
         frmBBC.grid(row=40,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-         
-        self.messageComp = {}
+        # frmGeneral setup
+        Label(frmInfo, text="mode").grid(row=2,column=0, sticky=W, padx=2)
+        Label(frmInfo, text="FW Version").grid(row=3,column=0, sticky=W, padx=2)
+        self.messageComp["mode"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["mode"]).grid(row=2,column=10, columnspan=2, sticky='ew' )
+        self.messageComp["majorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["majorVersion"]).grid(row=3,column=10, sticky='ew')
+        self.messageComp["minorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["minorVersion"]).grid(row=3,column=11, sticky='ew')
+
+        # frmTime setup
+        self.messageComp["time"] = Label(frmTime, textvariable=self.messageVars["time"]).grid(row=4,column=10, columnspan=10, sticky=E+W+N+S, padx=2,pady=2)
 
         # frmIf setup
         Label(frmIf, text="counts").grid(row=2,column=0, sticky=W)
@@ -581,20 +575,7 @@ class MainWindow():
         Label(frmSynth, text="locked").grid(row=3,column=0, sticky=W)
         Label(frmSynth, text="frequency").grid(row=4,column=0, sticky=W)
 
-        # frmSampler setup
-        Label(frmSampler, text="sampler 0 state").grid(row=2,column=0, sticky=W)
-        Label(frmSampler, text="sampler 1 state").grid(row=3,column=0, sticky=W)
-        Label(frmSampler, text="sampler 2 state").grid(row=4,column=0, sticky=W)
-        Label(frmSampler, text="sampler 3 state").grid(row=5,column=0, sticky=W)
 
-        #frmNotebook
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.grid(row=10, column=10, rowspan=100, sticky=E+W+S+N)
-
-        self._setupTabIF()
-        #self._setupTabSampler()
-
-        #frmIF
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
                 print (i, self.activeBoards[i])
@@ -609,7 +590,6 @@ class MainWindow():
             #frmSampler.columnconfigure(i,minsize=100)
 
             #frmIf
-            print (b, self.messageVars["if_{}_count".format(b)].get())
             self.messageComp["if_{}_count".format(b)] = ttk.Button(frmIf, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_count".format(b)])
             self.messageComp["if_{}_target".format(b)] = ttk.Button(frmIf, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_target".format(b)])
             self.messageComp["if_{}_mode".format(b)] = ttk.Button(frmIf, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_mode".format(b)])
@@ -634,25 +614,30 @@ class MainWindow():
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="OK.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
 #
-    def updateBoardInfo(self, message):
+        self._setupTabIF()
 
-        pass
+        #self._setupTabSampler()
+        # frmSampler setup
+        Label(frmSampler, text="sampler 0 state").grid(row=2,column=0, sticky=W)
+        Label(frmSampler, text="sampler 1 state").grid(row=3,column=0, sticky=W)
+        Label(frmSampler, text="sampler 2 state").grid(row=4,column=0, sticky=W)
+        Label(frmSampler, text="sampler 3 state").grid(row=5,column=0, sticky=W)
+
+
         
 
 def parseCommandLine():
 
-    parser = argparse.ArgumentParser("Check dbbc3 multicast")
+    parser = argparse.ArgumentParser("a graphical monitoring client for the DBBC3")
 
     parser.add_argument("-p", "--port", default=25000, type=int, help="The multicast port (default: %(default)s)")
     parser.add_argument("-g", "--group", default="224.0.0.255", type=str, help="The multicast group (default: %(default)s)")
     parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
-#    parser.add_argument("-m", "--mode", required=False, help="The current DBBC3 mode, e.g. OCT_D or DDC_V")
     parser.add_argument("-t", "--timeout", required=False, help="The maximum number of seconds to wait for a multicast message.")
     parser.add_argument("-s", "--simulate", action='store_true', required=False, help="Produce simulated IF counts.")
-#    parser.add_argument("--use-version", dest='ver', default= "", help="The version of the DBBC3 software.  Will assume the latest release version if not specified")
-
 
     return(parser.parse_args())
+
 
 args = parseCommandLine()
 
