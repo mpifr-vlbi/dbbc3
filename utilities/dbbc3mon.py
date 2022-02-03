@@ -297,18 +297,18 @@ class MainWindow():
 
 
             # sampler dashboard
-            #for s in range(4):
-            #    key = "if_{}_sampler{}_state".format(board, s)
-            #    state = self.messageVars[key].get()
+            for s in range(4):
+                key = "if_{}_sampler{}_state".format(board, s)
+                state = self.messageVars[key].get()
             #  # print (state)
-            #    if state == 'OK':
-            #        self.messageComp[key].configure(style="OK.TButton")
-            #    elif state == 'WARN':
-            #        self.messageComp[key].configure(style="WARN.TButton")
-            #    elif state == 'ERROR':
-            #        self.messageComp[key].configure(style="ERROR.TButton")
-            #    else:
-            #        self.messageComp[key].configure(style="My.TButton")
+                if state == 'OK':
+                    self.messageComp[key].configure(style="OK.TButton")
+                elif state == '--':
+                    self.messageComp[key].configure(style="WARN.TButton")
+                elif state == 'Error':
+                    self.messageComp[key].configure(style="ERROR.TButton")
+                else:
+                    self.messageComp[key].configure(style="My.TButton")
 
         
     def _setStringVar(self, key, value):
@@ -317,32 +317,31 @@ class MainWindow():
             self.messageVars[key] = StringVar(value=str(value))
         else:
             self.messageVars[key].set(str(value))
+
     def _getSamplerState(self, board):
 
         ret = ["OK", "OK", "OK", "OK"]
         meanPower = 0
         power = []
         for s in range(4):
-            key ="if_{}_sampler{}_statsFrac".format(board,s)
-            stats = list(map(float, self.messageVars[key].get()[1:-1].split(",")))
-            if abs(stats[0] +stats[1] -50.0) > 5.0:
-                ret[s] = "warning"
-            elif abs(stats[0] +stats[1] -50.0) > 10.0:
-                ret[s] = "error"
+         #   key ="if_{}_sampler{}_statsFrac".format(board,s)
+         #   stats = list(map(float, self.messageVars[key].get()[1:-1].split(",")))
+         #   if abs(stats[0] +stats[1] -50.0) > 5.0:
+         #       ret[s] = "warning"
+         #   elif abs(stats[0] +stats[1] -50.0) > 10.0:
+         #       ret[s] = "error"
 
             key ="if_{}_sampler{}_power".format(board,s)
             power.append(float(self.messageVars[key].get()))
             meanPower += float(self.messageVars[key].get()) / 4
             #print (self.messageVars[key].get(), meanPower)
 
+        if meanPower == 0.0:
+            return (["--", "--","--","--"])
 
         for s in range(4):
-            if meanPower == 0.0:
-                ret[s] = "--"
-            elif abs(1 -  power[s]/ meanPower) > 0.05:
-                ret[s] = "warning"
-            elif abs(1 -  power[s]/ meanPower) > 0.2:
-                ret[s] = "error"
+            if abs(1 -  power[s]/ meanPower) > 0.02:
+                ret[s] = "Error"
 
         return ret
 
@@ -373,15 +372,11 @@ class MainWindow():
             freq = float(self.messageVars["if_{}_synth_frequency".format(board)].get()) * 2
             self.messageVars["if_{}_synth_frequency".format(board)].set(str(freq))
 
-            #store count and power values in list
-            #self.counts[board-1].append(int(self.messageVars["if_{}_count".format(board)].get()))
-            #self.power[board-1].append(float(self.messageVars["if_{}_power".format(board)].get()))
-
             # check sampler states
-            #state = self._getSamplerState(board)
-            #print (state)
-            ##for s in range(4):
-            #    self._setStringVar("if_{}_sampler{}_state".format(board,s), state[s])
+            state = self._getSamplerState(board)
+            print (board, state)
+            for s in range(4):
+                self._setStringVar("if_{}_sampler{}_state".format(board,s), state[s])
                 
 
         
@@ -566,9 +561,6 @@ class MainWindow():
         frmSampler = LabelFrame(self.root, text="Sampler")
         frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-        frmBBC = LabelFrame(self.root, text="BBCs")
-        frmBBC.grid(row=40,column=0, sticky=E+W+N+S, padx=2,pady=2)
-
         # frmGeneral setup
         Label(frmInfo, text="mode").grid(row=2,column=0, sticky=W, padx=2)
         Label(frmInfo, text="FW Version").grid(row=3,column=0, sticky=W, padx=2)
@@ -587,6 +579,12 @@ class MainWindow():
         Label(frmSynth, text="enabled").grid(row=2,column=0, sticky=W)
         Label(frmSynth, text="synth").grid(row=3,column=0, sticky=W)
         Label(frmSynth, text="frequency").grid(row=4,column=0, sticky=W)
+
+        # frmSampler setup
+        Label(frmSampler, text="s0 state").grid(row=2,column=0, sticky=W)
+        Label(frmSampler, text="s1 state").grid(row=3,column=0, sticky=W)
+        Label(frmSampler, text="s2 state").grid(row=4,column=0, sticky=W)
+        Label(frmSampler, text="s3 state").grid(row=5,column=0, sticky=W)
 
 
         for i in range(len(self.activeBoards)):
@@ -623,18 +621,13 @@ class MainWindow():
             self.messageComp["if_{}_synth_frequency".format(b)].grid(row=4,column=i+1,sticky=E+W)
 
             # frmSampler
-            #for s in range(4):
-            #    self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="OK.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
-            #    self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
+            for s in range(4):
+                self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
+                self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
 
         self._setupTabIF()
 
         #self._setupTabSampler()
-        # frmSampler setup
-        #Label(frmSampler, text="sampler 0 state").grid(row=2,column=0, sticky=W)
-        #Label(frmSampler, text="sampler 1 state").grid(row=3,column=0, sticky=W)
-        #Label(frmSampler, text="sampler 2 state").grid(row=4,column=0, sticky=W)
-        #Label(frmSampler, text="sampler 3 state").grid(row=5,column=0, sticky=W)
 
 
         
