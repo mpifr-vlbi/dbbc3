@@ -26,6 +26,45 @@ from abc import ABC
 args = None
 
 
+class PlotBstat ():
+
+    def __init__(self, ax, messageVar):
+        self.ax = ax
+        self.messageVar = messageVar
+#        self.data = [0,0,0,0]
+        self.ax.set_ylim(0, 40)
+        self.bar = self.ax.bar([0,1,2,3], [0,0,0,0], alpha=0.4, color="green", edgecolor="black", zorder=-1)
+        self.ax.axhline(y=16,  color="black", linestyle="--", linewidth=0.5, zorder=10)
+        self.ax.axhline(y=34,  color="black", linestyle="--", linewidth=0.5, zorder=10)
+        self.ax.get_xaxis().set_ticks([])
+        self.ax.get_yaxis().set_ticks([])
+        self.ax.text(1.5, 16, "16%", fontsize='x-small', zorder=10)
+        self.ax.text(1.5, 34, "34%", fontsize='x-small', zorder=10)
+
+    def update(self, y):
+
+        error = False
+        y = [float(i) for i in self.messageVar.get()[1:-1].split(",")]
+        print ("update", y)
+#        self.data = y
+
+        if abs(y[0]-16) > 3.2 or abs(y[3]-16) > 3.2:
+            error = True
+
+        for i in range(len(y)):
+            self.bar[i].set_height(y[i])
+            self.bar[i].set_zorder(-1)
+            if error:
+                self.bar[i].set(color="red")
+
+#        self.ax.axhline(y=16,  color="black", linestyle="--", linewidth=0.5, zorder=10)
+#        self.ax.axhline(y=34,  color="black", linestyle="--", linewidth=0.5, zorder=10)
+#        self.ax.text(1.5, 16, "16%", fontsize='x-small', zorder=10)
+#        self.ax.text(1.5, 34, "34%", fontsize='x-small', zorder=10)
+
+        return (self.bar)
+
+
 class PlotCounts ():
     def __init__(self, ax, activeBoards, maxX=100):
         self.ax = ax
@@ -39,10 +78,11 @@ class PlotCounts ():
         self.ydata = []
 
         count = 0
-        colors = ['red','green', 'orange','blue', 'pink', 'violett', 'brown', 'gray']
+        colors = ['red','green', 'orange','blue', 'pink', 'violet', 'brown', 'gray']
         for board in self.activeBoards:
             if board:
                 self.ydata.append(collections.deque([], maxlen=self.maxt))
+                print (count)
                 line = Line2D([],  [], color=colors[count], label="board {}".format(count+1))
                 self.ax.add_line(line)
                 self.lines.append(line)
@@ -51,6 +91,7 @@ class PlotCounts ():
         self.ax.legend(handles=self.lines, fontsize='x-small', loc=4, frameon=True)
         self.ax.set_ylim(30000, 35000)
         self.ax.set_xlim(-1*maxX, 0)
+
 
     def update(self, y):
 
@@ -107,7 +148,7 @@ def thread_mcPoll(name, mc, q):
             # estimate total power from count values
             res["if_{}".format(board)]["power"] = float(mc.message["if_{}".format(board)]["count"]) / 1420.0 + float(mc.message["if_{}".format(board)]["attenuation"]) / 2.0
 
-#        print (res)
+   #     print (res)
 
         q.put(res)
 
@@ -121,6 +162,9 @@ class MainWindow():
 
             self.messageVars={}
             self.messageComp = {}
+
+            # default width of output text widget
+            self.txtWidth = 6
 
             # get the Multicast instance matching the currently loaded firmware
             mcFactory = DBBC3MulticastFactory()
@@ -163,6 +207,7 @@ class MainWindow():
 
         self.activeBoards =  np.array([0,0,0,0,0,0,0,0], dtype=bool)
 
+        #present = np.array([1,1,1,1,1,1,1,1], dtype=bool)
         if (args.boards):
             for board in list(args.boards):
                 if present[int(board)]:
@@ -265,6 +310,19 @@ class MainWindow():
                 continue
             board += 1
 
+            # adjust width of widget if content is longer than default width
+            for k in self.messageVars.keys():
+                    
+                if len(self.messageVars[k].get()) > self.txtWidth:
+                    #try:
+                        if k in self.messageComp.keys():
+                            print (k)
+                            print (self.messageComp.keys())
+                            self.messageComp[k].configure(width=len(self.messageVars[k].get()))
+                    #except:
+                    #    print ("error setting width for: ", k)
+                    #    pass
+                    
             # IF dashboard
             key = "if_{}_mode".format(board)
             if self.messageVars[key].get() == 'agc':
@@ -319,8 +377,29 @@ class MainWindow():
             self.messageVars[key].set(str(value))
 
     def _getSamplerState(self, board):
+        '''
+        Returns the state of all sampler of the given board.
+        The sampler state is evaluated based on the
+        gain, offset and delay.
+
+        Possible states:
+            OK:     all good
+            --:     no IF power
+            Error:  in case of error 
+
+        Returns:
+            list (str): 4 element list with a state identifier for the 4 samplers
+        '''
 
         ret = ["OK", "OK", "OK", "OK"]
+
+
+        # delay correlation
+        corrs = list(self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(","))
+        for corr in corrs: 
+            if int(corr) < 160000000:
+                return (["Error", "Error", "Error", "Error"])
+
         meanPower = 0
         power = []
         for s in range(4):
@@ -331,10 +410,12 @@ class MainWindow():
          #   elif abs(stats[0] +stats[1] -50.0) > 10.0:
          #       ret[s] = "error"
 
+            # power
             key ="if_{}_sampler{}_power".format(board,s)
             power.append(float(self.messageVars[key].get()))
             meanPower += float(self.messageVars[key].get()) / 4
             #print (self.messageVars[key].get(), meanPower)
+
 
         if meanPower == 0.0:
             return (["--", "--","--","--"])
@@ -342,6 +423,7 @@ class MainWindow():
         for s in range(4):
             if abs(1 -  power[s]/ meanPower) > 0.02:
                 ret[s] = "Error"
+
 
         return ret
 
@@ -374,12 +456,17 @@ class MainWindow():
 
             # check sampler states
             state = self._getSamplerState(board)
-            print (board, state)
+            #print (board, state)
             for s in range(4):
                 self._setStringVar("if_{}_sampler{}_state".format(board,s), state[s])
-                
 
-        
+            # process delay correlation (sampler phase)
+            key = "if_{}_delayCorr".format(board)
+            corrs = list(self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(","))
+            self._setStringVar("if_{}_delayCorr_01".format(board,s), corrs[0].strip())
+            self._setStringVar("if_{}_delayCorr_12".format(board,s), corrs[1].strip())
+            self._setStringVar("if_{}_delayCorr_23".format(board,s), corrs[2].strip())
+            
 
     def _parseMessage(self, message, pre=None):
         # loop over mc message and serialize it.
@@ -410,9 +497,84 @@ class MainWindow():
             yield pre + [message]
 
         
+#
+    def test(self):
+
+        print ("update")
+        yield [1,2,3,4]
+    def getBstats(self, board, filter ):
+#
+       # stats = self.messageVars["if_{}_filter{}_statsFrac".format(board, filter)].get()[1:-1].split(",")
+        stats = [float(i) for i in self.messageVars["if_{}_filter{}_statsFrac".format(board, filter)].get()[1:-1].split(",")]
+        print (stats)
+        yield  stats
+
+    def getCounts(self):
+        '''
+        Generator method to supply the FuncAnimation with the latest dbbc if counts
+        '''
+
+        counts = []
+        
+        for i in range(1, 9):
+            if (self.activeBoards[i-1]):
+                counts.append(float(self.messageVars["if_{}_count".format(i)].get()))
+        
+        print (counts)
+        yield counts
+
+    def _setupTabFilter(self):
+
+        tabFilter = ttk.Frame(self.notebook, height=280)
+        tabFilter.grid(row=0,column=0,sticky=E+W+S+N)
+        self.notebook.add(tabFilter, text='Filter Details')
+
+        frmPower = LabelFrame(tabFilter, text="Power")
+        frmPower.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        Label(frmPower, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        Label(frmPower, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
+
+        frmPlots = LabelFrame(tabFilter, text="2-bit statistics")
+        frmPlots.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        Label(frmPlots, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        Label(frmPlots, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
+
+        
+        #ax.set_title ("Counts", fontsize=16)
+        #ax.set_ylabel("counts", fontsize=11)
+        #ax.set_xlabel("time[s]", fontsize=11)
+        #ax.set_ylim([30000,40000])
+        #ax.set_xlim([-100,0])
+        #ax.grid(True)
+
+        pltStats = []
+        self.aniBstats = []
+        count = 0
+        for i in range(len(self.activeBoards)):
+            if not self.activeBoards[i]:
+                continue
+            b = i+1
+
+            Label(frmPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            Label(frmPlots, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+
+            for f in range(1,3):
+                key ="if_{}_filter{}_power".format(b, f)
+                #print (self.messageVars[key].get())
+                self.messageComp[key] = ttk.Button(frmPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=f+1, column=i+1, sticky=E+W)
+
+                fig, ax = plt.subplots()
+                fig.set_size_inches(0.8,0.8)
+                pltStats.append (PlotBstat(ax, self.messageVars["if_{}_filter{}_statsFrac".format(b, f)]))
+                self.aniBstats.append( animate.FuncAnimation(fig, pltStats[count].update, interval=2000, blit=True))
+                canvasBstats = FigureCanvasTkAgg(fig, master=frmPlots)
+                canvasBstats.get_tk_widget().grid(row=1+f, column=i+1, sticky=E+W+S+N)
+                count += 1
+        #self.canvasBstats.draw()
+            
     def _setupTabIF(self):
 
-        tabIF = ttk.Frame(self.notebook, width=400, height=280)
+        tabIF = ttk.Frame(self.notebook, height=280)
         tabIF.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabIF, text='Total Power') 
 
@@ -429,89 +591,57 @@ class MainWindow():
         self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
         self.canvasCounts.get_tk_widget().pack()
         self.canvasCounts.draw()
-#
-    def getCounts(self):
-        '''
-        Generator method to supply the FuncAnimation with the latest dbbc if counts
-        '''
-
-        counts = []
-        
-        for i in range(1, 9):
-            if (self.activeBoards[i-1]):
-                print (i)
-                counts.append(float(self.messageVars["if_{}_count".format(i)].get()))
-            
-        
-        yield counts
 
     def _setupTabSampler(self):
 
-        tabSampler = ttk.Frame(self.notebook, width=400, height=280)
+        tabSampler = ttk.Frame(self.notebook, height=280)
         tabSampler.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabSampler, text='Sampler Details') 
 
         # tabSampler
-        frmSamplerPower = LabelFrame(tabSampler, text="Sampler powers")
+        frmSamplerPower = LabelFrame(tabSampler, text="Sampler power")
         frmSamplerPower.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmSamplerPower, text="samp. 0").grid(row=2,column=0, sticky=E+W)
-        Label(frmSamplerPower, text="samp. 1").grid(row=3,column=0, sticky=E+W)
-        Label(frmSamplerPower, text="samp. 2").grid(row=4,column=0, sticky=E+W)
-        Label(frmSamplerPower, text="samp. 3").grid(row=5,column=0, sticky=E+W)
+        Label(frmSamplerPower, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerPower, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerPower, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerPower, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
-        frmSamplerStats = LabelFrame(tabSampler, text="Sampler offsets")
-        frmSamplerStats.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmSamplerStats, text="samp. 0").grid(row=2,column=0, sticky=E+W)
-        Label(frmSamplerStats, text="samp. 1").grid(row=3,column=0, sticky=E+W)
-        Label(frmSamplerStats, text="samp. 2").grid(row=4,column=0, sticky=E+W)
-        Label(frmSamplerStats, text="samp. 3").grid(row=5,column=0, sticky=E+W)
+        frmSamplerOffset = LabelFrame(tabSampler, text="Sampler offset")
+        frmSamplerOffset.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        Label(frmSamplerOffset, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerOffset, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerOffset, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerOffset, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
-        
-        frmSamplerPlots = LabelFrame(tabSampler, text="Sampler stats")
-        frmSamplerPlots.grid(row=20,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        frmSamplerDelay = LabelFrame(tabSampler, text="Sampler phase")
+        frmSamplerDelay.grid(row=20,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        Label(frmSamplerDelay, text="delay 0/1").grid(row=2,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerDelay, text="delay 1/2").grid(row=3,column=0, sticky=E+W, padx=5)
+        Label(frmSamplerDelay, text="delay 2/3").grid(row=4,column=0, sticky=E+W, padx=5)
 
-        labels = ["0", "1", "2", "3"]
-        levels = ['--','-+','+-','++']
-        stateColors = ["lightgreen","green","dodgerblue","lightblue"]
-
-        fig,axes = plt.subplots(2, 4, constrained_layout=True, sharex='all', sharey='all', figsize=(7,3))
-        #fig.set_size_inches(3,2)
-        axes[0][0].set_xlim([0,100])
-
-        #fig.set_size_inches(1, 1)
         for i in range(len(self.activeBoards)):
-            b = self.activeBoards[i]
+            if not self.activeBoards[i]:
+                #print (i, self.activeBoards[i])
+                continue
+            b = i+1
+            
+
             Label(frmSamplerPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            states = [[],[],[],[]]
-            self.pltSamplerStats[b] = []
+            Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            Label(frmSamplerDelay, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            #Label(frmSampler, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+
             for sampler in range(4):
                 key ="if_{}_sampler{}_power".format(b,sampler)
-                self.messageComp[key] = ttk.Button(frmSamplerPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
-                self.messageComp[key].grid(row=2+sampler,column=i+1, sticky=E+W)
-
-                key ="if_{}_sampler{}_statsFrac".format(b,sampler)
-                for state in range(4):
-                    self.messageComp["{}_{}".format(key,state)] = ttk.Button(frmSamplerStats, style="My.TButton", state=DISABLED, width=6, textvariable=self.messageVars[key])
-                    self.messageComp["{}_{}".format(key,state)].grid(row=2+sampler+state,column=i+1, sticky=E+W)
-                stats = self.messageVars[key].get()[1:-1].split(",")
-                stats = list(map(float, stats))
+                self.messageComp[key] = ttk.Button(frmSamplerPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=sampler+2, column=i+1, sticky=E+W)
+            
+            corrs = ["01","12","23"]
+            row = 2
+            for corr in corrs:
+                key = "if_{}_delayCorr_{}".format(b, corr)
+                self.messageComp[key] = ttk.Button(frmSamplerDelay, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=row, column=i+1, sticky=E+W )
+                row +=1
                 
-                col = i - int(i/4)*4
-                for j in range(4):
-                    states[j].append(stats[j])
-                    plot = axes[int(i/4)][col].barh(labels, [0,0,0,0], height=0.5, edgecolor='black', color=stateColors[j])
-                    axes[int(i/4)][col].axvline(47.5, linewidth=0.2, color='black', ls=":")
-                    axes[int(i/4)][col].axvline(52.5, linewidth=0.2, color='black', ls=":")
-                    axes[int(i/4)][col].title.set_text("board {}".format(b))
-                    self.pltSamplerStats[b].append(plot)
-        # hide unused subplots
-        for i in range(len(self.activeBoards),8):
-            col = i - int(i/4)*4
-            axes[int(i/4)][col].axis('off')
- 
-        self.canvasSampler = FigureCanvasTkAgg(fig, master=frmSamplerPlots)
-        self.canvasSampler.get_tk_widget().grid(row=30, column=i+1, sticky=E+W+N+S)
-        #self.canvasSampler.draw()
 
     def _setupWidgets(self):
         '''
@@ -521,17 +651,17 @@ class MainWindow():
 
         # define styles
         self.style = ttk.Style()
-        myfont = font.Font(family="Courier", size=11)
-        self.style.configure("My.TButton",font=myfont, foreground="black", relief="sunken", background="white", justify="center", width=6)
+        myfont = font.Font(family="Arial", size=11)
+        self.style.configure("My.TButton",font=myfont, foreground="black", relief="ridge", background="white", justify="center", width=self.txtWidth)
         self.style.map( "My.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
 
-        self.style.configure("OK.TButton",font=myfont, foreground="black", relief="sunken", background="lawn green", justify="center", width=6)
-        self.style.map( "OK.TButton", foreground=[("disabled", "black")], background=[("disabled", "lawn green")],justify=[("disabled", "center")])
+        self.style.configure("OK.TButton",font=myfont, foreground="black", relief="ridge", background="lime green", justify="center", width=self.txtWidth)
+        self.style.map( "OK.TButton", foreground=[("disabled", "black")], background=[("disabled", "lime green")],justify=[("disabled", "center")])
 
-        self.style.configure("WARN.TButton",font=myfont, foreground="black", relief="sunken", background="orange", justify="center", width=6)
+        self.style.configure("WARN.TButton",font=myfont, foreground="black", relief="sunken", background="orange", justify="center", width=self.txtWidth)
         self.style.map( "WARN.TButton", foreground=[("disabled", "black")], background=[("disabled", "orange")],justify=[("disabled", "center")])
 
-        self.style.configure("ERROR.TButton",font=myfont, foreground="black", relief="sunken", background="red", justify="center", width=6)
+        self.style.configure("ERROR.TButton",font=myfont, foreground="black", relief="sunken", background="red", justify="center", width=self.txtWidth)
         self.style.map( "ERROR.TButton", foreground=[("disabled", "black")], background=[("disabled", "red")],justify=[("disabled", "center")])
 
         # menubar setup
@@ -589,7 +719,7 @@ class MainWindow():
 
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
-                print (i, self.activeBoards[i])
+                #print (i, self.activeBoards[i])
                 continue
             b = i+1
 
@@ -626,10 +756,10 @@ class MainWindow():
                 self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
 
         self._setupTabIF()
+        self._setupTabSampler()
 
-        #self._setupTabSampler()
-
-
+        if self.mode == "OCT_D" and self.majorVersion >= 120:
+            self._setupTabFilter()
         
 
 def parseCommandLine():
