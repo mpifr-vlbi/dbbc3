@@ -607,7 +607,7 @@ class DBBC3ValidationDefault(object):
         return (report)
 
 
-    def validateSynthesizerFreq(self, board, targetFreq=0, exitOnError = True):
+    def validateSynthesizerFreq(self, board, targetFreq=0.0, exitOnError = True):
         '''
         Validates the actual tuning frequency of the GCoMo synthesizer serving the given board against
         the target value specified in the DBBC3 configuration file.
@@ -624,16 +624,16 @@ class DBBC3ValidationDefault(object):
 
         # verify that synth is tuned to the freq specified in the config
         if freq['actual'] != freq['target']:
-                msg = "Synthesizer of board %s is tuned to %d MHz but should be %d MHz" % (board, freq['actual'], targetFreq)
+                msg = "Synthesizer of board %s is tuned to %f MHz but should be %f MHz" % (board, freq['actual'], freq['target'])
                 resolv = "Check your hardware"
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
         # check freq against the user supplied value
         elif ((freq['actual'] != targetFreq) and (targetFreq > 0)):
-                msg = "Synthesizer of board %s is tuned to %d MHz but according to config it should be %d MHz" % (board, freq['actual'], targetFreq)
+                msg = "Synthesizer of board %s is tuned to %f MHz but according to config it should be %f MHz" % (board, freq['actual'], targetFreq)
                 resolv = "Check the tuning frequencies in the dbbc3 config file"
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
         else:
-                report.add(Item(Item.INFO, check, "Freq=%d MHz" % freq['actual'], "", Item.OK))
+                report.add(Item(Item.INFO, check, "Freq=%f MHz" % freq['actual'], "", Item.OK))
 
         return (report)
 
