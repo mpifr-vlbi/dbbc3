@@ -566,8 +566,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 if "MHz" in line:
                         # F 4524 MHz; // Act 4524 MHz
                         tok = line.split(" ")
-                        resp['target'] = int(tok[1]) * 2
-                        resp['actual'] = int(tok[5]) * 2
+                        resp['target'] = float(tok[1]) * 2
+                        resp['actual'] = float(tok[5]) * 2
         if not resp:
             raise DBBC3Exception("The synthesizer frequency for board %d could not be determined" % (board))
 
