@@ -13,19 +13,19 @@ class DBBC3MulticastFactory(object):
     Factory class to create an instance of a Multicast class matching the current DBBC3 mode and firmare version
     '''
 
-    def create(self):
+    def create(self, group="224.0.0.255", port=25000, timeout=2):
 
         # obtain mode and version from parsing message
-        mc = DBBC3MulticastBase()
-        print (mc.message["mode"])
-        print (mc.message["majorVersion"])
+        mc = DBBC3MulticastBase(group, port, timeout)
+#        print (mc.message["mode"])
+#        print (mc.message["majorVersion"])
          
         csClassName = getMatchingVersion(mc.message["mode"], mc.message["majorVersion"])
         if (csClassName == ""):
             csClassName = "DBBC3MulticastDefault"
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Multicast"), csClassName)
-        print (csClassName, CsClass)
-        return(CsClass())
+#        print (csClassName, CsClass)
+        return(CsClass(group, port ,timeout))
 
 def getMatchingVersion(mode, majorVersion):
     '''
@@ -84,7 +84,7 @@ class DBBC3MulticastAbstract(ABC):
 
 class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
-    def __init__(self, group="224.0.0.255", port=25000, timeout=2):
+    def __init__(self, group, port, timeout):
 
         self.socket = None
         self.group = group
@@ -113,7 +113,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
     def _connect(self, timeout):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        #self.sock.settimeout(timeout)
+        self.sock.settimeout(timeout)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         self.sock.bind((self.group, self.port))
