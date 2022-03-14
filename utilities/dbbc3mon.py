@@ -45,8 +45,6 @@ class PlotBstat ():
 
         error = False
         y = [float(i) for i in self.messageVar.get()[1:-1].split(",")]
-        print ("update", y)
-#        self.data = y
 
         if abs(y[0]-16) > 3.2 or abs(y[3]-16) > 3.2:
             error = True
@@ -82,7 +80,7 @@ class PlotCounts ():
         for board in self.activeBoards:
             if board:
                 self.ydata.append(collections.deque([], maxlen=self.maxt))
-                print (count)
+                #print (count)
                 line = Line2D([],  [], color=colors[count], label="board {}".format(count+1))
                 self.ax.add_line(line)
                 self.lines.append(line)
@@ -311,17 +309,17 @@ class MainWindow():
             board += 1
 
             # adjust width of widget if content is longer than default width
-            for k in self.messageVars.keys():
-                    
-                if len(self.messageVars[k].get()) > self.txtWidth:
-                    #try:
-                        if k in self.messageComp.keys():
-                            print (k)
-                            print (self.messageComp.keys())
-                            self.messageComp[k].configure(width=len(self.messageVars[k].get()))
-                    #except:
-                    #    print ("error setting width for: ", k)
-                    #    pass
+            #for k in self.messageVars.keys():
+            #        
+            #    if len(self.messageVars[k].get()) > self.txtWidth:
+            #        #try:
+            #            if self.messageComp[k]:
+            #                print (k)
+            #                print (self.messageComp.keys())
+            #                self.messageComp[k].configure(width=len(self.messageVars[k].get()))
+            #        #except:
+            #        #    print ("error setting width for: ", k)
+            #        #    pass
                     
             # IF dashboard
             key = "if_{}_mode".format(board)
@@ -500,13 +498,13 @@ class MainWindow():
 #
     def test(self):
 
-        print ("update")
+        #print ("update")
         yield [1,2,3,4]
     def getBstats(self, board, filter ):
 #
        # stats = self.messageVars["if_{}_filter{}_statsFrac".format(board, filter)].get()[1:-1].split(",")
         stats = [float(i) for i in self.messageVars["if_{}_filter{}_statsFrac".format(board, filter)].get()[1:-1].split(",")]
-        print (stats)
+        #print (stats)
         yield  stats
 
     def getCounts(self):
@@ -520,7 +518,7 @@ class MainWindow():
             if (self.activeBoards[i-1]):
                 counts.append(float(self.messageVars["if_{}_count".format(i)].get()))
         
-        print (counts)
+        #print (counts)
         yield counts
 
     def _setupTabFilter(self):
