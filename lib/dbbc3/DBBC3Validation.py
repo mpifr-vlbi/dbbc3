@@ -514,11 +514,14 @@ class DBBC3ValidationDefault(object):
         lower = 0
         prevAtt = -1
         
-        if (self._regulatePower(board, targetCount) == False):
-            # reset the dbbcif settings to their original values
-            self._resetIFSettings( board, retOrig)
-            rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
-            return (rep)
+        # try to regulate power to targetCount
+        # if targetCount cannot be reached continue on lowest possible counts
+        self._regulatePower(board, targetCount)
+        #if (self._regulatePower(board, targetCount) == False):
+        #    # reset the dbbcif settings to their original values
+        #    self._resetIFSettings( board, retOrig)
+        #    rep.add(Item(Item.WARN, check, "Failed to regulate power level to {0}. Skipping test.".format(targetCount), "", state=Item.FAIL))
+        #    return (rep)
 
         # Now freeze the attenuation
         ret = self.dbbc3.dbbcif(board, retOrig["inputType"], "man")
