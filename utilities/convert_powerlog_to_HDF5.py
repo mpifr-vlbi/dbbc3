@@ -29,6 +29,7 @@ and same for /usb
 
 '''
 
+from collections import OrderedDict
 import datetime
 import h5py
 import sys
@@ -105,7 +106,8 @@ class LogHDF5:
 		self.fout.require_dataset("start_vdif_epoch", shape=(), dtype="i4", data=self.vdif_start_epoch)
 		self.fout.require_dataset("start_vdif_second", shape=(), dtype="i4", data=self.vdif_start_sec)
 		self.fout.require_dataset("samples_per_second", shape=(), dtype="i4", data=self.n_samples_per_second)
-		self.datasets = {}
+		self.att_datasets = OrderedDict()  # NB: under Python>=3.6 could switch back to normal dict/{}, it is ordered like OrderedDict
+		self.pwr_datasets = OrderedDict()
 
 		for rxSb in ['lsb','usb']:
 			for if2Sb in ['high','low']:
@@ -125,12 +127,14 @@ class LogHDF5:
 					self.fout[key_root+'/pwr/scale'].attrs["description"] = "Multiplying with this constant scales power data to mean-square of 8-bit samples."
 
 					# Data time series
-					self.datasets[key_root+'/attn/data'] = self.fout.create_dataset(key_root+'/attn/data', shape=(1,), maxshape=(None, ), dtype="u1", chunks=True)
-					self.datasets[key_root+'/pwr/data'] = self.fout.create_dataset(key_root+'/pwr/data', shape=(1,self.n_samples_per_second), maxshape=(None, self.n_samples_per_second), dtype="u4", chunks=True)
+					self.att_datasets[key_root+'/attn/data'] = self.fout.create_dataset(key_root+'/attn/data', shape=(1,), maxshape=(None, ), dtype="u1", chunks=True)
+					self.pwr_datasets[key_root+'/pwr/data'] = self.fout.create_dataset(key_root+'/pwr/data', shape=(1,self.n_samples_per_second), maxshape=(None, self.n_samples_per_second), dtype="u4", chunks=True)
+
+					self.fout[key_root+'/attn/data'].attrs["description"] = "Attenuator values (arbitrary logarithmic scale). Time increases uniformly by 1-second intervals along 1st dimension."
+					self.fout[key_root+'/pwr/data'].attrs["description"] = "Average power (arbitrary linear scale) computed over each sampling period. Time increases uniformly by sub-second intervals along 2nd dimension, and 1-second intervals along 1st dimension."
 
 
 	def addDBBC3Readings(self, isotime, counts=[], attens=[]):
-		self.Ndatapoints += 1
 
 		# Need to map DBBC3 4 GHz IFs to equivalent R2DBE/EHT 2 GHz bands
 		# 4 core3h --> 8 r2dbe
@@ -141,14 +145,25 @@ class LogHDF5:
 		counts_r2dbe = counts + counts  # TODO: [lsb:usb] x [high:low] x [lcp:rcp]
 		attens_r2dbe = attens + attens
 
-		print(len(self.datasets), len(counts_r2dbe) + len(attens_r2dbe))
-		print(self.datasets)
+		for idx, key in zip( range(len(self.att_datasets)), list(self.att_datasets.keys())):
+			dataset = self.att_datasets[key]
+			dataset.resize((dataset.shape[0] + 1), axis=0)
+			dataset[-1:] = attens_r2dbe[idx]
+			# print(idx, key, dataset, self.Ndatapoints)
 
-		# TODO: resize and append hdf5 self.datasets[<key>] = ...
+		for idx, key in zip( range(len(self.pwr_datasets)), list(self.pwr_datasets.keys())):
+			dataset = self.pwr_datasets[key]
+			dataset.resize((dataset.shape[0] + 1), axis=0)
+			dataset[-1:] = counts_r2dbe[idx] // 2
+			# print(idx, key, dataset, self.Ndatapoints)
+
+		self.Ndatapoints += 1
+
 
 def convertToHDF5(logname):
 
-	hdfout = LogHDF5('test.hdf5')
+	hdfname = logname + '.hdf5'
+	hdfout = LogHDF5(hdfname)
 	fin = open(logname, "r")
 
 	while True:
@@ -166,35 +181,21 @@ def convertToHDF5(logname):
 
 		vdif_time = VDIFTime.from_datetime(datetime.datetime.strptime(vals[0], "%Y-%m-%dT%H:%M:%S"))
 		# vdif_time = VDIFTime.from_datetime(datetime.datetime.fromisoformat(vals[0])) # fromisoformat: Python 3.7+
-		counts = vals[1::2]
-		attens = vals[2::2]
+		counts = [int(v) for v in vals[1::2]]
+		attens = [int(v) for v in vals[2::2]]
 
-		print(counts,attens)
+		print('Adding log entry for time %s' % (vdif_time.to_datetime().isoformat()), end='\r')
 		hdfout.addDBBC3Readings(vdif_time, counts, attens)
 
-		break
+		#if hdfout.Ndatapoints > 1200:
+		#	break
 
-	# fout[dsn_pwr].attrs["description"] = "Average power (arbitrary linear scale) computed over each sampling period. Time increases uniformly by sub-second intervals along 2nd dimension, and 1-second intervals along 1st dimension."
-
-	# DBBC3:
-	#   LSB_LCP LSB_RCP USB_LCP USB_RCP ?
-
-	# dsn_pwr_prefix = "/".join([""] + [get_value(rs, r2dbe_name, n % ch) for n in ["rx_sb_%d", "bdc_ch_%d", "pol_%d"]] + ["pwr"])
-	# dsn_pwr_placeholder = "/".join([dsn_pwr_prefix, "placeholder"])
-	# fout.require_dataset(dsn_pwr_placeholder, shape=(), dtype="u4", data=dsp_pwr)
-	# fout[dsn_pwr_placeholder].attrs["description"] = "Missing samples in average power data have this value."
-
-	# fout.require_dataset(dsn_attn, shape=(n_seconds, ), dtype='u1', data=[dsp_attn,]*n_seconds)
-	# fout[dsn_attn].attrs["description"] = "Attenuator values (arbitrary logarithmic scale). Time increases uniformly by 1-second intervals along 1st dimension."
-
-	# dsn_attn_scale = "/".join([dsn_attn_prefix, "scale"])
-	# fout.require_dataset(dsn_attn_scale, shape=(), dtype="f", data=1/2)
-	# fout[dsn_attn_scale].attrs["description"] = "Multiplying with this constant scales attenuator values to decibel."
-
-	# dsn_attn_placeholder = "/".join([dsn_attn_prefix, "placeholder"])
-	# fout.require_dataset(dsn_attn_placeholder, shape=(), dtype="u1", data=dsp_attn)
-	# fout[dsn_attn_placeholder].attrs["description"] = "Missing samples in attenuator data have this value."
+	print()
+	print('Added %d power log entries to HDF5 output file: %s' % (hdfout.Ndatapoints,hdfname))
 
 
 if len(sys.argv) > 1:
-	convertToHDF5(sys.argv[1])
+	if '-h' in sys.argv[1] or '--help' in sys.argv[1] or sys.argv[1][0] == '-':
+		print ('Usage: convert_powerlog_to_HDF5.py <dbbc3_power.log>')
+	else:
+		convertToHDF5(sys.argv[1])
