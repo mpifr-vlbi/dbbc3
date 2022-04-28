@@ -3,6 +3,14 @@
 Convert an existing DBBC3 power logfile from ASCII into a HDF5 data structure,
 compatible with EHT 2021+ VLBI power logs.
 
+DBBC3 logs contain attenuator settings (0.5 dB per +1 step) and total
+power counts (sum of squared 8-bit samples in one second, already normalized
+by N number of samples per second (?); for rms value take the sqrt()).
+
+TODO: Future implementation of pwr_logger.py should capture not IF AGC&count values
+but the power levels if individual digital filters.
+
+
 Hdf5:
  /samples_per_second int32
  /start_vdif_epoch   int32
