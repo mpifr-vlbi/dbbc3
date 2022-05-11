@@ -148,21 +148,33 @@ class LogHDF5:
 		# 4 core3h --> 8 r2dbe
 		# IF-A = usb/high/lcp + usb/low/lcp ?
 		# IF-B = usb/high/rcp + usb/low/rcp ?
-		# IF-C = lsb/high/lcp + usb/low/lcp ?
-		# IF-D = lsb/high/rcp + usb/low/rcp ?
-		counts_r2dbe = counts + counts  # TODO: [lsb:usb] x [high:low] x [lcp:rcp]
-		attens_r2dbe = attens + attens
+		# IF-C = lsb/high/lcp + lsb/low/lcp ?
+		# IF-D = lsb/high/rcp + lsb/low/rcp ?
+		#
+		# Vs R2DBE
+		# print(idx, key, dataset, self.Ndatapoints)
+		# 0 /lsb/high/lcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 1 /lsb/high/rcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 2 /lsb/low/lcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 3 /lsb/low/rcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 4 /usb/high/lcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 5 /usb/high/rcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 6 /usb/low/lcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		# 7 /usb/low/rcp//attn/data <HDF5 dataset "data": shape (755,), type "|u1"> 753
+		#
+		# Mapping of R2DBE idx 0..7 to its source index in DBBC3 counts[] or attens[]
+		mapping = [2,3, 2,3, 0,1, 0,1]
 
 		for idx, key in zip( range(len(self.att_datasets)), list(self.att_datasets.keys())):
 			dataset = self.att_datasets[key]
 			dataset.resize((dataset.shape[0] + 1), axis=0)
-			dataset[-1:] = attens_r2dbe[idx]
+			dataset[-1:] = attens[mapping[idx]]
 			# print(idx, key, dataset, self.Ndatapoints)
 
 		for idx, key in zip( range(len(self.pwr_datasets)), list(self.pwr_datasets.keys())):
 			dataset = self.pwr_datasets[key]
 			dataset.resize((dataset.shape[0] + 1), axis=0)
-			dataset[-1:] = counts_r2dbe[idx] // 2
+			dataset[-1:] = counts[mapping[idx]]
 			# print(idx, key, dataset, self.Ndatapoints)
 
 		self.Ndatapoints += 1
