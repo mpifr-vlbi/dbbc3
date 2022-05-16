@@ -53,6 +53,8 @@ else:
         f.write("# column {}: board {} power reported in filter1\n".format(col, board))
         col += 1
         f.write("# column {}: board {} power reported in filter2\n".format(col, board))
+        col += 1
+        f.write("# column {}: board {} attenuation (0.5 dB steps)\n".format(col, board))
 f.write("\n")
 
 while True:
@@ -69,8 +71,9 @@ while True:
         else:
             power1 = mc.message["if_{0}".format(board+1)]["filter1"]["power"]
             power2 = mc.message["if_{0}".format(board+1)]["filter2"]["power"]
-            line += "{} {} ".format(power1, power2)
-            #f.write("{} {} ".format(power1, power2))
+            att = mc.message["if_{0}".format(board+1)]["attenuation"]
+            line += "{} {} {}".format(power1, power2, att)
+            #f.write("{} {} {}".format(power1, power2, att))
     f.write(line + "\n")
     f.flush()
     print (line)
