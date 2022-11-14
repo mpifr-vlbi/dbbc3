@@ -3344,8 +3344,12 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
             match = pattern.match(line)
             if match:
                 for i in range(self.config.numCoreBoards):
-                    delays.append(int(match.group(2+i*2)))
-
+                    # convert into signed
+                    delay = int(match.group(2+i*2))
+                    # account for negative delays
+                    if delay > 500000000:
+                        delay = int(match.group(2+i*2)) - 1000000000
+                    delays.append(delay)
         return(delays)
 
     def core3h_sampler_offset(self, board):
