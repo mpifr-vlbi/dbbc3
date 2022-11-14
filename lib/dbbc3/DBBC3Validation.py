@@ -38,16 +38,21 @@ import inspect
 class Item(object):
 
     # level
-    INFO = "INFO"
-    WARN = "WARN"
-    ERROR = "ERROR"
+    #INFO = "INFO"
+    #WARN = "WARN"
+    #ERROR = "ERROR"
+    INFO = "\033[1;34mINFO\033[0m"
+    WARN = "\033[1;33mWARN\033[0m"
+    ERROR = "\033[1;31mERROR\033[0m"
 
     # states
-    OK = "OK"
+    #OK = "OK"
+    OK = "\033[1;32mOK\033[0m"
     FAIL = "FAIL"
 
     #aux
-    RESOLUTION = "RESOLUTION"
+    #RESOLUTION = "RESOLUTION"
+    RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
 
     def __init__(self, level="", action="", message="", resolution="", state="", exit=False):
         self.level = level
@@ -131,7 +136,7 @@ class ValidationReport(object):
 class ValidationFactory(object):
     
 
-    def create(self, dbbc3, ignoreErrors):
+    def create(self, dbbc3, ignoreErrors=False):
 
         csClassName = getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
         if (csClassName == ""):
@@ -208,7 +213,6 @@ class DBBC3ValidationDefault(object):
         self.dbbc3 = dbbc3
         self.ignoreErrors = ignoreErrors
         self._saveState()
-        #DBBC3Validation.__init__(self, dbbc3, ignoreErrors)
 
         
     def _saveState(self):
@@ -262,24 +266,24 @@ class DBBC3ValidationDefault(object):
         ret = self.dbbc3.dbbcif(board)
 
         if abs(ret['target'] - ret['count']) > 1000:
-                res = "Check and adjust IF input power levels (should be @ -11dBm)"
+                res = "Check and adjust IF input power levels (input level should be approx. -6dBm)"
                 msg = "IF power not on target value. Should be close to %d is %d" % (ret['target'], ret['count'])
                 rep.add(Item(Item.ERROR, check, msg, res, Item.FAIL, True))
                 errorCount +=1
         if ret['inputType'] != 2 and downConversion==True:
                 msg = "Wrong IF input setting. Is %d, should be 2 to enable downconversion" % ret['inputType']
-                rep.add(Item(Item.ERROR, check, msg, "", Item.FAIL, True))
+                rep.add(Item(Item.ERROR, check, msg, "Switch on downconversion with the dbbcif command through the dbbc3 client software.", Item.FAIL, True))
                 errorCount +=1
         if ret['mode'] != "agc" and agc==True:
-                rep.add(Item(Item.ERROR, check, "Automatic gain control is disabled", "", Item.FAIL, True))
+                rep.add(Item(Item.ERROR, check, "Automatic gain control is disabled", "Enable agc with the dbbcif command through the dbbc3 client software.", Item.FAIL, True))
                 errorCount +=1
         if ret['attenuation'] < 20:
                 msg = "IF input power is too low. The attenuation should be in the range 20-40, but is %d" % (ret['attenuation'])
-                rep.add(Item(Item.WARN, check, msg, "", Item.FAIL, False))
+                rep.add(Item(Item.WARN, check, msg, "Increase the IF power", Item.FAIL, False))
                 errorCount +=1
         if  ret['attenuation'] > 40:
                 msg  = "IF input power is too high. The attenuation should be in the range 20-40, but is %d" % (ret['attenuation'])
-                rep.add(Item(Item.WARN, check, msg, "", Item.FAIL, False))
+                rep.add(Item(Item.WARN, check, msg, "Decrease the IF power", Item.FAIL, False))
                 errorCount +=1
         if errorCount == 0:
             msg = "count = %d" % (ret['count'])
