@@ -641,21 +641,21 @@ class DBBC3ValidationDefault(object):
         return (report)
 
 
-    def validatePPS(self, exitOnError=True):
+    def validatePPS(self, maxDelay=200, exitOnError=True):
 
         report = ValidationReport(self.ignoreErrors)
 
         notSynced = []
 
-        check = "=== Checking 1PPS synchronisation"
+        check = "=== Checking 1PPS synchronisation < +- %d ns" %(maxDelay)
         delays = self.dbbc3.pps_delay()
 
         for i in range(len(delays)):
-                if delays[i] > 200:
+                if abs(delays[i]) > maxDelay:
                         notSynced.append(self.dbbc3.boardToChar(i))
 
         if len(notSynced) > 0:
-                msg = "The following boards have pps offsets > 200 ns: %s" % str(notSynced)
+                msg = "The following boards have pps offsets > +-%d ns: %s" % (maxDelay, str(notSynced))
                 resolv = "Restart the DBBC3 control software (do not reload of firmware only reinitialize)\n"
                 resolv += "If the problem persists probably you have a hardware issue."
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
