@@ -245,7 +245,7 @@ class DBBC3ValidationDefault(object):
 
     def validateIFLevel(self, board, downConversion=True, agc=True):
         '''
-        Performs various validations of the IF power settings as obtained from trhe dbbcif command
+        Performs various validations of the IF power settings as obtained from the dbbcif command
         1) IF power should be within 1000 counts of the target value
         2) The attenuation setting should be within 20-40
         3) AGC should be switched on (unless check is  disabled with the agc parameter)
