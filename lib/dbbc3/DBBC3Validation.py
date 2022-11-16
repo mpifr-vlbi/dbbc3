@@ -32,6 +32,7 @@ from datetime import datetime
 from math import floor
 import time
 import importlib
+import os
 
 import inspect
 
@@ -77,6 +78,7 @@ class ValidationExit(Exception):
 
 class ValidationReport(object):
 
+
     def __init__(self, ignoreErrors=False):
 
         self.clear()
@@ -110,8 +112,8 @@ class ValidationReport(object):
         if (item.exit == True and self.ignoreErrors == False):
             self.exit = True
     
-    def __str__(self):
-        return ("")
+#    def __str__(self):
+#        return(self.result)
 
     def log(self, logger):
         '''
@@ -247,6 +249,7 @@ class DBBC3ValidationDefault(object):
         self.ignoreErrors = ignoreErrors
 
 
+        
     def validateIFLevel(self, board, downConversion=True, agc=True):
         '''
         Performs various validations of the IF power settings as obtained from the dbbcif command
@@ -603,7 +606,14 @@ class DBBC3ValidationDefault(object):
 
     def validateSynthesizerLock(self, board, exitOnError = True):
         '''
-        Checks if synthesizer serving the given board is locked
+        Validates that the synthesizer serving the given board is locked
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            exitOnError (boolean): if True any error will cause a program exit
+
+        Returns:
+            ValidationReport: contains the validation report
         '''
         report = ValidationReport(self.ignoreErrors)
 
@@ -617,9 +627,17 @@ class DBBC3ValidationDefault(object):
     def validateSynthesizerFreq(self, board, targetFreq=0.0, exitOnError = True):
         '''
         Validates the actual tuning frequency of the GCoMo synthesizer serving the given board against
-        the target value specified in the DBBC3 configuration file.
+        the target value as specified by the last synthFreq command or the value in the DBBC3 configuration file.
 
         If the parameter targetFreq is set to a value > 0 an additional check is performed against that frequency.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            targetFreq (float): the synthesizer frequency in MHz
+            exitOnError (boolean): if True any error will cause a program exit
+
+        Returns:
+            ValidationReport: contains the validation report
 
         '''
         report = ValidationReport(self.ignoreErrors)
@@ -636,7 +654,7 @@ class DBBC3ValidationDefault(object):
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
         # check freq against the user supplied value
         elif ((freq['actual'] != targetFreq) and (targetFreq > 0)):
-                msg = "Synthesizer of board %s is tuned to %f MHz but according to config it should be %f MHz" % (board, freq['actual'], targetFreq)
+                msg = "Synthesizer of board %s is tuned to %f MHz but should be %f MHz" % (board, float(freq['actual']), targetFreq)
                 resolv = "Check the tuning frequencies in the dbbc3 config file"
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
         else:
@@ -754,6 +772,39 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         '''
         '''
         DBBC3Validation_OCT_D_110.__init__(self, dbbc3, ignoreErrors)
+
+    
+    def validateFilter(self, board, filterNum, filterFile, exitOnError=True):
+        '''
+        Validate the loaded filter file for the specified board
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            filterNum (int): the filter number (must be 1 or 2)
+            filterFile (str): the name of the filter file to be validated
+            exitOnError (boolean): if True any error will cause a program exit
+        Returns:
+            ValidationReport: the report containing the validation results
+            
+        '''
+        rep = ValidationReport(self.ignoreErrors)
+
+        board = self.dbbc3.boardToChar(board)
+        check = "=== Checking filter%d for board %s" % (filterNum, board)
+
+        filters = self.dbbc3.tap(board)
+
+        key = "filter%d_file" % (filterNum)
+        
+        loadedFilter = os.path.basename(filters[key])
+
+        if filterFile == loadedFilter:
+            rep.add(Item(Item.INFO, check, "Filter file: %s" % (loadedFilter), "", Item.OK))
+        else:
+            res = "Use the tap command to load the correct filter file"
+            rep.add(Item(Item.ERROR, check,"Loaded filter %s but expected %s" % (loadedFilter, filterFile), res, Item.FAIL, exit=exitOnError))
+        return (rep)
+
 
     def validateSamplerPower(self, boardNum):
         '''
@@ -908,7 +959,6 @@ if __name__ == "__main__":
                 validate.validateSamplerOffsets(0)
 
 
-                validate.validateSynthesizerLock(0)
                 validate.validateSynthesizerLock(1)
                 validate.validateSynthesizerLock(2)
                 validate.validateSynthesizerLock(3)
