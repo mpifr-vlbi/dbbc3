@@ -529,12 +529,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return locked[sourceNum-1]
 
-    def synthFreq(self, board):
+    def synthFreq(self, board, freq=None):
         ''' 
-        Determines the frequency in MHz of the synthesizer serving the given core board
+        Gets / sets the frequency in MHz of the synthesizer serving the given board.
+        
+        If the freq parameter is not given or is set to None the current frequency is reported
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            freq (int, optional): the synthesizer frequency in MHz
 
         Returns:
             dict: A dictionary with the following structure::
@@ -543,7 +546,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 "actual" (int): the actual frequency in MHz
 
         Raises:
-            DBBC3Exception: In case the frequency could not be determined
+            DBBC3Exception: In case the frequency could not be set or determined
         '''
 
         resp = {}
@@ -558,7 +561,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         # first enable the source of the given synthesizer corresponding to the selected board
         self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
-        ret = self.sendCommand("synth=%d,cw" % synthNum)
+        cmd = "synth=%d,cw " % synthNum
+
+        if freq is not None:
+            # valon frequencies are half of the target value
+            cmd += str(freq /2)
+
+        ret = self.sendCommand(cmd)
 
         lines = ret.split("\n")
         # output: ['cw\r', 'F 4524 MHz; // Act 4524 MHz\r', '\r-2->']
