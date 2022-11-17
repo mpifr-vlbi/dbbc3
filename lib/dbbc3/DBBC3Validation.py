@@ -792,6 +792,10 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         board = self.dbbc3.boardToChar(board)
         check = "=== Checking filter%d for board %s" % (filterNum, board)
 
+        if filterNum not in [1,2]:
+            rep.add(Item(Item.ERROR, check,"Illegal filter number specified. Must be 1 or 2 but is %d" % (filterNum), "", Item.FAIL, exit=exitOnError))
+            return(rep)
+
         filters = self.dbbc3.tap(board)
 
         key = "filter%d_file" % (filterNum)
