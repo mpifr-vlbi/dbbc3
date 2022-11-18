@@ -946,37 +946,58 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(response)
 
-    def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
+    def core3h_vsi_bitmask(self, board):
         '''
-        ToDo: check with Sven concerning number of bitmasks
+        Gets the vsi input bitmask.
+
+        The eight - up to 32 bit wide - bitmasks specify which bits of the eight vsi input streams
+        are active and will be processed. Inactivated bits will be discarded which effectively reduces
+        the total amount of data.
+
+        Note: 
+            Currently setting of the bit mask is not supported by the python package
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
     
-        ToDo: parse output from command
+        Returns:
+            list (str): a list of hex representations of the bitmasks for all active vsi inputs
+
         '''
         
         boardNum = self.boardToDigit(board)+1
 
-        if vsi is not None:
-            vsiStr = str(vsi)
-            if (not vsiStr.isdigit()):
-                ValueError("core3h_vsi_bitmask: vsi must be numeric")
+#        if vsi is not None:
+#            vsiStr = str(vsi)
+#            if (not vsiStr.isdigit()):
+#                ValueError("core3h_vsi_bitmask: vsi must be numeric")
+#
+#            if mask is None:
+#                ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
+#        else:
+#            if mask is not None:
+#                ValueError("core3h_vsi_bitmask: no vsi was specified")
 
-            if mask is None:
-                ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
-        else:
-            if mask is not None:
-                ValueError("core3h_vsi_bitmask: no vsi was specified")
-
-        if mask is not None:
-            valStr = self._valueToHex(mask)
-            if (int(valStr, 16) > 0xffffffff):
-                raise ValueError("core3h_vdif_bitmask: the supplied mask is longer than 32 bit")
-    
+#        if mask is not None:
+#            valStr = self._valueToHex(mask)
+#            if (int(valStr, 16) > 0xffffffff):
+#                raise ValueError("core3h_vdif_bitmask: the supplied mask is longer than 32 bit")
+#    
         cmd = "core3h=%d,vsi_bitmask" % (boardNum)
         ret = self.sendCommand(cmd)
 
+        response = ""
         #VSI input bitmask : 0xFFFFFFFF 0xFFFFFFFF
+        pattern = re.compile("\s*VSI input bitmask\s*:(\s+0x\d{8}.*)")
+#        if "Failed" in ret:
+#            raise ValueError("core3h_inputselect: Illegal source supplied: %s" % (source))
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                response = match.group(1).split()
         
-        return(ret)
+        return(response)
         
     def core3h_vsi_swap(self, board, firstVSI=None, secondVSI=None):
         '''
@@ -1754,7 +1775,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
-        cmd = "core3h=%d,output %d %d %d" %(boardNum, outputIdx, frameId, duration)
+        cmd = "core3h=%d,output %d %d"  %(boardNum, outputIdx, frameId)
         ret = self.sendCommand(cmd)
 
         return(ret)
@@ -3326,6 +3347,9 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
         clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
+
+        # core3h_output was dropped from the command set of OCT_D_120
+        del clas.core3h_output
 
     def pps_delay(self):
         '''
