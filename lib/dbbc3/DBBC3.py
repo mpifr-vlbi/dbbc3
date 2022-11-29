@@ -103,7 +103,7 @@ class DBBC3(object):
                 self.sendCommand("version")
             
                 if timeout:
-                    self.socket.set_timeout(timeout) 
+                    self.socket.settimeout(timeout) 
 
             except socket.timeout:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (host, port))
