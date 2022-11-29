@@ -38,6 +38,8 @@ if __name__ == "__main__":
                         print ("Type 'quit' to exit")
                     elif (command.strip() == "quit"):
                         sys.exit()
+                    elif (command.strip() == ""):
+                        continue
                     else:
                         dbbc3.sendCommand(command)
                         print (dbbc3.lastResponse)
