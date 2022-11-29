@@ -42,12 +42,15 @@ class DBBC3(object):
         core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
 
-        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None, timeout=120):
+        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None, timeout=None):
             ''' Constructor '''
 
             self.socket = None
 
-            self._connect(host,port, timeout)
+            try:
+                self._connect(host,port, timeout)
+            except:
+                raise DBBC3Exception ("Cannot establish connection to %s on port %d" % (host, port))
 
             # attach basic command set
             DBBC3Commandset(self)
@@ -68,19 +71,43 @@ class DBBC3(object):
             # determine number of enabled GComos (should be equal to number of installed core3h boards)
             self.config.numCoreBoards = self._getNumCoreBoards()
 
+            self.timeout = timeout
             self.lastCommand = ""
             self.lastResponse = ""
 
-        def _connect (self, host, port, timeout=120):
+        def _connect (self, host, port, timeout=None):
             '''
-            open a socket connection to the DBBC3 control software
+            Opens a socket connection to the DBBC3 control software
             
-            timeout: the connection timeout in seconds (default 120)
+            If the optional timeout parameter is not set the socket connection will be
+            be set to blocking 
+
+            Args:
+                host (str):  the host name or IP address of the dbbc3
+                port (int):  the port to use for the socket connection
+                timeout (int): the connection timeout in seconds (default: None)
+
+            Raises:
+                DBBC3Exception: in case the connection could not be established
             '''
             try:
-                self.socket = socket.create_connection((host, port), timeout)
-            except:
+                
+                self.socket = socket.create_connection((host, port), 5)
+
+                # DBBC3 socket issue: will establish formal connection without 
+                # raising a timeout exception  even if
+                # other clients are connected (for unknown reasons) 
+                # workaround ist to send a dummy command to provoke the timeout
+
+                self.sendCommand("version")
+            
+                if timeout:
+                    self.socket.set_timeout(timeout) 
+
+            except socket.timeout:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (host, port))
+
+            self.socket.settimeout(None)
 
         def disconnect(self):
             if self.socket:
@@ -89,24 +116,27 @@ class DBBC3(object):
 
 
         def sendCommand(self, command):
-                '''
-                Method for sending generic commands to the DBBC3
-                
-                Returns the response
-                '''
+            '''
+            Method for sending generic commands to the DBBC3
+            
+            Returns the response
+            '''
 
-                try:
-                        #rv = self.socket.send(command + "\0")
-                        rv = self.socket.send((command + "\0").encode())
-                except:
-                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
-                
-                if rv <= 0:
-                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
-
+            rv = -1
+            try:
+                rv = self.socket.send((command + "\0").encode())
                 self.lastCommand = command
+
+                # TODO write proper receiving code for messages of arbitrary lengths
                 self.lastResponse = self.socket.recv(2048).decode('utf-8')
-                return(self.lastResponse)
+
+            except Exception:
+                raise DBBC3Exception("An error in the communication has occured")
+
+            if rv <= 0:
+                raise DBBC3Exception("An error in the communication has occured" )
+
+            return(self.lastResponse)
 
 
         def _validateVersion(self, retVersion, mode, majorVersion):
@@ -129,11 +159,23 @@ class DBBC3(object):
                 raise ValueError("Invalid data format requested %s. Must be one of %s" % (form, DBBC3.dataFormats))
 
         def _validateCore3hMode(self, mode):
+            '''
+            Checks whether the specified core3h mode is valid.
+
+            Raises:
+                ValueError: in case the specified core3h mode is invalid
+            '''
             
             if mode not in DBBC3.core3hModes:
-                raise ValueError("Invalid Core3H mode %s. Must be one of %s" %(mode, DBBC3.core3hModes))
+                raise ValueError("envalid Core3H mode %s. Must be one of %s" %(mode, DBBC3.core3hModes))
 
         def _validateSamplerNum (self, sampler):
+            '''
+            Checks whether the specified sampler number is valid.
+
+            Raises:
+                ValueError: in case the specified sampler number is invalid
+            '''
             if not isinstance(sampler, int):
                 raise ValueError("Sampler number must be an integer.")
 
@@ -158,6 +200,9 @@ class DBBC3(object):
         def _validateBBC(self, bbc):
             ''' 
             Checks whether the specified bbc number is valid
+
+            Raises:
+                ValueError: in case the specified bbc number is invalid
             '''
 
             if bbc not in range(1, self.config.maxTotalBBCs+1):
@@ -166,6 +211,9 @@ class DBBC3(object):
         def _validateBBCFreq(self, freq):
             ''' 
             Checks whether the specified bbc frequency is valid
+
+            Raises:
+                ValueError: in case the specified bbc frequency is invalid
             '''
 
             if (freq < 0.0 or freq > self.config.maxBBFreq):
@@ -174,6 +222,9 @@ class DBBC3(object):
         def _validateTPInt(self, tpint):
             '''
             Checks whether the specified tpint is valid
+
+            Raises:
+                ValueError: in case the specified tpint value is invalid
             '''
 
             if (tpint < 1 or tpint > 60):
@@ -187,6 +238,9 @@ class DBBC3(object):
 
             Note: This does not catch cases where the core3h board is installed but
             disabled by a prefix of 30 in the configuration file.
+
+            Returns:
+                int: the number of core boards installed in the system
             '''
 
             for board in range(8):
