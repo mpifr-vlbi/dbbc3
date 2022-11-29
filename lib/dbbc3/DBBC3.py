@@ -47,10 +47,11 @@ class DBBC3(object):
 
             self.socket = None
 
-            try:
-                self._connect(host,port, timeout)
-            except:
-                raise DBBC3Exception ("Cannot establish connection to %s on port %d" % (host, port))
+            self._connect(host,port, timeout)
+            #try:
+            #    self._connect(host,port, timeout)
+            #except:
+            #    raise DBBC3Exception ("Cannot establish connection to %s on port %d" % (host, port))
 
             # attach basic command set
             DBBC3Commandset(self)
@@ -126,16 +127,21 @@ class DBBC3(object):
             try:
                 rv = self.socket.send((command + "\0").encode())
                 self.lastCommand = command
+                self.lastResponse = ""
 
-                # TODO write proper receiving code for messages of arbitrary lengths
-                self.lastResponse = self.socket.recv(2048).decode('utf-8')
+                while True:
+                    part = self.socket.recv(2048)
+                    if not part or len(part) < 2048:
+                        break
+                    self.lastResponse += part.decode('utf-8')
+                self.lastResponse += part.decode('utf-8')
 
-            except Exception:
+            except Exception as e:
                 raise DBBC3Exception("An error in the communication has occured")
 
             if rv <= 0:
                 raise DBBC3Exception("An error in the communication has occured" )
-
+            
             return(self.lastResponse)
 
 
