@@ -18,8 +18,9 @@ from signal import signal, SIGINT
 from time import sleep
 
 checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
-printTree = {"setup":"#board"}
-commandTree = {"check": checkTree }
+#printTree = {"setup":"#board"}
+getTree = {"version":""}
+commandTree = {"check": checkTree, "get": getTree }
 
 logger = None
 
@@ -294,6 +295,13 @@ class Prompt(Cmd):
                 ret = self.val.validateSamplerOffsets(board)
             reportResult(ret)
         
+
+    def do_get(self,args):
+
+        fields = args.split()
+
+        if fields[0] == "version":
+            print(self.dbbc3.version())
 
     def do_check(self, args):
 
