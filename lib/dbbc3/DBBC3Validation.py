@@ -64,8 +64,8 @@ class Item(object):
         self.exit = exit
 
     def __str__(self):
-        return(str(vars(self)))
-        #return 'ValidationItem(action={}, level={}, message={}, exit={}, resolution={})'.format(self.action, self.level, self.message, self.exit, self.resolution)
+        #return(str(vars(self)))
+        return 'action:\t{}\nlevel:\t{}\nmessage:\t{}\nexit:\t{}\nresolution:\t{}'.format(self.action, self.level, self.message, self.exit, self.resolution)
         
 
 class ValidationExit(Exception):
@@ -112,8 +112,21 @@ class ValidationReport(object):
         if (item.exit == True and self.ignoreErrors == False):
             self.exit = True
     
-#    def __str__(self):
-#        return(self.result)
+    def __str__(self):
+        ret = ""
+        for result in self.result:
+            ret += "---------------------\n"
+            ret += result.__str__()
+            ret += "\n---------------------\n"
+           
+        return(ret)
+
+    def getItems(self):
+        '''
+        Returns the list of report items
+        '''
+
+        return(self.result)
 
     def log(self, logger):
         '''
@@ -329,7 +342,6 @@ class DBBC3ValidationDefault(object):
             lower = 0
             upper = ret["attenuation"]
 
-#        print ("init: ", upper, lower, ret["count"])
 
         # regulate power within +-10% of target
         while (abs(ret["count"] - targetCount) > 0.5 * targetCount ):
@@ -774,14 +786,20 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         DBBC3Validation_OCT_D_110.__init__(self, dbbc3, ignoreErrors)
 
     
-    def validateFilter(self, board, filterNum, filterFile, exitOnError=True):
+    def validateFilter(self, board, filterNum, filterFile, checkBitmask=True, exitOnError=True):
         '''
         Validate the loaded filter file for the specified board
+
+        In case the checkBitmaks parameter is set an additional check is done to 
+        validate that the vsi bitmasks match the band widths of the selected filters.
+        Should the band widths of the two OCT filters differ the bit mask is validated
+        to match the bandwidth of the wider of the two filters.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             filterNum (int): the filter number (must be 1 or 2)
             filterFile (str): the name of the filter file to be validated
+            checkBitmask (boolean): If true also vallidate that the vsi bitmask matches the filter band width
             exitOnError (boolean): if True any error will cause a program exit
         Returns:
             ValidationReport: the report containing the validation results
@@ -797,9 +815,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
             return(rep)
 
         filters = self.dbbc3.tap(board)
-
         key = "filter%d_file" % (filterNum)
-        
         loadedFilter = os.path.basename(filters[key])
 
         if filterFile == loadedFilter:
@@ -807,12 +823,84 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         else:
             res = "Use the tap command to load the correct filter file"
             rep.add(Item(Item.ERROR, check,"Loaded filter %s but expected %s" % (loadedFilter, filterFile), res, Item.FAIL, exit=exitOnError))
-        return (rep)
+            return (rep)
 
+        if not checkBitmask:
+            return (rep)
+
+        masks = self.dbbc3.core3h_vsi_bitmask(board)
+        
+        
+        # determine filter bandwidth
+        tmp = os.path.basename(filters["filter1_file"]).split("-")
+        for i, c in enumerate(tmp[1]):
+            if not c.isdigit():
+                stop = tmp[1][:i].split("_")[0]
+                
+                break
+
+        bw = int(stop) - int(tmp[0])
+        for item in self.validateBitmask(board, bw).getItems():
+            rep.add(item)
+
+        return(rep)
+
+
+    def validateBitmask(self, boardNum, bandwidth, exitOnError=True):
+        '''
+        Validates the vsi bitmasks for the specified board
+
+        Note:
+            valid bandwidth parameter values are 2000,1000,500,250
+            even though the true filter bandwidths are powers of two (e.g 2048 etc.)
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            bandwidth (int): the bandwidth of the tap filters in MHz (see note above)
+
+        Returns:
+            ValidationReport: the report containing the validation results
+        '''
+
+        validMask = { 
+         2000: "0xFFFFFFFF",
+         1000: "0x33333333",
+         500: "0x03030303",
+         250: "0x00030003"}
+
+        rep = ValidationReport(self.ignoreErrors)
+        board = self.dbbc3.boardToChar(boardNum)
+        check = "=== Checking vsi bitmasks for board %s" % (board)
+
+        masks = self.dbbc3.core3h_vsi_bitmask(board)
+
+        try:
+            bw = int(bandwidth)
+        except ValueError:
+            rep.add(Item(Item.ERROR, "validateBitmask", "illegal value for bandwidth parameter (must be int)", "contact developer", Item.FAIL, exit=exitOnError))
+
+        if bw not in validMask.keys():
+            rep.add(Item(Item.ERROR, "validateBitmask", "illegal bandwidth parameter specified. Must be one of [{}]".format(",".join(map(str, validMask.keys()))), "", Item.FAIL, exit=exitOnError))
+            return (rep)
+
+        # check that all bitmasks are identical
+        for mask in masks[1:]:
+            if not mask == masks[0]:
+                res = "Reinitialize the DBBC3 control software. If the problem persists contact a DBBC3 developer."
+                rep.add(Item(Item.ERROR, check,"Illegal vsi bitmask found", res, Item.FAIL, exit=exitOnError))
+
+        if not masks[0] == validMask[bw]:
+            res = "Consult the DBBC3 FAQ for instructions on how to set bitmasks (https://deki.mpifr-bonn.mpg.de/Cooperations/DBBC3/DBBC3_FAQ)"
+            rep.add(Item(Item.ERROR, check, "illegal mask for bandwidth of %d MHz:  %s expected: %s " %(bw, masks[0], validMask[bandwidth]), res, Item.FAIL, exit=exitOnError))
+
+        return(rep)
 
     def validateSamplerPower(self, boardNum):
         '''
         Validates the sampler powers (gains)
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
 
         Returns:
             ValidationReport: the report containing the validation results
@@ -950,6 +1038,7 @@ if __name__ == "__main__":
                 # add the handlers to the logger
                 logger.addHandler(ch)
 
+                val.validateFilters(0, "2000-4000_64taps.flt")
                 res = val.validateIFLevel(0)
                 res.log(logger)
                 if res.exit:
