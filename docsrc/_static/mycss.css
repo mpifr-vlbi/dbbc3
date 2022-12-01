@@ -3,7 +3,7 @@ max-width: 100% !important;
 }
 
 img.inheritance {
-  max-width: 100%;
+  max-width: none;
 }
 
 body {
