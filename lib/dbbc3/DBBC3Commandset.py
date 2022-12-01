@@ -470,7 +470,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         In case one or more samplers are not in sync use lastResponse to receive information on the failed board(s)
 
         Returns:
-            bool: True if all samplers are in sync, False otherwise
+            boolean: True if all samplers are in sync, False otherwise
         '''
         ret = self.sendCommand("checkphase")
 
@@ -3578,12 +3578,7 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         '''
         Retrieves the power levels and bit statistics of the two FIR filters
 
-
-        Args:
-            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
-
-        Returns:
-            dictionary with the following structure::
+        the results are returned in a dictionary with the following structure::
 
             ["filter1"]["power"] (int): the power value for filter 1
             ["filter1"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
@@ -3591,6 +3586,13 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
             ["filter2"]["power"] (int): the power value for filter 1
             ["filter2"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
             ["filter2"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            dictionary with the following structure::
+
 
         '''
         stats = {'filter1': {}, 'filter2': {}}
@@ -3735,10 +3737,10 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
 
     def tap(self, board, filterNum=None, filterFile=None):
         '''
-        Sets the tap filters when in OCT mode. 
+        Sets the tap filter(s) of the OCT mode. 
 
         If called without the filterNum parameter the current filter setup is returned as a dictionary
-        with the following structure:
+        with the following structure::
 
             "filter1_file" (str): the currently loaded filter definition file for filter 1
             "filter2_file" (str): the currently loaded filter definition file for filter 2
@@ -3749,8 +3751,8 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
             filterFile: the file containing the filter coefficients. The file needs to be present in the config folder: C:\DBBC_CONF\OCT_D_120\.
 
         Returns:
-            dict: in case the method is called without the filterNum parameter (see description for structure)
-            boolean: True if the tap filter was loaded correctly, False otherwise
+            A dictionary in case the method is called without the filterNum parameter (see description for structure)
+            oherwise True if the tap filter was loaded correctly, False otherwise
 
         Raises:
             ValueError: in case an illegal value for filterNum has been given.
