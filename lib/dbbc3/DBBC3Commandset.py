@@ -588,7 +588,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Enables/disables the synthesizer output that serves the given board.
     
         Warning:
-            Disabling the output will switch of the downconversion stage of the DBBC3.
+            Disabling the output will switch off the downconversion stage of the DBBC3.
 
         If called without the state argument the current output setting is reported.
 
@@ -3739,9 +3739,9 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
 
         If called without the filterNum parameter the current filter setup is returned as a dictionary
         with the following structure:
-            'filter1_file' (str): the currently loaded filter definition file for filter 1
-            'filter2_file' (str): the currently loaded filter definition file for filter 2
 
+            "filter1_file" (str): the currently loaded filter definition file for filter 1
+            "filter2_file" (str): the currently loaded filter definition file for filter 2
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
