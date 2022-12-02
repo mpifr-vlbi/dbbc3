@@ -13,12 +13,12 @@ class DBBC3MulticastFactory(object):
     Factory class to create an instance of a Multicast class matching the current DBBC3 mode and firmare version
     '''
 
-    def create(self, group="224.0.0.255", port=25000, timeout=2):
+    def create(self, group="224.0.0.255", port=25000, timeout=10):
 
         # obtain mode and version from parsing message
         mc = DBBC3MulticastBase(group, port, timeout)
-#        print (mc.message["mode"])
-#        print (mc.message["majorVersion"])
+        print (mc.message["mode"])
+        print (mc.message["majorVersion"])
          
         csClassName = getMatchingVersion(mc.message["mode"], mc.message["majorVersion"])
         if (csClassName == ""):
@@ -218,7 +218,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
             gcomo = {}
             shortArray = struct.unpack('HHH', mc[offset+i*8+2:offset+i*8+8])
             #print ("SHORTARRAY: ", shortArray)
-            if int(mc[self.gcomoOffset+i*8]) == 0:
+            if int(mc[offset+i*8]) == 0:
                 gcomo["mode"] = "man"
             else:
                 gcomo["mode"] = "agc"
@@ -267,10 +267,10 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         
 class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
 
+
     
-    def _parseAdb3l(self,message):
+    def _parseAdb3l(self,message, offset):
 #OK
-        offset = self.adb3lOffset
 
         # ADB3L Values
         for i in range(0,8):
@@ -323,8 +323,9 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             
             self.message["if_"+str(i+1)]["delayCorr"]= corrArray
 
-    def _parseCore3h(self,message):
-        offset = self.core3hOffset
+        return(offset)
+
+    def _parseCore3h(self,message, offset):
 
         # Core3H Values
         for i in range(0,8):
@@ -358,12 +359,13 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             #print("Sefd["+str(i)+"] " + str(sefdValue))
             self.message["if_"+str(i+1)]["sefd"]= sefdValue[0]
             offset = offset + 4
+
+        return(offset)
     
             
-    def _parseBBC(self, message):
+    def _parseBBC(self, message, offset):
 
         # BBC Values
-        offset = self.bbcOffset
         for i in range(0,128):
             if i < 64:
                     ifNum = int(math.floor(i /  8)) + 1
@@ -392,6 +394,8 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             bbc["sefdLSB"] = bbcValue[16]
 
             self.message["if_" + str(ifNum)]["bbc_" + str(i+1)] = bbc
+
+        return(offset)
             
         
     def poll(self):
@@ -483,12 +487,12 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
         self.message = {}
         valueArray = self.sock.recv(16384)
 
-        self._parseVersion(valueArray)
-        self._parseGcomo(valueArray, self.gcomoOffset)
-        self._parseDC(valueArray), self.dcOffset
-        self._parseAdb3l(valueArray)
-        self._parseCore3h(valueArray)
-        self._parseBBC(valueArray)
+        self._parseVersion(valueArray, 0)
+        nIdx = self._parseGcomo(valueArray, self.gcomoOffset)
+        nIdx = self._parseDC(valueArray, nIdx)
+        nIdx = self._parseAdb3l(valueArray, nIdx)
+        nIdx = self._parseCore3h(valueArray, nIdx)
+        nIdx = self._parseBBC(valueArray, nIdx)
 
         return(self.message)
 
