@@ -88,8 +88,8 @@ class DBBC3Config(object):
         return self._port
 
     @port.setter
-    def port(self, host):
-        self_port = port
+    def port(self, port):
+        self._port = port
 
     @property
     def mode(self):
