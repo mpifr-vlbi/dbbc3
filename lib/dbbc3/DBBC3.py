@@ -82,6 +82,8 @@ class DBBC3(object):
             self.config = DBBC3Config(retVersion)
             self.config.host = host
             self.config.port = port
+            # temporarily set the number of installed boards to maximum (will be determined below)
+            self.config.numCoreBoards = 8
 
             # attach final command set
             DBBC3Commandset(self, retVersion)
