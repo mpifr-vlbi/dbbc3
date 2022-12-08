@@ -155,12 +155,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
     @property
     def lastMessage(self):
-        '''
-        Returns the last received multicast message
-
-        Returns:
-            (dict): the last message dictionary received via multicast.
-        '''
+        ''' dict: Returns the last received multicast message dictionary '''
 
         return self.message
 
@@ -180,6 +175,9 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
     def poll(self):
         '''
         Poll and parse the next multicast message
+
+        Returns:
+            None
         '''
 
         self.message = {}
@@ -469,6 +467,9 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
             "mode" (str): the mode of the the running DBBC3 control software
             "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
+
+        Returns:
+            None
         '''
 
         self.message = {}
@@ -502,6 +503,9 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
             "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
             "mode" (str): the mode of the the running DBBC3 control software
             "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
+        
+        Returns:
+            None
         '''
 
         self.message = {}
