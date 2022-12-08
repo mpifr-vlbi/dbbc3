@@ -138,6 +138,11 @@ class ValidationReport(object):
         return self._exit
 
     @property
+    def result(self):
+        ''' Identical to :py:obj:`items`. Returns the list of report items attached to this ValidationReport'''
+        return(self.items)
+
+    @property
     def items(self):
         ''' Returns the list of report items attached to this ValidationReport
 
