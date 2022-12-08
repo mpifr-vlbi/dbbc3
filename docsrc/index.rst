@@ -5,10 +5,10 @@
 
 .. toctree::
 
-    dbbc3commandset
+    source/dbbc3commandset
 
 dbbc3 - python control of the DBBC3 VLBI backend
-************
+************************************************
 
 Introduction
 ------------
@@ -51,6 +51,10 @@ DBBC3 Module Reference
     * :mod:`dbbc3.DBBC3Config`
     * :mod:`dbbc3.DBBC3Util`
     * :mod:`dbbc3.DBBC3Validation`
+        * :mod:`dbbc3.DBBC3Validation.DBBC3ValidationDefault`
+        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_110`
+        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_120`
+
     * :mod:`dbbc3.DBBC3Multicast`
 
 

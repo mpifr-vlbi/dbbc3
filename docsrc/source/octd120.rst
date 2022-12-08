@@ -1,5 +1,5 @@
 :py:class:`DBBC3Commandset_OCT_D_120` class
-------------------------------------------
+-------------------------------------------
 
 .. currentmodule:: dbbc3.DBBC3Commandset
 

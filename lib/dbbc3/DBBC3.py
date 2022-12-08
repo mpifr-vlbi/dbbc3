@@ -35,6 +35,21 @@ from time import sleep
 class DBBC3(object):
         ''' 
         Main class of the DBBC3 module.
+
+        Upon instatiation a connection is made to the DBBC3 control software server. If a connection was successfully
+        established the mode and version of the loaded control software is being queried and the appropriate command
+        set is being attached to the class instance.
+
+        Args:
+            host (str): the host name or IP address of the DBBC3
+            port (int, optional): the port of the socket provided by the DBBC3 control software server (default: 4000)
+            timeout (int, optional): the timeout in seconds to set for the socket communication to the DBBC3 (default: None)
+
+        Attributes:
+            config (DBBC3Config): the dbbc3 configuration 
+            lastCommand (str): the last command that was sent to the DBBC3
+            lastResponse (str): the last response received from the DBBC3
+            
         '''
         
         dataFormats = ["vdif","raw"]    # valid output data formats
@@ -42,8 +57,11 @@ class DBBC3(object):
         core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
 
-        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None, timeout=None):
-            ''' Constructor '''
+        def __init__(self, host, port=4000,  mode=None, majorVersion=None, timeout=None):
+            ''' 
+            The constructor
+
+            '''
 
             self.socket = None
 
@@ -64,7 +82,6 @@ class DBBC3(object):
             self.config = DBBC3Config(retVersion)
             self.config.host = host
             self.config.port = port
-            self.config.numCoreBoards = numBoards
 
             # attach final command set
             DBBC3Commandset(self, retVersion)
@@ -111,6 +128,12 @@ class DBBC3(object):
             self.socket.settimeout(None)
 
         def disconnect(self):
+            """
+            Close the socket connection to the DBBC3
+
+            Returns:
+                None
+            """
             if self.socket:
                     self.socket.shutdown(socket.SHUT_RDWR)
                     self.socket = None
@@ -119,8 +142,19 @@ class DBBC3(object):
         def sendCommand(self, command):
             '''
             Method for sending generic commands to the DBBC3
+
+            Note:
+                the response of the last sendCommand is always available through the lastResponse class property
+
+            Args:
+                command (str): the command to the DBBC3 control software server
+
+            Returns:
+                str: the response received from the DBBC3 control software
+
+            Raises:
+                DBBC3Exception: in case an error occured in the communication with the DBBC3 server
             
-            Returns the response
             '''
 
             rv = -1
@@ -258,8 +292,11 @@ class DBBC3(object):
         def boardToChar(self, board):
             '''
             Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
-            board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
-            Returns the core board identifier as uppercase char e.g. A
+
+            Args:
+                board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+            Returns:
+                char: the core board identifier as uppercase char e.g. A
             '''
             board = (str(board)).upper()
 
@@ -277,8 +314,11 @@ class DBBC3(object):
         def boardToDigit(self, board):
             '''
             Converts the core board ID (e.g. A) into the board number (starting at 0)
-            board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
-            Returns the core board identifier as integer (starting at 0 for board A)
+
+            Args:
+                board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+            Returns:
+                int: the core board identifier as integer (starting at 0 for board A)
             '''
             board = (str(board)).upper()
 

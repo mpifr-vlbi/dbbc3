@@ -1,3 +1,27 @@
+# -*- coding: utf-8 -*-
+
+#  Copyright (C) 2019 Helge Rottmann, Max-Planck-Institut für Radioastronomie, Bonn, Germany
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+  This module is part of the DBBC3 package and implements the muticast 
+  functionality.
+'''
+__author__ = "Helge Rottmann"
+__copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__contact__ = "rottmann[at]mpifr-bonn.mpg.de"
+__license__ = "GPLv3"
+
 import socket
 import locale
 import re
@@ -8,26 +32,38 @@ import importlib
 from datetime import datetime
 from abc import ABC, abstractmethod
 
+
 class DBBC3MulticastFactory(object):
     '''
-    Factory class to create an instance of a Multicast class matching the current DBBC3 mode and firmare version
+    Factory class to create an instance of a Multicast sub-class matching the current DBBC3 mode and software version
     '''
 
     def create(self, group="224.0.0.255", port=25000, timeout=10):
+        """
+        Return an instance of the Multicast sub-class that matches the currently running mode and software version
+
+        Args:
+            group (str, optional): the multicast group to use (default: 224.0.0.255)
+            port (int, optional): the multicast port to use (default: 25000)
+            timeout (int, optional): the socket timeout in seconds (default: 10)
+
+        Returns:
+            the instance of the multicast class matching the current mode and software version
+        """
 
         # obtain mode and version from parsing message
         mc = DBBC3MulticastBase(group, port, timeout)
         print (mc.message["mode"])
         print (mc.message["majorVersion"])
          
-        csClassName = getMatchingVersion(mc.message["mode"], mc.message["majorVersion"])
+        csClassName = _getMatchingVersion(mc.message["mode"], mc.message["majorVersion"])
         if (csClassName == ""):
             csClassName = "DBBC3MulticastDefault"
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Multicast"), csClassName)
 #        print (csClassName, CsClass)
         return(CsClass(group, port ,timeout))
 
-def getMatchingVersion(mode, majorVersion):
+def _getMatchingVersion(mode, majorVersion):
     '''
     Determines the MultiCast sub-class to be used for the given mode and major version.
 
@@ -77,12 +113,30 @@ def getMatchingVersion(mode, majorVersion):
     return(ret)
 
 class DBBC3MulticastAbstract(ABC):
+    '''
+    Abstract base class for all derived Multicast classes
+    '''
 
     @abstractmethod
     def poll(self):
         pass
 
 class DBBC3MulticastBase(DBBC3MulticastAbstract):
+    '''
+    Base class that contains the multicast functionality common to all modes and
+    software versions.
+
+     All classes that contain multicast content specific to a particaular mode and
+     software version should be derived from this class.
+
+     Note:
+        All derived sub-classes must follow the naming convention DBBC3Mutlicast_*modei*_*version*
+
+     Args:
+        group (str, optional): the multicast group to use (default: 224.0.0.255)
+        port (int, optional): the multicast port to use (default: 25000)
+        timeout (int, optional): the socket timeout in seconds (default: 10)
+'''
 
     def __init__(self, group, port, timeout):
 
@@ -124,6 +178,10 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         
     def poll(self):
+        '''
+        Poll and parse the next multicast message
+        '''
+
         self.message = {}
         valueArray = self.sock.recv(16384)
 
@@ -266,9 +324,10 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         return(offset+64)
         
 class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
+    '''
+    Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
+    '''
 
-
-    
     def _parseAdb3l(self,message, offset):
 #OK
 
@@ -410,78 +469,6 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
             "mode" (str): the mode of the the running DBBC3 control software
             "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
-
-              "if_1": {
-    "attenuation": 9,
-    "count": 21015,
-    "delayCorr": [
-      192757734,
-      192986236,
-      194070375
-    ],
-    "mode": "agc",
-    "ppsDelay": [
-      0
-    ],
-    "sampler0": {
-      "power": 57240788,
-      "stats": [
-        28,
-        7836,
-        7724,
-        35
-      ]
-    },
-    "sampler1": {
-      "power": 56505770,
-      "stats": [
-        28,
-        7768,
-        7795,
-        32
-      ]
-    },
-    "sampler2": {
-      "power": 57090201,
-      "stats": [
-        28,
-        7809,
-        7750,
-        36
-      ]
-    },
-    "sampler3": {
-      "power": 56796681,
-      "stats": [
-        27,
-        7823,
-        7737,
-        36
-      ]
-    },
-    "sefd": [
-      0
-    ],
-    "synth": {
-      "attenuation": 10,
-      "frequency": 4096.0,
-      "lock": 1,
-      "status": 1
-    },
-    "target": 32000,
-    "time": [
-      0
-    ],
-    "tpOff": [
-      0
-    ],
-    "tpOn": [
-      0
-    ],
-    "tsys": [
-      0
-    ]
-  },
         '''
 
         self.message = {}
@@ -499,8 +486,23 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
 
 
 class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
+    '''
+    Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
+    '''
 
     def poll(self):
+        '''
+        Parses the multicast message
+
+        The multicast message from the DBBC3 is parsed and the contents are returned in a
+        multidimensional dictionary with the following structure::
+
+            "majorVersion" (int): the major version of the running DBBC3 control software
+            "minorVersion" (int): the minor version of the running DBBC3 control software
+            "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
+            "mode" (str): the mode of the the running DBBC3 control software
+            "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
+        '''
 
         self.message = {}
         valueArray = self.sock.recv(16384)

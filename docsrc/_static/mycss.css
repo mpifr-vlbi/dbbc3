@@ -11,7 +11,7 @@ div.graphviz {
 }
 
 body {
-  font-size: 60%
+  font-size: auto;
 }
 
 code {

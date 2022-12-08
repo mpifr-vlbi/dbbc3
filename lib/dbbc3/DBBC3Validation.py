@@ -21,7 +21,7 @@
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2021, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
@@ -33,15 +33,50 @@ from math import floor
 import time
 import importlib
 import os
+import logging
 
 import inspect
 
 class Item(object):
+    """
+    Storage class to hold information about one validation check
+    provided by one of the DBBC3 validation methods.
+    Instances of this class can be passed to :py:class:`ValidationReport`
+    via the  :py:func:`ValidationReport.add` method to provde a user 
+    friendly representation of the validation procedure.
+
+
+    The class provides these constants for specifying the reporting level::
+
+        INFO
+        WARN
+        ERROR
+
+    The class provides these constants for specifying the validation state::
+
+        OK
+        FAIL
+
+    Args:
+        level (str): the reporting level of the validation item (see levels above)
+        action (str): a description of the validation action that was performed
+        message (str): a message describing the outcome of the validation action
+        resolution (str, optional): a resolution message to be displayed in case validation errors have occured
+        state (str): a string describing the state of the validation action
+        exit (boolean): True indicates that processing should stop in case of a validation failure (default: False)
+
+    Note:
+        Setting exit=True only indicates that validation failure is considered to be critical. Handling of the exit condition
+        is not done by this class or by :py:class:`ValidationReport` and must be  handled in the upsteam code calling the 
+        validation actions
+
+    """
 
     # level
     #INFO = "INFO"
     #WARN = "WARN"
     #ERROR = "ERROR"
+
     INFO = "\033[1;34mINFO\033[0m"
     WARN = "\033[1;33mWARN\033[0m"
     ERROR = "\033[1;31mERROR\033[0m"
@@ -64,19 +99,22 @@ class Item(object):
         self.exit = exit
 
     def __str__(self):
+        
         #return(str(vars(self)))
-        return 'action:\t{}\nlevel:\t{}\nmessage:\t{}\nexit:\t{}\nresolution:\t{}'.format(self.action, self.level, self.message, self.exit, self.resolution)
+        return 'action:\t{}\nstate:\t{}\nlevel:\t{}\nmessage:\t{}\nexit:\t{}\nresolution:\t{}'.format(self.action, self.state, self.level, self.message, self.exit, self.resolution)
         
 
-class ValidationExit(Exception):
-    '''
-    Exception to be thrown when a validation fails and 
-    the exit parameter for the validation method is 
-    set to True
-    '''
-    pass
-
 class ValidationReport(object):
+    '''
+    Reporter class to provide human readable reports and/or logs of validation actions. Each report can consist of multiple validation items
+    represented by an :py:class:`Item` instance.
+
+    If any of the validation items has failed and has an exit condition the exit attribute of this class is set to True (unless 
+    overridden by the py:attr:`ignoreErrors` argument.
+
+    Args:
+        ignoreErrors (boolean): If True a validation failure in any of the validation items will not set an exit condition (default: False)
+    '''
 
 
     def __init__(self, ignoreErrors=False):
@@ -84,58 +122,99 @@ class ValidationReport(object):
         self.clear()
         self.ignoreErrors = ignoreErrors
 
+    @property
+    def numWarnings(self):
+        """ int: the total number of warnings raised for all validation items of this report """
+        return self._numWarning
+
+    @property
+    def numError(self):
+        """ int: the total number of errors raised for all validation items of this report """
+        return self._numError
+
+    @property
+    def exit(self):
+        """ boolean: True if at least one of the validation items has failed with an exit condition """
+        return self._exit
+
+    @property
+    def items(self):
+        ''' Returns the list of report items attached to this ValidationReport
+
+        Returns:
+            list of :obj:`Item`: the list of reporting items
+        '''
+        return(self._items)
+
     def clear(self):
         '''
         Reset the contents of the ValidationReport
         '''
         
-        self.result = []
-        self.numWarning = 0
-        self.numError = 0
-        self.exit = False
+        self._items = []
+        self._numWarning = 0
+        self._numError = 0
+        self._exit = False
 
     def add(self, item):
         '''
         Add a validation item to the report
 
-        If the item contains an exit condition (item.exit =True)
+        If the item contains an exit condition (item.exit = True)
         the self.exit member is set to True unless the
         ignoreErrors parameter was set on initiliazation
+
+        Args:
+            item (Item): the validation Item instance to add
         '''
         if (item.level == Item.ERROR):
-            self.numError += 1
+            self._numError += 1
         elif (item.level == Item.WARN):
-            self.numWarning += 1
+            self._numWarning += 1
 
-        self.result.append(item)
+        self._items.append(item)
 
         if (item.exit == True and self.ignoreErrors == False):
-            self.exit = True
+            self._exit = True
     
     def __str__(self):
         ret = ""
-        for result in self.result:
+        for result in self._items:
             ret += "---------------------\n"
             ret += result.__str__()
             ret += "\n---------------------\n"
            
         return(ret)
 
-    def getItems(self):
-        '''
-        Returns the list of report items
-        '''
-
-        return(self.result)
 
     def log(self, logger):
         '''
-        Default logging
+        Write all validation items attached to the report to the log. 
+
+        Depending on the item.level string each logger entry will have either the 
+        info, warning or error log levels::
+
+            item.level contains "INFO" => log level info
+            item.level contains "WARN" => log level warning
+            item.level contains "ERROR" => log level error
+
+        The message test will be formated in the following way::
+
+        [item.state] item.action - item.message
+
+        if the validation item contains a non-empty resolution field an additional line 
+        will be logged with the following format::
+
+        [RESOLUTION] item.resolution
+
+        Args:
+            logger (:py:class:`logging.Logger`): the logger object to use for logging the output 
+        
         '''
-        if (len(self.result) == 0):
+        if (len(self._items) == 0):
             return
 
-        for res in self.result:
+        for res in self._items:
             if "INFO" in res.level:
                 logger.info("[{}] {} - {}".format(res.state,  res.action, res.message))
             elif ("WARN" in res.level ):
@@ -146,20 +225,38 @@ class ValidationReport(object):
             if len(res.resolution) > 0:
                 logger.info("[{}] {}".format(Item.RESOLUTION,  res.resolution))
         
-
-
 class ValidationFactory(object):
-    
+    '''
+    Factory class for providing the matching DBBC3Validation sub-class for the currently active
+    DBBC3 mode and software version.
+
+    In order to function all derived DBBC3Validation classes must follow the naming convention::
+
+        DBBC3Validation_mode_majorversion
+
+    e.g. DBBC3Validation_OCT_D_120 for mode OCT_D major version 120
+    '''
 
     def create(self, dbbc3, ignoreErrors=False):
+        """
+        Return a DBBC3Validation sub-class object matching the current mode and software version of the DBBC3
+        as specified in dbbc3.config 
 
-        csClassName = getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
+        Args:
+            dbbc3 (DBBC3): the active DBBC3 instance
+            ignoreErrors (boolean, optional): If True do not exit processing in case of validation failures (default: False)
+        Returns:
+            the instance of the validation class matching the current mode and software version
+        """
+
+            #dbbc3 (:obj:`DBBC3.DBBC3`): the active :obj:`DBBC3.DBBC3` instance
+        csClassName = _getMatchingValidation(dbbc3.config.mode, dbbc3.config.cmdsetVersion['majorVersion'])
         if (csClassName == ""):
             csClassName = "DBBC3ValidationDefault"
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Validation"), csClassName)
         return(CsClass(dbbc3,ignoreErrors))
 
-def getMatchingValidation(mode, majorVersion):
+def _getMatchingValidation(mode, majorVersion):
     '''
     Determines the validation sub-class to be used for the given mode and major version.
 
@@ -172,7 +269,6 @@ def getMatchingValidation(mode, majorVersion):
 
     Returns:
         str: The class name that implements the valdation methods for the given mode and major version
-
 
     '''
 
@@ -211,14 +307,21 @@ def getMatchingValidation(mode, majorVersion):
 
 class DBBC3ValidationDefault(object):
     '''
-    Class that contains the validation methods common to all DBBC3 modes
+    Base class that contains the validation methods common to all DBBC3 modes
+
+    All classes that contain validation methods specific for a particaular mode and
+    software version should be derived from this class.
+
+    Args:
+        dbbc3 (DBBC3): the active DBBC3 instance
+        ignoreErrors (boolean): If True do not exit processing in case of validation failures
     '''
 
-    OK = "\033[1;32mOK\033[0m"
-    INFO = "\033[1;34mINFO\033[0m"
-    WARN = "\033[1;35mWARN\033[0m"
-    ERROR = "\033[1;31mERROR\033[0m"
-    RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
+#    OK = "\033[1;32mOK\033[0m"
+#    INFO = "\033[1;34mINFO\033[0m"
+#    WARN = "\033[1;35mWARN\033[0m"
+#    ERROR = "\033[1;31mERROR\033[0m"
+#    RESOLUTION = "\033[1;34mRESOLUTION\033[0m"
     
     def __init__(self, dbbc3, ignoreErrors):
         '''
@@ -247,7 +350,7 @@ class DBBC3ValidationDefault(object):
         '''
         Restores the state of the DBBC3 according to the
         state that was previously saved upon
-        initialization of the Validation class
+        initialization 
         '''
 
         for board in range(self.dbbc3.config.numCoreBoards):
@@ -255,21 +358,30 @@ class DBBC3ValidationDefault(object):
             self.dbbc3.dbbcif(board, ifstate["inputType"], ifstate["mode"], ifstate["target"])
         
 
-    def setIgnoreErrors(self,ignoreErrors):
-        '''
-        Setter for the ignoreErrors parameter
-        '''
-        self.ignoreErrors = ignoreErrors
+#    def setIgnoreErrors(self,ignoreErrors):
+#        '''
+#        Setter for the ignoreErrors parameter
+#        '''
+#        self.ignoreErrors = ignoreErrors
 
 
         
     def validateIFLevel(self, board, downConversion=True, agc=True):
         '''
-        Performs various validations of the IF power settings as obtained from the dbbcif command
-        1) IF power should be within 1000 counts of the target value
-        2) The attenuation setting should be within 20-40
-        3) AGC should be switched on (unless check is  disabled with the agc parameter)
-        4) input should be set to 2 (unless check is disabled with the downConversion parameter)
+        Performs various validations of the IF power settings as obtained from the dbbcif command:
+
+        - IF power should be within 1000 counts of the target value
+        - The attenuation setting should be within 20-40
+        - AGC should be switched on (unless disabled by the agc parameter)
+        - Downconversion should be switched on (unless check is disabled with the downConversion parameter)
+
+        Args:
+             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+             downConversion (boolean, optional): If True validate that downconversion is enabled (default: True)
+             agc (boolean, optional): If True validate that agc is turned on (default: True)
+
+        Returns: 
+            ValidationReport: the validation report 
         '''
         
         rep = ValidationReport(self.ignoreErrors)
@@ -308,6 +420,12 @@ class DBBC3ValidationDefault(object):
         return(rep)
 
     def validateSamplerPhases(self):
+        """
+        Validates that all sampler phases for all boards are synchronized
+
+        Returns: 
+            ValidationReport: the validation report 
+        """
 
         rep = ValidationReport(self.ignoreErrors)
         check = "=== Checking sampler phases"
@@ -368,6 +486,15 @@ class DBBC3ValidationDefault(object):
         return True
 
     def validateSamplerPower(self, boardNum):
+        """
+        Validate the powers of all samplers of the specified board
+
+        Args:
+             boardNum (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: 
+            ValidationReport: the validation report 
+        """
 
         rep = ValidationReport(self.ignoreErrors)
 
@@ -465,6 +592,15 @@ class DBBC3ValidationDefault(object):
 
         
     def validateBitStatistics(self, boardNum):
+        """
+        Validate the bit statistics for all samplers of the specified board
+
+        Args:
+             boardNum (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: 
+            ValidationReport: the validation report 
+        """
 
         rep = ValidationReport(self.ignoreErrors)
 
@@ -515,6 +651,15 @@ class DBBC3ValidationDefault(object):
         return(rep)
 
     def validateSamplerOffsets(self, boardNum):
+        """
+        Validate the offsets of all samplers of the specified board
+
+        Args:
+             boardNum (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: 
+            ValidationReport: the validation report 
+        """
 
         rep = ValidationReport(self.ignoreErrors)
 
@@ -676,6 +821,19 @@ class DBBC3ValidationDefault(object):
 
 
     def validatePPS(self, maxDelay=200, exitOnError=True):
+        """
+        Validates the delay between the internally generated and external PPS signals.
+        The validation is carried out for all all active boards of the DBBC3. The validation
+        fails in case any of the PPS delays is exceeding +-maxDelay nanoseconds (configurable).
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            maxDelay (int): the maximum valid delay in nanoseconds
+            exitOnError (boolean): if True any error will cause a program exit
+
+        Returns:
+            ValidationReport: contains the validation report
+        """
 
         report = ValidationReport(self.ignoreErrors)
 
@@ -699,35 +857,56 @@ class DBBC3ValidationDefault(object):
 
         return (report)
 
-    def validatePPSDelay(self, board, exitOnError=False):
+#    def validatePPSDelay(self, board, exitOnError=False):
+#
+#        report = ValidationReport(self.ignoreErrors)
+#        #TODO: make special call pps_delay for DDC_U (returns 4 values)
+#        return(report)
+#
+#
+#        board = self.dbbc3.boardToChar(board)
+#        check =  "=== Checking PPS delays of core board %s" % board.upper()
+#        ret = self.dbbc3.pps_delay()
+#
+#        for i in range(len(delays)):
+#                if delays[i] == 0:
+#                        inactive.append(self.dbbc3.boardToChar(i))
+#                elif delays[i] > 200:
+#                        notSynced.append(self.dbbc3.boardToChar(i))
+#
+#        if ret[0] != ret[1]:
+#            msg =   "PPS delays for 1st and 2nd block differ %s on core board %s" % (ret, board.upper())
+#            resolv = "This is a bug. Contact the maintainer of the DBBC3 software"
+#                
+#            report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
+#        else:
+#            report.add(Item(Item.INFO, check, "PPS delays (1st block / 2nd block)  %s ns", "", Item.OK))
+#
+#        return(report)
+#
 
-        report = ValidationReport(self.ignoreErrors)
-        #TODO: make special call pps_delay for DDC_U (returns 4 values)
-        return(report)
+    def validateTimesync(self, board, exitOnError=True, maxDelay=5):
+        """
+        Validates the time synchronisation of the specified core3h board
 
+        Validation fails in case:
 
-        board = self.dbbc3.boardToChar(board)
-        check =  "=== Checking PPS delays of core board %s" % board.upper()
-        ret = self.dbbc3.pps_delay()
+            - not valid time stamp could be obtained from the DBBC3
+            - the DBBC3 time deveates by more than maxDealy seconds (configurable) from the local NTP time
 
-        for i in range(len(delays)):
-                if delays[i] == 0:
-                        inactive.append(self.dbbc3.boardToChar(i))
-                elif delays[i] > 200:
-                        notSynced.append(self.dbbc3.boardToChar(i))
+        Failure could indicate that the GPS antenna is not properly connected to the DBBC3 or no GPS
+        satelites were visible on system initialization. Also make sure that the local computer has its
+        time synchonized by NTP.
 
-        if ret[0] != ret[1]:
-            msg =   "PPS delays for 1st and 2nd block differ %s on core board %s" % (ret, board.upper())
-            resolv = "This is a bug. Contact the maintainer of the DBBC3 software"
-                
-            report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
-        else:
-            report.add(Item(Item.INFO, check, "PPS delays (1st block / 2nd block)  %s ns", "", Item.OK))
+        Args:
+             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+             exitOnError (boolean): if True any error will cause a program exit
+             maxDelay (int): the maximum valid time delay in seconds
 
-        return(report)
+        Returns:
+            ValidationReport: contains the validation report
 
-
-    def validateTimesync(self, board, exitOnError=True):
+        """
 
         report = ValidationReport(self.ignoreErrors)
 
@@ -743,8 +922,8 @@ class DBBC3ValidationDefault(object):
                 msg =   "No timestamp could be obtained for core board %s" % board.upper()
                 report.add(Item(Item.ERROR, check, msg, resolv, Item.FAIL, exit=exitOnError))
         else:
-                delta = datetime.utcnow() - ret
-                if delta.seconds > 10:
+                delta = abs(datetime.utcnow() - ret)
+                if delta.seconds > maxDelay:
                         msg =   "Difference between reported time and local NTP time > 10s for board %s" % board.upper()
                         resolv += "Run core3h_timesync and re-check\n"
                         resolv += "Check that the local computer is synchronised via NTP\n"
@@ -756,15 +935,29 @@ class DBBC3ValidationDefault(object):
 
 
 class DBBC3Validation_OCT_D_110(DBBC3ValidationDefault):
+    """
+    class with validation methods specific to the OCT_D 110 mode
+
+    Args:
+        dbbc3 (DBBC3): the active DBBC3 instance
+        ignoreErrors (boolean): If True do not exit processing in case of validation failures
+    """
         
     def __init__(self, dbbc3, ignoreErrors):
         '''
+        Constructor
         '''
         DBBC3ValidationDefault.__init__(self, dbbc3, ignoreErrors)
 
     def validateCalibrationLoop(self, exitOnError=False):
         '''
         Validates that the calibration loop is running
+
+        Args:
+            exitOnError (boolean, optional): if True raise an exit condition on validation failure
+            
+        Returns:
+            ValidationReport: contains the validation report
         '''
         report = ValidationReport(self.ignoreErrors)
 
@@ -778,10 +971,20 @@ class DBBC3Validation_OCT_D_110(DBBC3ValidationDefault):
         else:
             report.add(Item(Item.ERROR, check,"The calibration loop is not running", "", Item.FAIL, exit=exitOnError))
 
+        return(report)
+
 class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
+    """
+    class with validation methods specific to the OCT_D 120 mode
+
+    Args:
+        dbbc3 (DBBC3): the active DBBC3 instance
+        ignoreErrors (boolean): If True do not exit processing in case of validation failures
+    """
 
     def __init__(self, dbbc3, ignoreErrors):
         '''
+        Constructor
         '''
         DBBC3Validation_OCT_D_110.__init__(self, dbbc3, ignoreErrors)
 
@@ -840,7 +1043,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
                 break
 
         bw = int(stop) - int(tmp[0])
-        for item in self.validateBitmask(board, bw).getItems():
+        for item in self.validateBitmask(board, bw).items():
             rep.add(item)
 
         return(rep)
@@ -965,7 +1168,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
         '''
         Validates the sampler offsets
 
-        Parameters:
+        Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             targetCount (int, optional): the total power count at which the validation should be carried out. Defaults to 32000.
         

@@ -93,11 +93,11 @@ class DBBC3Commandset(object):
     Upon construction the appropriate sub-class implementing the command set for the given version and mode is determined 
     and dynamically attached.
 
-    if version is not given the latest implemented version for the activated mode will be used.
+    If version is not given the latest implemented version for the activated mode will be used.
 
     Args:
         clas (object): the class to which to attach the DBBC3Commandset
-        version (str): the command set version
+        version (str, optional): the command set version
 
     '''
 
@@ -126,7 +126,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     The basic class implementing all commands common to all DBBC modes and versions.
 
     All sub-classes implementing commands that are special to a specific mode or version 
-    should be derived from DBBC3CommandsetDefault and should follow the class naming
+    should be derived from DBBC3CommandsetDefault or from the appropriate upstream class and should follow the class naming
     convention: DBBC3Commandset_MODE_VERSION
     e.g. DBBC3Commandset_OCT_D_110
     '''
@@ -366,6 +366,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Reconfigures the core3h boards 
 
         Reloads the firmware, then reinitializes the ADB3L and core3h and finally does a PPS sync.
+
+        Returns:
+            None
         '''
 
         self.sendCommand("reconfigure")
