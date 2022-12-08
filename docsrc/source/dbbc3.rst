@@ -3,4 +3,5 @@
 
 .. automodule:: dbbc3.DBBC3
     :members:
+    :member-order: groupwise
 
