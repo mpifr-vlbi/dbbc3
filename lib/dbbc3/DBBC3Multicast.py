@@ -326,6 +326,35 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
     Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
     '''
 
+    def poll(self):
+        '''
+        Parses the multicast message
+
+        The multicast message from the DBBC3 is parsed and the contents are returned in a
+        multidimensional dictionary with the following structure::
+
+            "majorVersion" (int): the major version of the running DBBC3 control software
+            "minorVersion" (int): the minor version of the running DBBC3 control software
+            "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
+            "mode" (str): the mode of the the running DBBC3 control software
+            "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
+
+        Returns:
+            None
+        '''
+
+        self.message = {}
+        valueArray = self.sock.recv(16384)
+
+        self._parseVersion(valueArray, 0)
+        nIdx = self._parseGcomo(valueArray, self.gcomoOffset)
+        nIdx = self._parseDC(valueArray, nIdx)
+        nIdx = self._parseAdb3l(valueArray, nIdx)
+        nIdx = self._parseCore3h(valueArray, nIdx)
+        nIdx = self._parseBBC(valueArray, nIdx)
+
+        return(self.message)
+
     def _parseAdb3l(self,message, offset):
 #OK
 
@@ -455,35 +484,6 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
         return(offset)
             
         
-    def poll(self):
-        '''
-        Parses the multicast message
-
-        The multicast message from the DBBC3 is parsed and the contents are returned in a
-        multidimensional dictionary with the following structure::
-
-            "majorVersion" (int): the major version of the running DBBC3 control software
-            "minorVersion" (int): the minor version of the running DBBC3 control software
-            "minorVersionString" (str): a human readable string of the minor version of the running DBBC3 control software
-            "mode" (str): the mode of the the running DBBC3 control software
-            "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
-
-        Returns:
-            None
-        '''
-
-        self.message = {}
-        valueArray = self.sock.recv(16384)
-
-        self._parseVersion(valueArray, 0)
-        nIdx = self._parseGcomo(valueArray, self.gcomoOffset)
-        nIdx = self._parseDC(valueArray, nIdx)
-        nIdx = self._parseAdb3l(valueArray, nIdx)
-        nIdx = self._parseCore3h(valueArray, nIdx)
-        nIdx = self._parseBBC(valueArray, nIdx)
-
-        return(self.message)
-
 
 
 class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
