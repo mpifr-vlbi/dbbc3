@@ -3818,6 +3818,17 @@ class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
             clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
             clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
+class DBBC3Commandset_DDC_U_126(DBBC3Commandset_DDC_U_125):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DDC_U mode version 126
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+        DBBC3Commandset_DDC_U_125.__init__(self,clas)
+
 class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
     '''
     Implementation of the DBBC3 commandset for the
