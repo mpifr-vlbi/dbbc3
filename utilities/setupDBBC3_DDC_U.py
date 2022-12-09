@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser(description="Setup and validate DBBC3 in DDC_U 
 
 parser.add_argument("-p", "--port", default=4000, type=int, help="The port of the control software socket (default: %(default)s)")
 parser.add_argument("-n", "--num-coreboards", type=int, help="The number of activated core boards in the DBBC3")
-parser.add_argument("-i", "--if", dest='boards', nargs="+", help="A list of core boards to be used for setup and validation. (e.g. -i A C E). If not specified will use all activated core boards.")
+#parser.add_argument("-i", "--if", dest='boards', nargs="+", help="A list of core boards to be used for setup and validation. (e.g. -i A C E). If not specified will use all activated core boards.")
 parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
 parser.add_argument("--use-version", dest='ver', default= "", help="The software version of the DBBC3 DDC_U mode to use. Will assume the latest release version if not specified")
 parser.add_argument("--ignore-errors", dest='ignoreErrors',default=False, action='store_true', help="Ignore any errors and continue with the validation")
