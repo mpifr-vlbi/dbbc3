@@ -15,12 +15,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 '''
-  This module is part of the DBBC3 package and implements the command sets
-  of the DBBC3 for the various modes and versions
+  This module is part of the DBBC3 package and provides utility methods
 '''
 
 __author__ = "Helge Rottmann"
-__copyright__ = "2019, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
+__copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
@@ -31,6 +30,15 @@ import subprocess
 
 
 def parseTimeResponse(response):
+    '''
+    Parses response of the core3h timesync command and converts it into datetime
+
+    Args:
+        response (str): the reposnse string as provided by the core3h_timesync command
+
+    Returns:
+        datetime: the datetime representation of the returned timesync reponse
+    '''
 
     year = 0
     doy = 0
@@ -59,11 +67,32 @@ def parseTimeResponse(response):
     return(timestamp)
 
 def validateOnOff(string):
+    '''
+    Validates the argument to be "on" or "off"
+
+    Args:
+       string (str): the input string to check
+
+    Returns:
+        boolean: True if input string is either "on" or "off". False otherwise
+
+    '''
 
     return (string in ["on", "off"])
 
 
 def checkRecorderInterface (host ,device, user="oper"):
+    """
+    Returns the state of the given ethernet device on the given host
+
+    Args:
+        host (str): the hostname or IP addres of the host to probe
+        device (str): the name of the network device to check
+        user (str, optional): the ssh user name to use to carry out the check
+
+    Returns:
+        str: the state of the given device as provided by the ip link show command
+    """
     out = subprocess.Popen("ssh {user}@{host} ip link show {device}".format(user=user, host=host,  device=device), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     start = str(out[0]).find("state") + 6
     end = str(out[0]).find("qlen")

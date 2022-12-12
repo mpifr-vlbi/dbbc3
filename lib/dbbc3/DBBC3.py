@@ -35,15 +35,53 @@ from time import sleep
 class DBBC3(object):
         ''' 
         Main class of the DBBC3 module.
+
+        Upon instantiation a connection is made to the DBBC3 control software server. If a connection was successfully
+        established the mode and version of the loaded control software is being queried and the appropriate command
+        set is being attached to the class instance.
+
+        Note:
+            in case the optional arguments mode and/or majorVersion are given these values are comapred
+            against the actual currently loaded mode and software version. An Exception is being raised
+            if the values do not match.
+
+        Args:
+            host (str): the host name or IP address of the DBBC3
+            port (int, optional): the port of the socket provided by the DBBC3 control software server (default: 4000)
+            mode (str, optional): the expected mode of the DBBC3 (see note above)
+            majorVersion (int, optional): the expected major version of the DBBC3 control software (see note above)
+            timeout (int, optional): the timeout in seconds to set for the socket communication to the DBBC3 (default: None)
         '''
         
         dataFormats = ["vdif","raw"]    # valid output data formats
     
         core3hModes = ["independent","half_merged", "merged", "pfb"] # valid core3h modes
 
+        @property 
+        def config (self):
+            ''' :py:class:`DBBC3Config`: the dbbc3 configuration '''
+            return (self._config)
 
-        def __init__(self, host, port=4000, numBoards=8, mode=None, majorVersion=None, timeout=120):
-            ''' Constructor '''
+        @property 
+        def lastCommand (self):
+            ''' str: the last command that was sent to the DBBC3 '''
+            return (self._lastCommand)
+
+        @property 
+        def lastResponse (self):
+            'str: the last response received from the DBBC3'''
+            return (self._lastResponse)
+
+        @property 
+        def timeout (self):
+            'int: the socket timeout in seconds'''
+            return (self._timeout)
+
+        def __init__(self, host, port=4000,  mode=None, majorVersion=None, timeout=None):
+            ''' 
+            The constructor
+
+            '''
 
             self.socket = None
 
@@ -57,56 +95,106 @@ class DBBC3(object):
             self._validateVersion(retVersion, mode, majorVersion)
 
             # update the configuration
-            self.config = DBBC3Config(retVersion)
-            self.config.host = host
-            self.config.port = port
-            self.config.numCoreBoards = numBoards
+            self._config = DBBC3Config(retVersion)
+            self._config.host = host
+            self._config.port = port
+            # temporarily set the number of installed boards to maximum (will be determined below)
+            self._config.numCoreBoards = 8
 
             # attach final command set
             DBBC3Commandset(self, retVersion)
 
             # determine number of enabled GComos (should be equal to number of installed core3h boards)
-            self.config.numCoreBoards = self._getNumCoreBoards()
+            self._config.numCoreBoards = self._getNumCoreBoards()
 
-            self.lastCommand = ""
-            self.lastResponse = ""
+            self._timeout = timeout
+            self._lastCommand = ""
+            self._lastResponse = ""
 
-        def _connect (self, host, port, timeout=120):
+        def _connect (self, host, port, timeout=None):
             '''
-            open a socket connection to the DBBC3 control software
+            Opens a socket connection to the DBBC3 control software
             
-            timeout: the connection timeout in seconds (default 120)
+            If the optional timeout parameter is not set the socket connection will be
+            be set to blocking 
+
+            Args:
+                host (str):  the host name or IP address of the dbbc3
+                port (int):  the port to use for the socket connection
+                timeout (int): the connection timeout in seconds (default: None)
+
+            Raises:
+                DBBC3Exception: in case the connection could not be established
             '''
             try:
-                self.socket = socket.create_connection((host, port), timeout)
-            except:
+                
+                self.socket = socket.create_connection((host, port), 5)
+
+                # DBBC3 socket issue: will establish formal connection without 
+                # raising a timeout exception  even if
+                # other clients are connected (for unknown reasons) 
+                # workaround ist to send a dummy command to provoke the timeout
+
+                self.sendCommand("version")
+            
+                if timeout:
+                    self.socket.settimeout(timeout) 
+
+            except socket.timeout:
                 raise DBBC3Exception("Failed to connect to %s on port %d." % (host, port))
 
+            self.socket.settimeout(None)
+
         def disconnect(self):
+            """
+            Close the socket connection to the DBBC3
+
+            Returns:
+                None
+            """
             if self.socket:
                     self.socket.shutdown(socket.SHUT_RDWR)
                     self.socket = None
 
 
         def sendCommand(self, command):
-                '''
-                Method for sending generic commands to the DBBC3
-                
-                Returns the response
-                '''
+            '''
+            Method for sending generic commands to the DBBC3
 
-                try:
-                        #rv = self.socket.send(command + "\0")
-                        rv = self.socket.send((command + "\0").encode())
-                except:
-                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
-                
-                if rv <= 0:
-                        raise DBBC3Exception("An error in the communication to %s has occured" % (self.config.host))
+            Note:
+                the response of the last sendCommand is always available through the lastResponse class property
 
-                self.lastCommand = command
-                self.lastResponse = self.socket.recv(2048).decode('utf-8')
-                return(self.lastResponse)
+            Args:
+                command (str): the command to the DBBC3 control software server
+
+            Returns:
+                str: the response received from the DBBC3 control software
+
+            Raises:
+                DBBC3Exception: in case an error occured in the communication with the DBBC3 server
+            
+            '''
+
+            rv = -1
+            try:
+                rv = self.socket.send((command + "\0").encode())
+                self._lastCommand = command
+                self._lastResponse = ""
+
+                while True:
+                    part = self.socket.recv(2048)
+                    if not part or len(part) < 2048:
+                        break
+                    self._lastResponse += part.decode('utf-8')
+                self._lastResponse += part.decode('utf-8')
+
+            except Exception as e:
+                raise DBBC3Exception("An error in the communication has occured")
+
+            if rv <= 0:
+                raise DBBC3Exception("An error in the communication has occured" )
+            
+            return(self._lastResponse)
 
 
         def _validateVersion(self, retVersion, mode, majorVersion):
@@ -129,11 +217,23 @@ class DBBC3(object):
                 raise ValueError("Invalid data format requested %s. Must be one of %s" % (form, DBBC3.dataFormats))
 
         def _validateCore3hMode(self, mode):
+            '''
+            Checks whether the specified core3h mode is valid.
+
+            Raises:
+                ValueError: in case the specified core3h mode is invalid
+            '''
             
             if mode not in DBBC3.core3hModes:
-                raise ValueError("Invalid Core3H mode %s. Must be one of %s" %(mode, DBBC3.core3hModes))
+                raise ValueError("envalid Core3H mode %s. Must be one of %s" %(mode, DBBC3.core3hModes))
 
         def _validateSamplerNum (self, sampler):
+            '''
+            Checks whether the specified sampler number is valid.
+
+            Raises:
+                ValueError: in case the specified sampler number is invalid
+            '''
             if not isinstance(sampler, int):
                 raise ValueError("Sampler number must be an integer.")
 
@@ -158,6 +258,9 @@ class DBBC3(object):
         def _validateBBC(self, bbc):
             ''' 
             Checks whether the specified bbc number is valid
+
+            Raises:
+                ValueError: in case the specified bbc number is invalid
             '''
 
             if bbc not in range(1, self.config.maxTotalBBCs+1):
@@ -166,6 +269,9 @@ class DBBC3(object):
         def _validateBBCFreq(self, freq):
             ''' 
             Checks whether the specified bbc frequency is valid
+
+            Raises:
+                ValueError: in case the specified bbc frequency is invalid
             '''
 
             if (freq < 0.0 or freq > self.config.maxBBFreq):
@@ -174,6 +280,9 @@ class DBBC3(object):
         def _validateTPInt(self, tpint):
             '''
             Checks whether the specified tpint is valid
+
+            Raises:
+                ValueError: in case the specified tpint value is invalid
             '''
 
             if (tpint < 1 or tpint > 60):
@@ -186,20 +295,26 @@ class DBBC3(object):
             core3h boards this method is used to determine the number of boards.
 
             Note: This does not catch cases where the core3h board is installed but
-            disbaled by a prefix of 30 in the configuration file.
+            disabled by a prefix of 30 in the configuration file.
+
+            Returns:
+                int: the number of core boards installed in the system
             '''
 
             for board in range(8):
                 if not self.dbbcif(board):
-                    break
+                    return(board)
 
-            return(board)
+            return(8)
 
         def boardToChar(self, board):
             '''
             Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
-            board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
-            Returns the core board identifier as uppercase char e.g. A
+
+            Args:
+                board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+            Returns:
+                char: the core board identifier as uppercase char e.g. A
             '''
             board = (str(board)).upper()
 
@@ -217,8 +332,11 @@ class DBBC3(object):
         def boardToDigit(self, board):
             '''
             Converts the core board ID (e.g. A) into the board number (starting at 0)
-            board: board identifier; can be numeric e.g. 0, or char e.g. 'A'
-            Returns the core board identifier as integer (starting at 0 for board A)
+
+            Args:
+                board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+            Returns:
+                int: the core board identifier as integer (starting at 0 for board A)
             '''
             board = (str(board)).upper()
 
@@ -270,6 +388,6 @@ if __name__ == "__main__":
 #
 #    ret =  dbbc3.checkphase()
 #    if not ret:
-#        print( dbbc3.lastResponse)
+#        print( dbbc3._lastResponse)
 
 

@@ -93,11 +93,11 @@ class DBBC3Commandset(object):
     Upon construction the appropriate sub-class implementing the command set for the given version and mode is determined 
     and dynamically attached.
 
-    if version is not given the latest implemented version for the activated mode will be used.
+    If version is not given the latest implemented version for the activated mode will be used.
 
     Args:
         clas (object): the class to which to attach the DBBC3Commandset
-        version (str): the command set version
+        version (str, optional): the command set version
 
     '''
 
@@ -126,7 +126,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     The basic class implementing all commands common to all DBBC modes and versions.
 
     All sub-classes implementing commands that are special to a specific mode or version 
-    should be derived from DBBC3CommandsetDefault and should follow the class naming
+    should be derived from DBBC3CommandsetDefault or from the appropriate upstream class and should follow the class naming
     convention: DBBC3Commandset_MODE_VERSION
     e.g. DBBC3Commandset_OCT_D_110
     '''
@@ -243,7 +243,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             'timestamp' (time.struct_time): the timestamp
             'timestampAsString' (str): the timestamp in string representation %Y-%m-%dT%H:%M:%S
 
-        In the OCT mode the dict contains the following additional fields::
+        In the OCT mode (version 110) the dict contains the following additional fields::
 
             'seconds'(int): seconds since the beginning of the current year
             'halfYearsSince2000' (int): number of half years since the year 2000
@@ -366,6 +366,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Reconfigures the core3h boards 
 
         Reloads the firmware, then reinitializes the ADB3L and core3h and finally does a PPS sync.
+
+        Returns:
+            None
         '''
 
         self.sendCommand("reconfigure")
@@ -463,10 +466,14 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Checks whether all samplers of all core boards are in sync
 
-        In case one or more samplers are not in sync query the lastResponse statement to receive information on the failed board(s)
+        Warning:
+            Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to 
+            phase shifting of the sampler outputs.
+
+        In case one or more samplers are not in sync use lastResponse to receive information on the failed board(s)
 
         Returns:
-            bool: True if all samplers are in sync, False otherwise
+            boolean: True if all samplers are in sync, False otherwise
         '''
         ret = self.sendCommand("checkphase")
 
@@ -525,12 +532,15 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return locked[sourceNum-1]
 
-    def synthFreq(self, board):
+    def synthFreq(self, board, freq=None):
         ''' 
-        Determines the frequency in MHz of the synthesizer serving the given core board
+        Gets / sets the frequency in MHz of the synthesizer serving the given board.
+        
+        If the freq parameter is not given or is set to None the current frequency is reported
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            freq (int, optional): the synthesizer frequency in MHz
 
         Returns:
             dict: A dictionary with the following structure::
@@ -539,7 +549,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 "actual" (int): the actual frequency in MHz
 
         Raises:
-            DBBC3Exception: In case the frequency could not be determined
+            DBBC3Exception: In case the frequency could not be set or determined
         '''
 
         resp = {}
@@ -554,7 +564,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         # first enable the source of the given synthesizer corresponding to the selected board
         self.sendCommand("synth=%d,source %d" % (synthNum, sourceNum))
-        ret = self.sendCommand("synth=%d,cw" % synthNum)
+        cmd = "synth=%d,cw " % synthNum
+
+        if freq is not None:
+            # valon frequencies are half of the target value
+            cmd += str(freq /2)
+
+        ret = self.sendCommand(cmd)
 
         lines = ret.split("\n")
         # output: ['cw\r', 'F 4524 MHz; // Act 4524 MHz\r', '\r-2->']
@@ -562,8 +578,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
                 if "MHz" in line:
                         # F 4524 MHz; // Act 4524 MHz
                         tok = line.split(" ")
-                        resp['target'] = int(tok[1]) * 2
-                        resp['actual'] = int(tok[5]) * 2
+                        resp['target'] = float(tok[1]) * 2
+                        resp['actual'] = float(tok[5]) * 2
         if not resp:
             raise DBBC3Exception("The synthesizer frequency for board %d could not be determined" % (board))
 
@@ -574,8 +590,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Enables/disables the synthesizer output that serves the given board.
     
-        :warning::
-            Disabling the output will switch of the downconversion stage of the DBBC3.
+        Warning:
+            Disabling the output will switch off the downconversion stage of the DBBC3.
 
         If called without the state argument the current output setting is reported.
 
@@ -591,7 +607,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             ValueError: In case an illegal state argument has been supplied
         '''
 
-        print ("state: ", state)
+        #print ("state: ", state)
         resp = {}
         boardNum = self.boardToDigit(board)
 
@@ -738,8 +754,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Reads the value of the device register
 
-        Note: not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
-        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
+        Note:
+            Not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -769,8 +786,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Reads the decimal value of the device register
 
-        Note: not all devices have readbale registers. See DBBC3 documentation for the core3h "devices" command.
-        The list of available devices can be obtained with the :py:func:`core3h_devices` command.
+        Note:
+            Not all devices have readable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -792,7 +810,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Writes a value into the device register
 
-        Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
+        Note:
+            Not all devices have writeable registers. See the DBBC3 documentation for the core3h "devices" command.
+            The list of available devices can be obtained with the :py:func:`core3h_devices` command.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -823,7 +843,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
         Updates only certain bits of the value of a device register
 
-        Note: not all devices have writable registers. See DBBC3 documentation for "devices" command
+        Note:
+             Not all devices have writable registers. See DBBC3 documentation for "devices" command
 
         The bitmask must be in hexadecimal format.
 
@@ -928,35 +949,58 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         return(response)
 
-    def core3h_vsi_bitmask(self, board, vsi=None, mask=None, reset=False):
+    def core3h_vsi_bitmask(self, board):
         '''
-        ToDo: check with Sven concerning number of bitmasks
+        Gets the vsi input bitmask.
+
+        The eight - up to 32 bit wide - bitmasks specify which bits of the eight vsi input streams
+        are active and will be processed. Inactivated bits will be discarded which effectively reduces
+        the total amount of data.
+
+        Note: 
+            Currently setting of the bit mask is not supported by the python package
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
     
-        ToDo: parse output from command
+        Returns:
+            list (str): a list of hex representations of the bitmasks for all active vsi inputs
+
         '''
         
         boardNum = self.boardToDigit(board)+1
 
-        vsiStr = str(vsi)
-        if (not vsiStr.isdigit()):
-            ValueError("core3h_vsi_bitmask: vsi must be numeric")
+#        if vsi is not None:
+#            vsiStr = str(vsi)
+#            if (not vsiStr.isdigit()):
+#                ValueError("core3h_vsi_bitmask: vsi must be numeric")
+#
+#            if mask is None:
+#                ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
+#        else:
+#            if mask is not None:
+#                ValueError("core3h_vsi_bitmask: no vsi was specified")
 
-        if vsiStr and not mask:
-            ValueError("core3h_vsi_bitmask: missing mask for vsi: %d" % (vsi))
-
-        if not vsiStr and mask:
-            ValueError("core3h_vsi_bitmask: no vsi was specified")
-
-        valStr = self._valueToHex(bitmask)
-        if (int(valStr, 16) > 0xffffffff):
-            raise ValueError("core3h_vdif_bitmask: the supplied bitmask is longer than 32 bit")
-    
+#        if mask is not None:
+#            valStr = self._valueToHex(mask)
+#            if (int(valStr, 16) > 0xffffffff):
+#                raise ValueError("core3h_vdif_bitmask: the supplied mask is longer than 32 bit")
+#    
         cmd = "core3h=%d,vsi_bitmask" % (boardNum)
         ret = self.sendCommand(cmd)
 
+        response = ""
         #VSI input bitmask : 0xFFFFFFFF 0xFFFFFFFF
+        pattern = re.compile("\s*VSI input bitmask\s*:(\s+0x\d{8}.*)")
+#        if "Failed" in ret:
+#            raise ValueError("core3h_inputselect: Illegal source supplied: %s" % (source))
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                response = match.group(1).split()
         
-        return(ret)
+        return(response)
         
     def core3h_vsi_swap(self, board, firstVSI=None, secondVSI=None):
         '''
@@ -1008,8 +1052,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         TODO: update the documentation
         TODO: Find out about "vsi1-2-3-4-5-6-7-8"
 
-        Note: it is recommended to execute :py:func:`core3h_reset`
-        (with or without the keepsync option) after changing the input source
+        Note:
+            It is recommended to execute :py:func:`core3h_reset`
+            (with or without the keepsync option) after changing the input source
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1054,16 +1099,19 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             
         Split mode requires an input width of at least 2 bit.
 
-        Note: raw and vdif format can be applied independently to each split
-        stream with the help of the :py:func:`core3h_start` command syntax
+        Note:
+            Raw and vdif format can be applied independently to each split
+            stream with the help of the :py:func:`core3h_start` command syntax
 
-        Note: in order to specify a correct VDIF frame setup you have to take
-        into account that the effective input width is halved when the 
-        split mode is enabled.
+        Note:
+            In order to specify a correct VDIF frame setup you have to take
+            into account that the effective input width is halved when the 
+            split mode is enabled.
 
-        Note: A restriction of the split mode is that only output0 is capable
-        of producing multi-threaded VDIF data. At output1 the data will 
-        always be forced to be single-threaded, regardless of the chosen frame setup.
+        Note:
+            A restriction of the split mode is that only output0 is capable
+            of producing multi-threaded VDIF data. At output1 the data will 
+            always be forced to be single-threaded, regardless of the chosen frame setup.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1200,7 +1248,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
 
         if "succeeded" in ret:
-            print (ret)
+            #print (ret)
             timestamp = d3u.parseTimeResponse(ret)
             item["success"] = True
             item["timestampUTC"] = timestamp
@@ -1304,8 +1352,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         If the method is called without supplying the stationID parameter the
         current station ID will be reported.
 
-        Note: setting this value directly affects the header data of 
-        the VDIF data format
+        Note: 
+            Setting this value directly affects the header data of 
+            the VDIF data format
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1376,7 +1425,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         first user data field contain the Extended Data Version (EDV) number.
         See: https://vlbi.org/vdif/ for details
 
-        d0 - d3 are optional. If not specified the current value of the field is kept.
+        d0 - d3 are optional. If not specified the current value of the fields are reported
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A") 
@@ -1430,7 +1479,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
-            outputId (int): the index of the Core3h output (starting at 0)
+            outputId (int): the index of the Core3h output device (starting at 0)
             ip (str): the destination IP address 
             port (int, optional): the destination IP port number (default = 46227)
             threadId (int): the id of the tread for which to set the destination
@@ -1440,7 +1489,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
                 "ip" (str): the IP address
                 "port" (int): the port 
-                "output" (int): the index of the core3h output (starting at 0)
+                "output" (int): the index of the core3h output port (starting at 0)
                 "thread_0" (dict, optional): dictionary holding destination "ip" and "port" for thread 0 (if defined)
                 "thread_1" (dict, optional): dictionary holding destination "ip" and "port" for thread 1 (if defined)
                 "...."
@@ -1552,16 +1601,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Sets a parameter of the 10Gb ethernet device.
 
         valid parameters are:
-        ip: IP address
-        mac: MAC address
-        nm: netmask
-        port:  UDP port
-        gateway: IP adress of gateway
+        "ip": IP address
+        "mac": MAC address
+        "nm": netmask
+        "port":  UDP port
+        "gateway": IP adress of gateway
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             device (str): the ethernet device name, e.g. eth0
-            key (str): the name of the parameter to set
+            key (str): the name of the parameter to set (see above)
             value (str): the new parameter value
 
         '''
@@ -1729,7 +1778,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board)+1
-        cmd = "core3h=%d,output %d %d %d" %(boardNum, outputIdx, frameId, duration)
+        cmd = "core3h=%d,output %d %d"  %(boardNum, outputIdx, frameId)
         ret = self.sendCommand(cmd)
 
         return(ret)
@@ -1769,9 +1818,10 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         time synchronization. For this to work the input stage of the data path
         and the timers are not reset.
 
-        Warning:  Time synchronization will not be correct
-        anymore in the rare but possible case that a data sample with a 1PPS
-        flag is lost during the reset process.
+        Warning: 
+            Time synchronization will not be correct
+            anymore in the rare but possible case that a data sample with a 1PPS
+            flag is lost during the reset process.
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -1802,7 +1852,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         its initial state, i.e. as it was directly after the programming of the FPGA and
         lets the FiLa10G system boot again.
 
-        Warning: all previously configured settings and states are lost when rebooting!
+        Warning:
+            All previously configured settings and states are lost when rebooting!
 
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
@@ -2073,7 +2124,6 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         '''
 
         boardNum = self.boardToDigit(board) +1
-        boardId = self.boardToChar(board)
 
         self._validateSamplerNum(sampler)
 
@@ -2167,6 +2217,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def adb3l_reset(self):
         ''' 
         Resets all ADB3L boards and sets the registers to default values
+
+        Returns:
+            None
         '''
         self.sendCommand("adb3l=reset")
         return
@@ -2174,6 +2227,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
     def adb3l_reseth(self):
         '''
         Resets all ADB3L boards, but does NOT change/reset any register settings
+
+        Returns:
+            None
         '''
         self.sendCommand("adb3l=reseth")
         return 
@@ -2188,6 +2244,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         Args:
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int, optional): sampler number (0-3)
+
+        Returns:
+            None
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -2254,6 +2313,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_delay(self, board, sampler, value=512):
         '''
+        Warning:
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler delay for the specified board and sampler.
 
         The allowed range is 0-1023 which corresponds to -60ps to +60ps with a stepping size of 120fs.
@@ -2263,6 +2327,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int): sampler number (0-3)
             value (int, optional): the delay value in steps of 120fs. Default is 512 (=0ps)
+
+        Returns:
+            None
 
         Raises:
             ValueError: in case the specified sampler is out of range
@@ -2282,6 +2349,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_offset(self, board, sampler, value=128):
         '''
+        Warning:
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler offset value for the specified board and sampler.
 
         The allowed range is 0-255 which corresponds to -20mV to +20mV with a stepping size of 156microV.
@@ -2291,6 +2363,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int): sampler number (0-3)
             value (int, optional): the offset value in steps of 156 microV. Default is 128 (=0 mV)
+
+        Returns:
+            None
 
         Raises:
             ValueError: in case the specified sampler is out of range
@@ -2310,6 +2385,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def adb3l_gain(self, board, sampler, value=512):
         '''
+        Warning:
+             This is an expert level method and is intended for debugging purposes only.
+             Wrong usage could bring the DBBC3 system into an unstable state and could lead to
+             unwanted or unexpected results. Use only if you know what you are doing!
+
         Sets the sampler gain value for the specified board and sampler.
 
         The allowed range is 0-255 which corresponds to -0.5dB to +0.5dB with a stepping size of 0.004dB.
@@ -2319,6 +2399,9 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
             board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
             sampler (int): sampler number (0-3)
             value (int, optional): the offset value in steps of 0.004dB. Default is 128 (=0 dB)
+
+        Returns:
+            None
 
         Raises:
             ValueError: in case the specified sampler is out of range
@@ -2366,6 +2449,62 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
         clas.core3hread = types.MethodType (self.core3hread.__func__, clas)
         clas.core3hwrite = types.MethodType (self.core3hwrite.__func__, clas)
+
+    def pps_delay(self, board=None):
+        '''
+        Retrieves the delay of the internally generated vs. the external 1PPS signal
+
+        The delay is calculated as the time difference internal - external 1PPS and is returned in ns.
+
+        In case the method is called without the optional board parameter the PPS delays are returned
+        for all the core boards present in the current system.
+
+        If the optional board parameter is used one delay value will be returned for each of the
+        PPS groups each serving 4 BBCs. Group 1: BBCs 1-4; group 2: BBCs 5-8 etc.
+
+        Parameters:
+            board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
+
+        Returns:
+            list: list holding the delays of the internal-external PPS in nanoseconds. One value for each Core3H board if called without the optional board parameter.
+            list: list holding the delays of the internal-external PPS in nanoseconds. Two values for the two PPS groups if called with the optional board parameter.
+        '''
+
+        cmd = "pps_delay"
+
+        if (board is not None):
+            boardNum = self.boardToDigit(board)+1
+
+            cmd += "=%d" % boardNum;
+            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
+            patStr = "pps_delay\[%d\]/" % boardNum
+            numVals = int(self.config.maxBoardBBCs / 4)
+            retVals = numVals
+        else:
+            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+            patStr = "pps_delay/"
+            numVals = 8
+            retVals = self.config.numCoreBoards
+
+        ret = self.sendCommand(cmd)
+
+        for i in range(numVals):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(retVals):
+                    # convert into signed 
+                    delay = int(match.group(2+i*2))
+                    # account for negative delays
+                    if delay > 500000000:
+                        delay = int(match.group(2+i*2)) - 1000000000
+                    delays.append(delay)
+        return(delays)
 
     def dbbctp0 (self, bbc, tp0=None):
         '''
@@ -3009,7 +3148,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def mag_thr(self, bbc, threshold=None):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3047,36 +3186,10 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
         return(None)
 
-    def pps_delay(self):
-        '''
-        Returns the delay between internal and external PPS.
-
-        The PPS delay is obtained for all 8 core3h boards and is returned in ns
-        '''
-
-        cmd = "pps_delay"
-        ret = self.sendCommand(cmd)
-
-        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-        patStr = "pps_delay/"
-        for i in range(8):
-                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
-        patStr = patStr[:-1] + ";"
-        pattern = re.compile(patStr)
-
-        delays = []
-        
-        for line in ret.split("\n"):
-            match = pattern.match(line)
-            if match:
-                for i in range(self.config.numCoreBoards):
-                    delays.append(int(match.group(2+i*2)))
-                
-        return(delays)
 
     def core3hread(self, board, block, bbc, register):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3112,7 +3225,7 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
 
     def core3hwrite(self, board, block, bbc, register, value):
         '''
-        :warning::
+        Warning:
              This is an expert level method and is intended for debugging purposes only.
              Wrong usage could bring the DBBC3 system into an unstable state and could lead to
              unwanted or unexpected results. Use only if you know what you are doing!
@@ -3185,62 +3298,6 @@ class DBBC3Commandset_DDC_V_124(DBBC3Commandset_DDC_V_123):
             clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
             clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
-    def pps_delay(self, board=None):
-        '''
-        Retrieves the delay of the internally generated vs. the external 1PPS signal
-
-        The delay is calculated as the time difference internal - external 1PPS and is returned in ns.
-
-        In case the method is called without the optional board parameter the PPS delays are returned
-        for all the core boards present in the current system.
-
-        If the optional board parameter is used two delays will be returned one for the first
-        group serving BBCs 1-4 and the second serving BBCs 5-8 of the specified board.
-
-        Args:
-            board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
-
-        Returns:
-            if called without the optional board parameter:
-                list: list holding the delays of the internal-external PPS in nanoseconds for each core3H board
-            if called with the optional board parameter:
-                list: two-element list containing the internal-external PPS delay of the two PPS groups.
-        '''
-
-        cmd = "pps_delay"
-
-        if (board is not None):
-            boardNum = self.boardToDigit(board)+1
-
-            cmd += "=%d" % boardNum;
-            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
-            patStr = "pps_delay\[%d\]/" % boardNum
-            numVals = int(self.config.maxBoardBBCs / 4)
-            retVals = numVals
-        else:
-            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-            patStr = "pps_delay/"
-            numVals = 8
-            retVals = self.config.numCoreBoards
-
-        ret = self.sendCommand(cmd)
-
-        for i in range(numVals):
-                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
-        patStr = patStr[:-1] + ";"
-        pattern = re.compile(patStr)
-
-        delays = []
-        for line in ret.split("\n"):
-            match = pattern.match(line)
-            if match:
-                for i in range(retVals):
-                    # convert into signed 
-                    delay = int(match.group(2+i*2))
-                    if delay > 500000000:
-                        delay = int(match.group(2+i*2)) - 1000000000
-                    delays.append(delay)
-        return(delays)
 
 
     
@@ -3278,7 +3335,472 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
+class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
+
+    def __init__(self, clas):
+
+        DBBC3CommandsetDefault.__init__(self,clas)
+
+        clas.tap = types.MethodType (self.tap.__func__, clas)
+        clas.samplerstats = types.MethodType (self.samplerstats.__func__, clas)
+        clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
+        clas.time = types.MethodType (self.time.__func__, clas)
+        clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
+        clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
+        clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
+        clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
+        clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
+
+        # core3h_output was dropped from the command set of OCT_D_120
+        del clas.core3h_output
+
+    def pps_delay(self):
+        '''
+        Determines the delay between the internal vs. the external PPS.
+        A positive value indicates that the internal PPS is delayed with respect to the external signal.
+        All delays are in units of ns.
+
+        Returns:
+            list (float): List containing the pps delays for all 8 core3h boards (unit: ns)
+        '''
+
+        cmd = "pps_delay"
+        ret = self.sendCommand(cmd)
+
+        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+        patStr = "pps_delay/"
+        for i in range(8):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(self.config.numCoreBoards):
+                    # convert into signed
+                    delay = int(match.group(2+i*2))
+                    # account for negative delays
+                    if delay > 500000000:
+                        delay = int(match.group(2+i*2)) - 1000000000
+                    delays.append(delay)
+        return(delays)
+
+    def core3h_sampler_offset(self, board):
+        '''
+        Obtains the offset statistics for each of the four samplers of the specified board.
+
+        Note:
+            Usage of :py:func:`core3h_sampler_offset` is deprecated. Use :py:func:`samplerstats` to obtain
+            the statistics, power, offset and delay of the individual samplers.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            list: list containing the sampler offsets; the values will be None in case of error
+            None if the core board is not connected
+        '''
+        boardNum = self.boardToDigit(board) +1
+
+        # sampler_offset
+        # Sampler offset levels:
+        # Offset at sampler 0 = 63860074
+        # Offset at sampler 1 = 63739766
+        # Offset at sampler 2 = 64068670
+        # Offset at sampler 3 = 64170648
+
+        res = [None] *4
+        ret = self.sendCommand("core3h=%d,sampler_offset"  % (boardNum))
+
+        if "not connected" in ret:
+                return(None)
+
+        pattern = re.compile("\s*Offset\s+at\s+sampler\s+(\d)\s*=\s*(\d+)")
+
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if match:
+                res[int(match.group(1))] = int(match.group(2))
+
+        return (res)
+
+
+    def core3h_sampler_power(self, board):
+        '''
+        Obtains the power levels for each of the four samplers of the specified board.
+
+        Note:
+            Usage of :py:func:`core3h_sampler_power` is deprecated. Use :py:func:`samplerstats` to obtain
+            the statistics, power, offset and delay of the individual samplers.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            list: list containing the sampler powers; the values will be None in case of error
+            None if the core board is not connected
+        '''
+        boardNum = self.boardToDigit(board) +1
+
+        # Sampler power levels:
+        # Power at sampler 0 = 106798846
+        # Power at sampler 1 = 107664014
+        # Power at sampler 2 = 106424473
+        # Power at sampler 3 = 107536015
+
+        res = [None] *4
+        ret = self.sendCommand("core3h=%d,sampler_power"  % (boardNum))
+
+        if "not connected" in ret:
+                return(None)
+
+        pattern = re.compile("\s*Power\s+at\s+sampler\s+(\d)\s*=\s*(\d+)")
+
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if match:
+                res[int(match.group(1))] = int(match.group(2))
+
+        return (res)
+
+    def core3h_core3_power(self, board):
+        '''
+        Obtains the power statistics of the selected board for both filters.
+
+        The powers reported separately for the two VSI channels resulting 
+        in a total of 4 values:
+            * filter 0: 0a & 0b 
+            * filter 1: 1a & 1b 
+
+        Note:
+            Usage of :py:func:`core3h_core3_power` is deprecated. Use :py:func:`core3hstats` to obtain
+            bit statistics and power levels of the filtered outputs.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+
+        Returns:
+            dict : dictionary containing the powers for the two filters (split up over two VSI channels), None in case the core3 board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+
+        pow = {}
+        ret = self.sendCommand("core3h=%d,core3_power" % (boardNum))
+
+        if "not connected" in ret:
+                return None
+
+        #CORE3 filter power levels:
+        #Power at filter 0a = 62066749
+        #Power at filter 1a = 299796534
+        #Power at filter 0b = 110171088
+        #Power at filter 1b = 300520436
+
+        pattern = re.compile("\s*Power\s+at\s+filter\s+([01][ab])\s+=\s+(\d+)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                pow[match.group(1)] = int(match.group(2))
+
+        return(pow)
+
+    def core3h_core3_bstat(self, board, filter):
+        '''
+        Obtains the 2-bit statistics for the selected core board and filter
+
+        Note:
+            Usage of :py:func:`core3h_core3_bstat` is deprecated. Use :py:func:`core3hstats` to obtain
+            bit statistics and power levels of the filtered outputs.
+
+        Args:
+            board (int or str): can be given as a number (0 = board A) or as char e.g. A
+            filter (int): the selected filter (can be 0 or 1)
+
+        Returns:
+            list: list containing the count of the 4 levels or None if the core board is not connected
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+
+        #self._validateSamplerNum(sampler)
+
+        bstats = []
+        ret = self.sendCommand("core3h=%d,core3_bstat %d" % (boardNum, filter))
+
+        if "not connected" in ret:
+                return(None)
+
+          #P("11") = 9.64% (6171370)
+          #P("10") = 41.70% (26691866)
+          #P("01") = 40.36% (25836378)
+          #P("00") = 8.28% (5300386)
+
+        pattern = re.compile("\s*P\(\"(\d\d)\"\)\s*=\s*(\d+\.\d+)%\s+\((\d+)\)")
+        for line in ret.split('\n'):
+            #print (line)
+            match = pattern.match(line)
+            if (match):
+                #print (match.group(3))
+                bstats.append(int(match.group(3)))
+
+        return (bstats)
+
+    def checkphase(self, board=None):
+        '''
+        Checks the delay phase calibration for the specified board or for all boards if the board parameter is not specified.
+
+        Warning:
+            Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to 
+            phase shifting of the sampler outputs. During scans the delay output of the :py:func:`samplerstats` command can be
+            used to evaluate the sampler synchronisation state.
+
+        Returns:
+            bool: True if all samplers are in sync, False otherwise
+        '''
+
+        cmd = "checkphase"
+        if board is not None :
+            boardNum = self.boardToDigit(board) +1
+            cmd += "=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        if "successful" in ret:
+                return(True)
+        else:
+                return(False)
+
+    def core3hstats(self, board):
+        '''
+        Retrieves the power levels and bit statistics of the two FIR filters
+
+        the results are returned in a dictionary with the following structure::
+
+            ["filter1"]["power"] (int): the power value for filter 1
+            ["filter1"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter1"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["power"] (int): the power value for filter 1
+            ["filter2"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            dictionary with the following structure::
+
+
+        '''
+        stats = {'filter1': {}, 'filter2': {}}
+        boardNum = self.boardToDigit(board) +1
+        cmd = "core3hstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Filter\s*(\d)\s*:\s*(\d+)")
+        pattern["bstat"] = re.compile("\s*(\d{2})\s*:\s*(\d+)\s+(\d+\.\d+)\%")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                continue
+            elif "Bstat" in line:
+                parse = "bstat"
+                stats["filter1"]["bstat_val"] = []
+                stats["filter2"]["bstat_val"] = []
+                stats["filter1"]["bstat_frac"] = []
+                stats["filter2"]["bstat_frac"] = []
+                continue
             
+            if parse == "bstat":
+                if "Filter 1" in line:
+                    filter = 1
+                elif "Filter 2" in line:
+                    filter = 2
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power": 
+                        stats["filter%s" % (match.group(1))]["power"] = int(match.group(2))
+                    elif parse == "bstat":
+                        stats["filter%s" % (filter)]["bstat_val"].append(int(match.group(2)))
+                        stats["filter%s" % (filter)]["bstat_frac"].append(float(match.group(3)))
+        return (stats)
+
+
+    def samplerstats(self, board):
+        '''
+        Retrieves and validates sampler statistics: gain, offset and delay.
+
+        Warning: 
+            The reported delay states can be incorrect in case reduced band widths are
+            inserted into the DBBC3; in particular if low parts of the input bands are missing.
+            In this case use :py:func:`checkphase` to validate sampler synchronisation.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns: 
+            2-D dictionary with the following structure::
+
+            ["power"]["val"] (list of int): a list of 4 power values; one for each sampler
+            ["power"]["state"] (list of str): a list of 4 power states; one for each sampler
+            ["offset"]["val"] (list of int): a list of 4 offset values; one for each sampler
+            ["offset"]["frac"] (list of float): a list of 4 offset fractional values; one for each sampler
+            ["offset"]["state"] (list of str): a list of 4 offset states; one for each sampler
+            ["delay"]["val"] (list of int): a list of 3 delay values; one for each sampler pair (0-1, 1-2, 2-3)
+            ["delay"]["state"] (list of str): a list of 3 delay states; one for each sampler pair (0-1, 1-2, 2-3)
+
+            any state other than "OK" indicates an error
+
+        '''
+        
+        stats = {}
+        boardNum = self.boardToDigit(board) +1 
+        cmd = "samplerstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\[(.*)\]")
+        pattern["offset"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\s+(\d+\.\d+)\%\[(.*)\]")
+        pattern["delay"] = re.compile("\s*Sampler\s*(\d\-\d)\s*:\s*(\d+)\[(.*)\]")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                stats["power"] = {}
+                stats["power"]["val"] = []
+                stats["power"]["state"] = []
+                continue
+            elif "Offset" in line:
+                parse = "offset"
+                stats["offset"] = {}
+                stats["offset"]["val"] = []
+                stats["offset"]["frac"] = []
+                stats["offset"]["state"] = []
+                continue
+            elif "Delay" in line:
+                parse = "delay"
+                stats["delay"] = {}
+                stats["delay"]["val"] = []
+                stats["delay"]["state"] = []
+                continue
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power" or parse == "delay":
+                        stats[parse]["val"].append (int(match.group(2)))
+                        stats[parse]["state"].append(match.group(3))
+                    elif parse == "offset":
+                        stats["offset"]["val"].append (int(match.group(2)))
+                        stats["offset"]["frac"].append (float(match.group(3)))
+                        stats["offset"]["state"].append(match.group(4))
+
+        return (stats)
+
+    def time(self):
+        '''
+        Returns the VDIF time for all boards present in the DBBC3 
+
+        Returns:
+            List of dictionaries each element representing one board (0=A) with the following structure:
+                "epoch" (int): the VDIF epoch
+                "second" (int): the second since the beginning of the epoch
+
+        Raises:
+            DBBC3Exception: in case no time information could be obtained
+        '''
+
+        resp = []
+        ret = self.sendCommand("time")
+
+        pattern = re.compile("\s*Board\[(\d)\]\s*:\s*Epoch:\s*(\d+),\s*Second:\s*(\d+)")
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                resp.append({"epoch": match.group(2), "second": match.group(3)})
+        
+        if not resp:
+            raise DBBC3Exception("time: Did not receive any time information")
+        
+        return (resp)
+
+    def tap(self, board, filterNum=None, filterFile=None):
+        '''
+        Sets the tap filter(s) of the OCT mode. 
+
+        If called without the filterNum parameter the current filter setup is returned as a dictionary
+        with the following structure::
+
+            "filter1_file" (str): the currently loaded filter definition file for filter 1
+            "filter2_file" (str): the currently loaded filter definition file for filter 2
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            filterNum: the filter number to set; valid inputs are 1 or 2
+            filterFile: the file containing the filter coefficients. The file needs to be present in the config folder: C:\DBBC_CONF\OCT_D_120\.
+
+        Returns:
+            A dictionary in case the method is called without the filterNum parameter (see description for structure)
+            oherwise True if the tap filter was loaded correctly, False otherwise
+
+        Raises:
+            ValueError: in case an illegal value for filterNum has been given.
+            ValueError: in case no filter file has been specified
+            DBBC3Exception: in case the file containing the filter coeeficients does not exist."
+        '''
+
+        boardNum = self.boardToDigit(board) +1
+        cmd = "tap=%d" % (boardNum)
+
+        reportMode = False
+        if filterNum:
+            if filterNum not in [1,2]:
+                raise ValueError("tap: filterNum must be 1 or 2")
+
+            if not filterFile:
+                raise ValueError("tap: missing required parameter filterFile")
+
+            cmd += ",%s,%s" % (filterNum, filterFile)
+        else:
+            reportMode = True
+
+        ret = self.sendCommand(cmd)
+
+        if reportMode:
+            #>> tap=1
+            #Board[1], Filter 1 has file "[c:/DBBC_CONF/OCT_D_120/2000-4000_64taps.flt]" loaded
+            #Board[1], Filter 2 has file "[c:/DBBC_CONF/OCT_D_120/0-2000_64taps.flt]" loaded;
+            resp = {}
+            pattern = re.compile(".*Filter\s+(\d+)\s+has\s+file\s+\"\[(.+)\]\"\s+loaded")
+            for line in ret.split("\n"):
+                match = pattern.match(line)
+                if match:
+                    resp["filter%s_file" % (match.group(1))] = match.group(2)
+            return (resp)
+            
+        else:
+            if "Error" in ret:
+                raise DBBC3Exception("tap: Error in the call parameters. (check that filterFile exist on the DBBC3)" )
+            
+            if "Taps loaded correctly" in ret:
+                return(True)
+            else:
+                return(False)
+
 class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
     '''
     Implementation of the DBBC3 commandset for the
@@ -3296,6 +3818,17 @@ class DBBC3Commandset_DDC_U_125(DBBC3Commandset_DDC_Common):
             clas.dbbctp0 = types.MethodType (self.dbbctp0.__func__, clas)
             clas.dbbctdiode = types.MethodType (self.dbbctdiode.__func__, clas)
 
+class DBBC3Commandset_DDC_U_126(DBBC3Commandset_DDC_U_125):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DDC_U mode version 126
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+        DBBC3Commandset_DDC_U_125.__init__(self,clas)
+
 class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
     '''
     Implementation of the DBBC3 commandset for the
@@ -3306,6 +3839,36 @@ class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
         '''
         '''
         DBBC3Commandset_DDC_Common.__init__(self,clas)
+
+    def pps_delay(self):
+        '''
+        Determines the delay between the internal vs. the external PPS.
+        A positive value indicates that the internal PPS is delayed with respect to the external signal.
+        All delays are in units of ns.
+
+        Returns: 
+            list (float): List containing the pps delays for all 8 core3h boards (unit: ns)
+        '''
+
+        cmd = "pps_delay"
+        ret = self.sendCommand(cmd)
+
+        #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+        patStr = "pps_delay/"
+        for i in range(8):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(self.config.numCoreBoards):
+                    delays.append(int(match.group(2+i*2)))
+                
+        return(delays)
 
 
 class DBBC3Commandset_DSC_110(DBBC3CommandsetDefault):

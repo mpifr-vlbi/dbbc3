@@ -1,8 +1,5 @@
 :py:mod:`DBBC3Commandset` Module
 ********************************
-.. toctree::
-   ddcv124
-
 .. inheritance-diagram:: dbbc3.DBBC3Commandset
    :parts: 1
 
@@ -26,8 +23,4 @@
     :members: DBBC3Commandset_DDC_Common
     :show-inheritance:
     :exclude-members: adb3l_biston, adb3l_bistoff, adb3l_SDA_on
-
-:inherited-members:
-:show-inheritance:
-:exclude-members: adb3l_biston, adb3l_bistoff, adb3l_SDA_on
 

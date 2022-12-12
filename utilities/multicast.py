@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import socket
 import struct
@@ -43,60 +43,60 @@ while True:
     # Downconverter Values        
     for i in range(0,8):
         shortArray = struct.unpack('HHHH', valueArray[offset+i*8:offset+i*8+8])
-        print(str(shortArray))
+   #     print(str(shortArray))
         
     offset = offset + (8 * 8)
         
     # ADB3L Values
     for i in range(0,8):
         powerArray = struct.unpack('IIII', valueArray[offset:offset+16])
-        print(str(powerArray))
+   #     print(str(powerArray))
         offset = offset + 16
         
         bstatArray_0 = struct.unpack('IIII', valueArray[offset:offset+16])
-        print(str(bstatArray_0) + str(sum(bstatArray_0)))
+   #     print(str(bstatArray_0) + str(sum(bstatArray_0)))
         offset = offset + 16
         
         bstatArray_1 = struct.unpack('IIII', valueArray[offset:offset+16])
-        print(str(bstatArray_1) + str(sum(bstatArray_1)))
+   #     print(str(bstatArray_1) + str(sum(bstatArray_1)))
         offset = offset + 16
         
         bstatArray_2 = struct.unpack('IIII', valueArray[offset:offset+16])
-        print(str(bstatArray_2) + str(sum(bstatArray_2)))
+   #     print(str(bstatArray_2) + str(sum(bstatArray_2)))
         offset = offset + 16
         
         bstatArray_3 = struct.unpack('IIII', valueArray[offset:offset+16])
-        print(str(bstatArray_3) + str(sum(bstatArray_3)))
+   #     print(str(bstatArray_3) + str(sum(bstatArray_3)))
         offset = offset + 16
         
         corrArray = struct.unpack('III', valueArray[offset:offset+12])
-        print(str(corrArray))
+   #     print(str(corrArray))
         offset = offset + 12
         
     # Core3H Values    
     for i in range(0,8):
         timeValue = struct.unpack('I', valueArray[offset:offset+4])
-        print("Time["+str(i)+"] " +str(timeValue))
+   #     print("Time["+str(i)+"] " +str(timeValue))
         offset = offset + 4
         
         ppsDelayValue = struct.unpack('I', valueArray[offset:offset+4])
-        print("pps_delay["+str(i)+"] " +str(ppsDelayValue))
+   #     print("pps_delay["+str(i)+"] " +str(ppsDelayValue))
         offset = offset + 4
         
         tpS0_0Value = struct.unpack('I', valueArray[offset:offset+4])
-        print("tpS0_0["+str(i)+"] " +str(tpS0_0Value))
+   #     print("tpS0_0["+str(i)+"] " +str(tpS0_0Value))
         offset = offset + 4
         
         tpS0_1Value = struct.unpack('I', valueArray[offset:offset+4])
-        print("tpS0_1["+str(i)+"] " +str(tpS0_1Value))
+   #     print("tpS0_1["+str(i)+"] " +str(tpS0_1Value))
         offset = offset + 4
         
         tsysValue = struct.unpack('I', valueArray[offset:offset+4])
-        print("Tsys["+str(i)+"] " + str(tsysValue))
+   #     print("Tsys["+str(i)+"] " + str(tsysValue))
         offset = offset + 4
         
         sefdValue = struct.unpack('I', valueArray[offset:offset+4])
-        print("Sefd["+str(i)+"] " + str(sefdValue))
+   #     print("Sefd["+str(i)+"] " + str(sefdValue))
         offset = offset + 4
         
 #    # BBC Values

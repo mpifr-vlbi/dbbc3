@@ -3,7 +3,7 @@
 import argparse
 import json
 import re
-from dbbc3.DBBC3Multicast import DBBC3Multicast
+from dbbc3.DBBC3Multicast import DBBC3MulticastFactory
 
 args = None
 
@@ -24,7 +24,11 @@ def parseCommandLine():
     
 args = parseCommandLine()
 
-mc = DBBC3Multicast(args.group, args.port, args.timeout)
+mcFactory = DBBC3MulticastFactory()
+mc = mcFactory.create()
+
+
+#mc = DBBC3Multicast(args.group, args.port, args.timeout)
 
 while(True):
     print ("polling")
