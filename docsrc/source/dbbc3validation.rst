@@ -1,5 +1,6 @@
 :mod:`DBBC3Validation` Module
-********************************
+-----------------------------
+
 .. automodule:: dbbc3.DBBC3Validation
     :member-order: groupwise
 
@@ -26,21 +27,22 @@ A very simple example:
         rep.log(logger)
 
 
-
-
 :py:class:`Item` class
-----------------------------------------
+----------------------
+
 .. autoclass:: dbbc3.DBBC3Validation.Item
     :members: 
 
 :py:class:`ValidationReport` class
-----------------------------------------
+----------------------------------
+
 .. autoclass:: dbbc3.DBBC3Validation.ValidationReport
     :members: 
     :member-order: groupwise
 
 :py:class:`ValidationFactory` class
-----------------------------------------
+-----------------------------------
+
 .. autoclass:: dbbc3.DBBC3Validation.ValidationFactory
     :members: 
     :member-order: groupwise
