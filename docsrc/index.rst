@@ -3,10 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. toctree::
-
-    source/dbbc3commandset
-
 dbbc3 - python control of the DBBC3 VLBI backend
 ************************************************
 
@@ -42,6 +38,7 @@ DBBC3 Module Reference
 
     * :mod:`dbbc3.DBBC3`
     * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset`
+        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_126`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124`
         * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121`
