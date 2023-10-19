@@ -7,7 +7,7 @@ from datetime import datetime
 from tkinter import *
 
 args = None
-
+doIgnoreFilters = False
 
 def parseCommandLine():
 
@@ -41,11 +41,20 @@ f = open(args.logfile, "w")
 # write headline
 col = 1
 f.write("# column {}: time\n".format(col))
-for board in boards:
-    col += 1
-    f.write("# column {}: board {} counts\n".format(col, board))
-    col += 1
-    f.write("# column {}: board {} attenuation (0.5 dB steps)\n".format(col, board))
+if doIgnoreFilters:
+    for board in boards:
+        col += 1
+        f.write("# column {}: board {} counts\n".format(col, board))
+        col += 1
+        f.write("# column {}: board {} attenuation (0.5 dB steps)\n".format(col, board))
+else:
+    for board in boards:
+        col += 1
+        f.write("# column {}: board {} power reported in filter1\n".format(col, board))
+        col += 1
+        f.write("# column {}: board {} power reported in filter2\n".format(col, board))
+        col += 1
+        f.write("# column {}: board {} attenuation (0.5 dB steps)\n".format(col, board))
 f.write("\n")
 
 while True:
@@ -53,11 +62,18 @@ while True:
     f.write("{} ".format(datetime.now().replace(microsecond=0).isoformat()))
     line = ""
     for board in boards:
-        count = mc.message["if_{0}".format(board+1)]["count"]
-        att = mc.message["if_{0}".format(board+1)]["attenuation"]
-        line += "{} {} ".format(count, att)
-        #f.write("{} {} ".format(count, att))
-
+        if doIgnoreFilters:
+            # Per-whole-IF count and attenuation
+            count = mc.message["if_{0}".format(board+1)]["count"]
+            att = mc.message["if_{0}".format(board+1)]["attenuation"]
+            line += "{} {} ".format(count, att)
+            #f.write("{} {} ".format(count, att))
+        else:
+            power1 = mc.message["if_{0}".format(board+1)]["filter1"]["power"]
+            power2 = mc.message["if_{0}".format(board+1)]["filter2"]["power"]
+            att = mc.message["if_{0}".format(board+1)]["attenuation"]
+            line += "{} {} {}".format(power1, power2, att)
+            #f.write("{} {} {}".format(power1, power2, att))
     f.write(line + "\n")
     f.flush()
     print (line)
