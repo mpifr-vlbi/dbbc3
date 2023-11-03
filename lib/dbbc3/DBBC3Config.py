@@ -24,6 +24,8 @@ __copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
+from dbbc3.DBBC3Exception import DBBC3Exception
+
 class DBBC3Config(object):
     '''
     Class for storing and handling of the DBBC3 configuration. 
@@ -72,6 +74,8 @@ class DBBC3Config(object):
             self._setupOCT_D()
         elif (self._cmdsetVersion["mode"] == "OCT_S"):
             self._setupOCT_S()
+        else:
+            raise DBBC3Exception("Unsupported mode: %s" % (self._cmdsetVersion["mode"]))
 
     @property
     def host(self):
