@@ -2423,6 +2423,72 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 class DBBC3CommandsetStatic(object):
 
     @staticmethod
+    def core3h_sampler_power(self, board):
+        '''
+        Gets the power levels for each of the four samplers of the given board
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            list (int) : list holding the power values
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "core3h=%d,sampler_power" % (boardNum)
+
+        ret = self.sendCommand(cmd).lower()
+
+        #power at sampler 0 = 108690709
+        #power at sampler 1 = 118916275
+        #power at sampler 2 = 104941019
+        #power at sampler 3 = 113124549
+#
+        pattern = re.compile("\s*power\s+at\s+sampler\s+\d\s+=\s*(\d+)")
+
+        values=[]
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                values.append(int(match.group(1)))
+
+        return (values)
+
+    @staticmethod
+    def core3h_sampler_offset(self, board):
+        '''
+        Gets the offset statistics for each of the four samplers of the given board
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            list (int) : list holding the offset statistics
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "core3h=%d,sampler_offset" % (boardNum)
+
+        ret = self.sendCommand(cmd).lower()
+
+        #offset at sampler 0 = 62536837
+        #offset at sampler 1 = 63690747
+        #offset at sampler 2 = 64773646
+        #offset at sampler 3 = 64186436
+
+        pattern = re.compile("\s*offset\s+at\s+sampler\s+\d\s+=\s*(\d+)")
+
+        values=[]
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                values.append(int(match.group(1)))
+
+        return (values)
+
+    @staticmethod
     def core3h_sampler_delay(self, board):
         '''
         Gets the correlation results between the three samplers of the specified CORE3H board
@@ -4159,6 +4225,8 @@ class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
         clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
         clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
         clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
+        clas.core3h_sampler_offset = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_offset, clas)
+        clas.core3h_sampler_power = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_power, clas)
 
         #pps_delay/ [1]: 999999945 ns, [2] 999999961 ns, [3] 999999961 ns, [4] 999999945 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
 
