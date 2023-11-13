@@ -2423,6 +2423,38 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 class DBBC3CommandsetStatic(object):
 
     @staticmethod
+    def core3h_sampler_delay(self, board):
+        '''
+        Gets the correlation results between the three samplers of the specified CORE3H board
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            list (int) : list holding the correlation results between sampler pairs 0<->1, 1<->2 and 2<->3
+            
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "core3h=%d,sampler_delay" % (boardNum)
+
+        ret = self.sendCommand(cmd).lower()
+
+        #Samplers 0-1: 186075933
+        #Samplers 1-2: 145255624
+        #Samplers 2-3: 134840264
+
+        pattern = re.compile("\s*samplers\s+\d\-\d:\s*(\d+)")
+
+        values=[]
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                values.append(int(match.group(1)))
+
+        return (values)
+
+    @staticmethod
     def core3h_vdif_leapsecs(self, board, secs=None):
         '''
         Gets / sets the number of UTC leap seconds since the VDIF reference epoch
@@ -4126,6 +4158,7 @@ class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
         clas.printadb3lconfig = types.MethodType (DBBC3CommandsetStatic.printadb3lconfig, clas)
         clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
         clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
+        clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
 
         #pps_delay/ [1]: 999999945 ns, [2] 999999961 ns, [3] 999999961 ns, [4] 999999945 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
 
