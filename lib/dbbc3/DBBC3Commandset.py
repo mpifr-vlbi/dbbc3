@@ -1724,8 +1724,8 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         outFormats = [""] * 4
 
         formats = format.split("+")
-        if len(formats) > self.config.numCore3hOutputs:
-            raise ValueError("Too many output formats specified to core3h_start. Maximum number of outputs is %d" % (self.config.numCore3hOutputs))
+        if len(formats) > self.config._numCore3hOutputs:
+            raise ValueError("Too many output formats specified to core3h_start. Maximum number of outputs is %d" % (self.config._numCore3hOutputs))
         for form in formats:
             self._validateDataFormat(form)
 
