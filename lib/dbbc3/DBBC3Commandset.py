@@ -121,6 +121,7 @@ class DBBC3Commandset(object):
         CsClass(clas)
 
     
+
 class DBBC3CommandsetDefault(DBBC3Commandset):
     '''
     The basic class implementing all commands common to all DBBC modes and versions.
@@ -991,11 +992,12 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         response = ""
         #VSI input bitmask : 0xFFFFFFFF 0xFFFFFFFF
-        pattern = re.compile("\s*VSI input bitmask\s*:(\s+0x\d{8}.*)")
+        pattern = re.compile("\s*VSI input bitmask\s*:\s*(0x[A-F0-9]{8}).*")
 #        if "Failed" in ret:
 #            raise ValueError("core3h_inputselect: Illegal source supplied: %s" % (source))
 
         for line in ret.split("\n"):
+            #line = " VSI input bitmask : 0x89ABCDEF"
             match = pattern.match(line)
             if match:
                 response = match.group(1).split()
@@ -2419,6 +2421,299 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         self.sendCommand(cmd)
         return
 
+class DBBC3CommandsetStatic(object):
+
+    @staticmethod
+    def core3h_vdif_leapsecs(self, board, secs=None):
+        '''
+        Gets / sets the number of UTC leap seconds since the VDIF reference epoch
+
+        Generally the number of leap seconds since the start of the VDIF reference epoch is zero, since
+        UTC leap seconds are inserted at the end of a half-year and the reference epoch is set to the
+        beginning of the current half-year.
+
+        This command exists for the case in which a UTC leap second needs to be inserted between the 
+        beginning of the reference epoch and the current time. With this command the user can manually
+        insert any number of missing leap seconds. Furthermore a negative leap second number allows the
+        removal of seconds relaive to the start of the epoch.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            secs (int, optional): the number of leap seconds since the VDIF reference epoch
+            
+        Returns:
+            int: the number of leap seconds since the VDIF reference epoch
+
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "core3h=%d,vdif_leapsecs" % (boardNum)
+
+        if (secs):
+            cmd += " %d" % secs
+
+        ret = self.sendCommand(cmd)
+
+        # Past leap seconds within reference epoch: 1
+        pattern = re.compile("^.*epoch:\s*(\d+)")
+
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                return (int(match.group(1)))
+
+        return(None)
+
+    @staticmethod
+    def printcore3hconfig(self, board):
+        '''
+        Retrieves the configuration file of the specified CORE3H board for the currently loaded mode
+
+        Args: 
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            list: list holding the lines of the configuration file
+        '''
+
+        boardNum = self.boardToDigit(board)+1
+        cmd = "printcore3hconfig=%d" % (boardNum)
+
+        ret = self.sendCommand(cmd)
+
+        lines = []
+
+        for line in self.sendCommand(cmd).splitlines():
+            if line != "":
+                lines.append(line)
+
+        return (lines)
+
+    @staticmethod
+    def printadb3lconfig(self):
+        '''
+        Retrieves the configuration file for the ADB3L boards for the currently loaded mode
+
+        Returns:
+            list: list holding the lines of the configuration file
+        '''
+
+        cmd = "printadb3lconfig"
+
+        lines = []
+
+        for line in self.sendCommand(cmd).splitlines():
+            if line != "":
+                lines.append(line)
+
+        return (lines)
+
+    @staticmethod
+    def printmainconfig(self):
+        '''
+        Retrieves the main configuration file of the DBBC3 for the currently loaded mode
+
+        Returns:
+            list: list holding the lines of the configuration file
+        '''
+
+        cmd = "printmainconfig"
+
+        lines = []
+    
+        for line in self.sendCommand(cmd).splitlines():
+            if line != "":
+                lines.append(line)
+
+        return (lines)
+
+    @staticmethod
+    def pps_delayV2(self, board=None):
+        '''
+        Retrieves the delay of the internally generated vs. the external 1PPS signal
+
+        The delay is calculated as the time difference internal - external 1PPS and is returned in ns.
+
+        In case the method is called without the optional board parameter the PPS delays are returned
+        for all the core boards present in the current system.
+
+        If the optional board parameter is used one delay value will be returned for each of the
+        PPS groups each serving 4 BBCs. Group 1: BBCs 1-4; group 2: BBCs 5-8 etc.
+
+        Parameters:
+            board: (int or str, optional): if specified returns the PPS values for the PPS groups (4 BBCs) of the given core3H board
+
+        Returns:
+            list: list holding the delays of the internal-external PPS in nanoseconds. One value for each Core3H board if called without the optional board parameter.
+            list: list holding the delays of the internal-external PPS in nanoseconds. Two values for the two PPS groups if called with the optional board parameter.
+        '''
+
+#pps_delay/ [1]: 999999945 ns, [2] 999999961 ns, [3] 999999961 ns, [4] 999999945 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+
+        cmd = "pps_delay"
+
+
+        if (board):
+            boardNum = self.boardToDigit(board)+1
+
+            cmd += "=%d" % boardNum;
+            # pps_delay[1]/ [1]: 43 ns, [5] 43 ns;
+            patStr = "pps_delay\[%d\]/" % boardNum
+            numVals = int(self.config.maxBoardBBCs / 4)
+            retVals = numVals
+        else:
+            #pps_delay/ [1]: 39 ns, [2] 39 ns, [3] 0 ns, [4] 0 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+            patStr = "pps_delay/"
+            numVals = 8
+            retVals = self.config.numCoreBoards
+
+        ret = self.sendCommand(cmd)
+
+        for i in range(numVals):
+                patStr += "\s+\[(\d+)\]:{0,1}\s+(\d+)\s+ns,"
+        patStr = patStr[:-1] + ";"
+        pattern = re.compile(patStr)
+
+        delays = []
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                for i in range(retVals):
+                    # convert into signed
+                    delay = int(match.group(2+i*2))
+                    # account for negative delays
+                    if delay > 500000000:
+                        delay = int(match.group(2+i*2)) - 1000000000
+                    delays.append(delay)
+        return(delays)
+
+    @staticmethod
+    def checkphaseV2(self, board=None):
+        '''
+        Checks the delay phase calibration for the specified board or for all boards if the board parameter is not specified.
+
+        Warning:
+            Do not execute checkphase while observing/recording data! Data will be invalid while checkphase is running due to
+            phase shifting of the sampler outputs. During scans the delay output of the :py:func:`samplerstats` command can be
+            used to evaluate the sampler synchronisation state.
+
+        Returns:
+            bool: True if all samplers are in sync, False otherwise
+        '''
+
+        cmd = "checkphase"
+        if board is not None :
+            boardNum = self.boardToDigit(board) +1
+            cmd += "=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        if "successful" in ret:
+                return(True)
+        else:
+                return(False)
+
+    @staticmethod
+    def timeV2(self):
+        '''
+        Returns the VDIF time for all boards present in the DBBC3
+
+        Returns:
+            List of dictionaries each element representing one board (0=A) with the following structure:
+                "epoch" (int): the VDIF epoch
+                "second" (int): the second since the beginning of the epoch
+
+        Raises:
+            DBBC3Exception: in case no time information could be obtained
+        '''
+
+        resp = []
+        ret = self.sendCommand("time")
+
+        pattern = re.compile("\s*Board\[(\d)\]\s*:\s*Epoch:\s*(\d+),\s*Second:\s*(\d+)")
+        for line in ret.split("\n"):
+            match = pattern.match(line)
+            if match:
+                resp.append({"epoch": match.group(2), "second": match.group(3)})
+
+        if not resp:
+            raise DBBC3Exception("time: Did not receive any time information")
+
+        return (resp)
+
+    @staticmethod
+    def samplerstats(self, board):
+        '''
+        Retrieves and validates sampler statistics: gain, offset and delay.
+
+        Warning:
+            The reported delay states can be incorrect in case reduced band widths are
+            inserted into the DBBC3; in particular if low parts of the input bands are missing.
+            In this case use :py:func:`checkphase` to validate sampler synchronisation.
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            2-D dictionary with the following structure::
+
+            ["power"]["val"] (list of int): a list of 4 power values; one for each sampler
+            ["power"]["state"] (list of str): a list of 4 power states; one for each sampler
+            ["offset"]["val"] (list of int): a list of 4 offset values; one for each sampler
+            ["offset"]["frac"] (list of float): a list of 4 offset fractional values; one for each sampler
+            ["offset"]["state"] (list of str): a list of 4 offset states; one for each sampler
+            ["delay"]["val"] (list of int): a list of 3 delay values; one for each sampler pair (0-1, 1-2, 2-3)
+            ["delay"]["state"] (list of str): a list of 3 delay states; one for each sampler pair (0-1, 1-2, 2-3)
+
+            any state other than "OK" indicates an error
+
+        '''
+
+        stats = {}
+        boardNum = self.boardToDigit(board) +1
+        cmd = "samplerstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\[(.*)\]")
+        pattern["offset"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\s+(\d+\.\d+)\%\[(.*)\]")
+        pattern["delay"] = re.compile("\s*Sampler\s*(\d\-\d)\s*:\s*(\d+)\[(.*)\]")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                stats["power"] = {}
+                stats["power"]["val"] = []
+                stats["power"]["state"] = []
+                continue
+            elif "Offset" in line:
+                parse = "offset"
+                stats["offset"] = {}
+                stats["offset"]["val"] = []
+                stats["offset"]["frac"] = []
+                stats["offset"]["state"] = []
+                continue
+            elif "Delay" in line:
+                parse = "delay"
+                stats["delay"] = {}
+                stats["delay"]["val"] = []
+                stats["delay"]["state"] = []
+                continue
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power" or parse == "delay":
+                        stats[parse]["val"].append (int(match.group(2)))
+                        stats[parse]["state"].append(match.group(3))
+                    elif parse == "offset":
+                        stats["offset"]["val"].append (int(match.group(2)))
+                        stats["offset"]["frac"].append (float(match.group(3)))
+                        stats["offset"]["state"].append(match.group(4))
+
+        return (stats)
+
 class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
     '''
     Implementation of the DBBC3Commandset with methods common to all
@@ -3342,14 +3637,15 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         DBBC3CommandsetDefault.__init__(self,clas)
 
         clas.tap = types.MethodType (self.tap.__func__, clas)
-        clas.samplerstats = types.MethodType (self.samplerstats.__func__, clas)
         clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
-        clas.time = types.MethodType (self.time.__func__, clas)
         clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
         clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
         clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
         clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
+
+        clas.samplerstats = types.MethodType (DBBC3CommandsetStatic.samplerstats, clas)
+        clas.time = types.MethodType (DBBC3CommandsetStatic.timeV2, clas)
 
         # core3h_output was dropped from the command set of OCT_D_120
         del clas.core3h_output
@@ -3638,103 +3934,30 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         return (stats)
 
 
-    def samplerstats(self, board):
-        '''
-        Retrieves and validates sampler statistics: gain, offset and delay.
-
-        Warning: 
-            The reported delay states can be incorrect in case reduced band widths are
-            inserted into the DBBC3; in particular if low parts of the input bands are missing.
-            In this case use :py:func:`checkphase` to validate sampler synchronisation.
-
-        Args:
-            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
-
-        Returns: 
-            2-D dictionary with the following structure::
-
-            ["power"]["val"] (list of int): a list of 4 power values; one for each sampler
-            ["power"]["state"] (list of str): a list of 4 power states; one for each sampler
-            ["offset"]["val"] (list of int): a list of 4 offset values; one for each sampler
-            ["offset"]["frac"] (list of float): a list of 4 offset fractional values; one for each sampler
-            ["offset"]["state"] (list of str): a list of 4 offset states; one for each sampler
-            ["delay"]["val"] (list of int): a list of 3 delay values; one for each sampler pair (0-1, 1-2, 2-3)
-            ["delay"]["state"] (list of str): a list of 3 delay states; one for each sampler pair (0-1, 1-2, 2-3)
-
-            any state other than "OK" indicates an error
-
-        '''
-        
-        stats = {}
-        boardNum = self.boardToDigit(board) +1 
-        cmd = "samplerstats=%d" % (boardNum)
-        ret = self.sendCommand(cmd)
-
-        pattern = {}
-        pattern["power"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\[(.*)\]")
-        pattern["offset"] = re.compile("\s*Sampler\s*(\d)\s*:\s*(\d+)\s+(\d+\.\d+)\%\[(.*)\]")
-        pattern["delay"] = re.compile("\s*Sampler\s*(\d\-\d)\s*:\s*(\d+)\[(.*)\]")
-
-        parse = ""
-        for line in ret.split("\n"):
-            if "Power" in line:
-                parse = "power"
-                stats["power"] = {}
-                stats["power"]["val"] = []
-                stats["power"]["state"] = []
-                continue
-            elif "Offset" in line:
-                parse = "offset"
-                stats["offset"] = {}
-                stats["offset"]["val"] = []
-                stats["offset"]["frac"] = []
-                stats["offset"]["state"] = []
-                continue
-            elif "Delay" in line:
-                parse = "delay"
-                stats["delay"] = {}
-                stats["delay"]["val"] = []
-                stats["delay"]["state"] = []
-                continue
-            if parse == "":
-                continue
-            else:
-                match = pattern[parse].match(line)
-                if match:
-                    if parse == "power" or parse == "delay":
-                        stats[parse]["val"].append (int(match.group(2)))
-                        stats[parse]["state"].append(match.group(3))
-                    elif parse == "offset":
-                        stats["offset"]["val"].append (int(match.group(2)))
-                        stats["offset"]["frac"].append (float(match.group(3)))
-                        stats["offset"]["state"].append(match.group(4))
-
-        return (stats)
-
-    def time(self):
-        '''
-        Returns the VDIF time for all boards present in the DBBC3 
-
-        Returns:
-            List of dictionaries each element representing one board (0=A) with the following structure:
-                "epoch" (int): the VDIF epoch
-                "second" (int): the second since the beginning of the epoch
-
-        Raises:
-            DBBC3Exception: in case no time information could be obtained
-        '''
-
-        resp = []
-        ret = self.sendCommand("time")
-
-        pattern = re.compile("\s*Board\[(\d)\]\s*:\s*Epoch:\s*(\d+),\s*Second:\s*(\d+)")
-        for line in ret.split("\n"):
-            match = pattern.match(line)
-            if match:
-                resp.append({"epoch": match.group(2), "second": match.group(3)})
-        
-        if not resp:
-            raise DBBC3Exception("time: Did not receive any time information")
+#    def time(self):
+#        '''
+#        Returns the VDIF time for all boards present in the DBBC3 
+#
+#        Returns:
+#            List of dictionaries each element representing one board (0=A) with the following structure:
+#                "epoch" (int): the VDIF epoch
+#                "second" (int): the second since the beginning of the epoch
+#
+#        Raises:
+#            DBBC3Exception: in case no time information could be obtained
+#        '''
+#
+#        resp = []
+#        ret = self.sendCommand("time")
+#
+#        pattern = re.compile("\s*Board\[(\d)\]\s*:\s*Epoch:\s*(\d+),\s*Second:\s*(\d+)")
+#        for line in ret.split("\n"):
+#            match = pattern.match(line)
+#            if match:
+#                resp.append({"epoch": match.group(2), "second": match.group(3)})
+#        
+#        if not resp:
+#            raise DBBC3Exception("time: Did not receive any time information")
         
         return (resp)
 
@@ -3882,3 +4105,30 @@ class DBBC3Commandset_DSC_110(DBBC3CommandsetDefault):
         '''
 
         DBBC3CommandsetDefault.__init__(self,clas)
+
+
+class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DSC mode version 120
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+
+        DBBC3Commandset_DSC_110.__init__(self,clas)
+
+        clas.checkphase = types.MethodType (DBBC3CommandsetStatic.checkphaseV2, clas)
+        clas.samplerstats = types.MethodType (DBBC3CommandsetStatic.samplerstats, clas)
+        clas.time = types.MethodType (DBBC3CommandsetStatic.timeV2, clas)
+        clas.pps_delay = types.MethodType (DBBC3CommandsetStatic.pps_delayV2, clas)
+        clas.printmainconfig = types.MethodType (DBBC3CommandsetStatic.printmainconfig, clas)
+        clas.printadb3lconfig = types.MethodType (DBBC3CommandsetStatic.printadb3lconfig, clas)
+        clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
+        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
+
+        #pps_delay/ [1]: 999999945 ns, [2] 999999961 ns, [3] 999999961 ns, [4] 999999945 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
+
+
+
