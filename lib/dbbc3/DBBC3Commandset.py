@@ -2174,12 +2174,11 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         #Power at sampler 1 = 99624764
         #Power at sampler 2 = 77772775
         #Power at sampler 3 = 110169325
-        pattern = re.compile("\s*Power\s+at\s+sampler\s+(\d)\s+=\s+(\d+)")
+        pattern = re.compile("\s*Power\s+at\s+[Ss]ampler\s+(\d)\s+=\s+(\d+)")
         for line in ret.split('\n'):
-            #print (line)
+#            print (line)
             match = pattern.match(line)
             if (match):
-                #print (match.group(3))
                 pow.append(int(match.group(2)))
 
         return(pow)
