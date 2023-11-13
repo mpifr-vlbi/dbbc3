@@ -2455,7 +2455,7 @@ class DBBC3CommandsetStatic(object):
         ret = self.sendCommand(cmd)
 
         # Past leap seconds within reference epoch: 1
-        pattern = re.compile("^.*epoch:\s*(\d+)")
+        pattern = re.compile("^.*epoch:\s*(-*\d+)")
 
         for line in ret.split("\n"):
             match = pattern.match(line)
