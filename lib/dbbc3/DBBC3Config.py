@@ -74,6 +74,8 @@ class DBBC3Config(object):
             self._setupOCT_D()
         elif (self._cmdsetVersion["mode"] == "OCT_S"):
             self._setupOCT_S()
+        elif (self._cmdsetVersion["mode"] == "DSC"):
+            self._setupDSC()
         else:
             raise DBBC3Exception("Unsupported mode: %s" % (self._cmdsetVersion["mode"]))
 
@@ -184,6 +186,13 @@ class DBBC3Config(object):
     def _setupOCT_S(self):
         '''
         Configuration settings specific to the OCT_S mode
+        '''
+        # the maximum number of BBCs per core board
+        self._maxBoardBBCs = 8
+
+    def _setupDSC(self):
+        '''
+        Configuration settings specific to the DSC mode
         '''
         # the maximum number of BBCs per core board
         self._maxBoardBBCs = 8
