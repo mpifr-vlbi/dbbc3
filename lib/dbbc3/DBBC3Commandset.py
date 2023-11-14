@@ -1222,10 +1222,17 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
     def core3h_timesync(self, board, timestamp=None):
         '''
-        Performs time synchronization for the given core board.
+        Performs time synchronization to the active 1PPS source for the given core board.
 
-        TODO: Finish method with code for manual setting of time
-        TODO Discuss with Sven 3 sec offset between reported seconds and GPS time
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+            timestamp (datetime): the datetime object representing the new date/time to be used for synchronisation
+
+        Returns:
+            dict: dictionary with the following structure::
+
+                "success" (boolean): True in case of a successful time synchronisation, False otherwise
+                "timestampUTC" (datetime): the datetime object containing the new synchronized date/time 
         '''
 
         boardNum = self.boardToDigit(board)+1
@@ -1233,8 +1240,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         cmd = "core3h=%d,timesync" % (boardNum)
 
         if (timestamp):
-            datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
-            cmd += "," + datetime
+            cmd += " " + datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
 
         ret = self.sendCommand(cmd)
@@ -1248,13 +1254,18 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         item = {}
         item["success"] = False
+        item["timestampUTC"] = None
 
 
         if "succeeded" in ret:
-            #print (ret)
-            timestamp = d3u.parseTimeResponse(ret)
             item["success"] = True
-            item["timestampUTC"] = timestamp
+
+            # In case timestamp was specified the response does not contain the new datetime
+            if (timestamp):
+                newtime = timestamp
+            else:
+                newtime = d3u.parseTimeResponse(ret)
+            item["timestampUTC"] = newtime
             #print timestamp, datetime.now()
 
                 
@@ -4204,6 +4215,8 @@ class DBBC3Commandset_DSC_110(DBBC3CommandsetDefault):
 
         DBBC3CommandsetDefault.__init__(self,clas)
 
+        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
+
 
 class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
     '''
@@ -4224,7 +4237,6 @@ class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
         clas.printmainconfig = types.MethodType (DBBC3CommandsetStatic.printmainconfig, clas)
         clas.printadb3lconfig = types.MethodType (DBBC3CommandsetStatic.printadb3lconfig, clas)
         clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
-        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
         clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
         clas.core3h_sampler_offset = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_offset, clas)
         clas.core3h_sampler_power = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_power, clas)
