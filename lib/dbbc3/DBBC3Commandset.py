@@ -223,12 +223,13 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         # version/ DDC_V,124,October 01 2019;
         # version/ OCT_D,110,July 03 2019
         # version/ DDC_V,124,February 18th 2020;
+        # version/ DSC,110, January 20th 2020
         pattern = re.compile("version\/\s+(.+),(\d+),(.+?\s+.+?\s+\d{4});{0,1}")
 
         match = pattern.match(ret)
         if match:
             # remove any st/nd/rd/th from the date string
-            amended = re.sub('\d+(st|nd|rd|th)', lambda m: m.group()[:-2].zfill(2), match.group(3))
+            amended = re.sub('\d+(st|nd|rd|th)', lambda m: m.group()[:-2].zfill(2), match.group(3).strip())
             resp["mode"] = match.group(1)
             resp["majorVersion"] =  int(match.group(2))
             resp["minorVersion"] = int(datetime.strptime(amended, '%B %d %Y').strftime('%y%m%d'))
