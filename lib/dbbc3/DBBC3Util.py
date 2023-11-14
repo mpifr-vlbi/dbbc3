@@ -31,7 +31,7 @@ import subprocess
 
 def parseTimeResponse(response):
     '''
-    Parses response of the core3h timesync command and converts it into datetime
+    Parses response of the core3h timesync command (VDIF time) and converts it into datetime (UTC)
 
     Args:
         response (str): the reposnse string as provided by the core3h_timesync command
@@ -39,6 +39,7 @@ def parseTimeResponse(response):
     Returns:
         datetime: the datetime representation of the returned timesync reponse
     '''
+
 
     year = 0
     doy = 0
@@ -49,20 +50,35 @@ def parseTimeResponse(response):
     timestamp = None
 
     for line in response.split("\n"):
+
+        #halfYearsSince2000 = 47
+        #seconds = 11790442
+        #daysSince2000 = 8582
+
         line = line.strip()
         tok = line.split("=")
 
         if tok[0].strip() == "halfYearsSince2000":
-            year = int(tok[1]) /2 + 2000
+            year = int(tok[1]) // 2 + 2000
+            if (year % 2) == 0:
+                halfYearDays = 1
+            else:
+                halfYearDays = 182
+            
         elif tok[0].strip() == "seconds":
-            doy = int(int(tok[1]) / 86400)
-            remSecs = int(tok[1]) - doy * 86400
-            hour = remSecs / 3600
-            minute = (remSecs - hour*3600) / 60
+            # seconds are relative to VDIF epoch start
+            seconds = int(tok[1])
+
+            doy = seconds // 86400 + halfYearDays
+            remSecs = int(tok[1]) - (doy - halfYearDays) * 86400
+            hour = remSecs // 3600 
+            minute = (remSecs - hour*3600) // 60
             second = (remSecs - hour*3600 - minute*60)
 
+    #        print (year, halfYearDays, doy, hour, minute, second)
+
     if year > 0:
-        timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy+1, hour, minute, second), "%Y %j %H %M %S %Z")
+        timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
 
     return(timestamp)
 
