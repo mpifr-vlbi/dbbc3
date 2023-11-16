@@ -1259,15 +1259,16 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
 
         if "succeeded" in ret:
             item["success"] = True
+            item["timestampUTC"] =d3u.parseTimeResponse(ret)
 
             # In case timestamp was specified the response does not contain the new datetime
-            if (timestamp):
-                newtime = timestamp
-            else:
-                newtime = d3u.parseTimeResponse(ret)
-            item["timestampUTC"] = newtime
-            #print timestamp, datetime.now()
-
+            #if (timestamp):
+            #    newtime = timestamp
+            #else:
+            #    print (ret)
+            #    newtime = d3u.parseTimeResponse(ret)
+            #item["timestampUTC"] = newtime
+            ##print timestamp, datetime.now()
                 
         return (item)
 
