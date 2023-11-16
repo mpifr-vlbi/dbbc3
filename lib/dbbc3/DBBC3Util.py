@@ -37,6 +37,62 @@ def parseTimeResponse(response):
         response (str): the reposnse string as provided by the core3h_timesync command
 
     Returns:
+        datetime: the datetime representation of the returned timesync reponse; None in case of failure
+    '''
+
+    year = 0
+    doy = 0
+    hour = 0
+    minute = 0
+    second = 0
+
+    timestamp = None
+
+    # Response in DSC_120 (with timestamp set and by GPS)
+    # Time synchronization...
+    # Mark5B time : years=23, MJD=60262, secs=51330
+    # VDIF time   : epoch=47, secs=11801730
+    # Time synchronization succeeded!
+
+    #vdiftime:epoch=47,secs=11806973
+    patVDIF = re.compile("vdiftime:epoch=(\d+),secs=(\d+)")
+
+    for line in response.split("\n"):
+
+        line = line.strip().lower().replace(" ","");
+
+        tok = line.split("=")
+
+        match = patVDIF.match(line)
+
+        if (match):
+            year = int(match.group(1)) // 2 + 2000
+            if (int(match.group(1)) % 2) == 0:
+                halfYearDays = 1
+            else:
+                halfYearDays = 182
+
+            doy = int(match.group(2)) // 86400 + halfYearDays
+
+            remSecs = int(match.group(2)) - (doy - halfYearDays) * 86400
+            hour = remSecs // 3600 
+            minute = (remSecs - hour*3600) // 60
+            second = (remSecs - hour*3600 - minute*60)
+            #print (year, halfYearDays, doy, hour, minute, second)
+
+            timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
+
+    return(timestamp)
+
+
+def parseTimeResponseLegacy(response):
+    '''
+    Parses response of the core3h timesync command (VDIF time) and converts it into datetime (UTC)
+
+    Args:
+        response (str): the reposnse string as provided by the core3h_timesync command
+
+    Returns:
         datetime: the datetime representation of the returned timesync reponse
     '''
 
@@ -48,6 +104,12 @@ def parseTimeResponse(response):
     second = 0
 
     timestamp = None
+
+    # Response in DSC_120 (with timestamp set and by GPS)
+    # Time synchronization...
+    # Mark5B time : years=23, MJD=60262, secs=51330
+    # VDIF time   : epoch=47, secs=11801730
+    # Time synchronization succeeded!
 
     for line in response.split("\n"):
 
@@ -64,14 +126,14 @@ def parseTimeResponse(response):
                 halfYearDays = 1
             else:
                 halfYearDays = 182
-            
+
         elif tok[0].strip() == "seconds":
             # seconds are relative to VDIF epoch start
             seconds = int(tok[1])
 
             doy = seconds // 86400 + halfYearDays
             remSecs = int(tok[1]) - (doy - halfYearDays) * 86400
-            hour = remSecs // 3600 
+            hour = remSecs // 3600
             minute = (remSecs - hour*3600) // 60
             second = (remSecs - hour*3600 - minute*60)
 
