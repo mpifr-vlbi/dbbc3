@@ -203,7 +203,8 @@ class Prompt(Cmd):
             if (cmd.startswith(topic)):
                 print (cmd)
 
-    def _checkSystemOCT_D(self, boards):
+    def _checkSystem(self, boards):
+
         logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
         with Spinner(""):
             rep = val.validateSamplerPhases()
@@ -223,29 +224,6 @@ class Prompt(Cmd):
             reportResult(rep)
 
             reportResult(val.validateBitStatistics(board))
-
-    def _checkSystemDDC_U(self, boards):
-
-        logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
-        with Spinner(""):
-            rep = val.validateSamplerPhases()
-        reportResult(rep)
-
-        for board in boards:
-            logger.info ("=== Checking board {0}".format(board))
-            reportResult(val.validatePPS())
-            reportResult(val.validateTimesync(board))
-            reportResult(val.validateSynthesizerLock(board))
-            reportResult(val.validateSynthesizerFreq(board))
-            reportResult(val.validateIFLevel(board))
-            with Spinner(""):
-                rep = val.validateSamplerPower(board)
-            reportResult(rep)
-            with Spinner(""):
-                rep = val.validateSamplerOffsets(board)
-            reportResult(rep)
-
-            reportResult(val.validateBitStatistics(board)) 
 
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
@@ -342,10 +320,13 @@ class Prompt(Cmd):
                 boards = self._resolveBoards(fields[1])
             if (self.dbbc3.config.mode == "DDC_U"):
                 self._noteSamplerTest()
-                self._checkSystemDDC_U(boards)
+                self._checkSystem(boards)
             elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
                 self._noteSamplerTest()
-                self._checkSystemOCT_D(boards)
+                self._checkSystem(boards)
+            elif (self.dbbc3.config.cmdsetVersion['mode'] == "DSC"):
+                self._noteSamplerTest()
+                self._checkSystem(boards)
             else:
                 print ("'check system' not yet supported for the current mode")
             
@@ -483,7 +464,11 @@ if __name__ == "__main__":
            if hasattr(e, 'message'):
                 print("An error has occured: {0}".format(e.message))
            else:
+
                 print(e)
+                import traceback
+                print(''.join(traceback.TracebackException.from_exception(e).format()))
+                pass
 #
            exitClean()
                     
