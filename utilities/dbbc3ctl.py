@@ -290,7 +290,7 @@ class Prompt(Cmd):
             return
 
         if fields[0] == "version":
-            print(self.dbbc3.version())
+            logger.info(str(self.dbbc3.version()))
 
     def do_check(self, args):
 
