@@ -18,6 +18,9 @@ from signal import signal, SIGINT
 from time import sleep
 
 checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
+
+checkTree_DSC_110 = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "system": "#board" }
+
 #printTree = {"setup":"#board"}
 getTree = {"version":""}
 commandTree = {"check": checkTree, "get": getTree }
@@ -114,6 +117,7 @@ class Spinner:
             self.remove_spinner(cleanup=True)
         else:
             sys.stdout.write('\r')
+
 class Prompt(Cmd):
 
     def __init__(self, dbbc3, boards, val):
@@ -211,7 +215,10 @@ class Prompt(Cmd):
         reportResult(rep)
         for board in boards:
             logger.info ("=== Checking board {0}".format(board))
-            reportResult(val.validatePPS())
+            try:
+                reportResult(val.validatePPS())
+            except:
+                pass
             reportResult(val.validateTimesync(board))
             reportResult(val.validateSynthesizerLock(board))
             reportResult(val.validateSynthesizerFreq(board))
@@ -278,6 +285,10 @@ class Prompt(Cmd):
 
         fields = args.split()
 
+        if fields[0] not in commandTree["get"].keys():
+            print ("Unknown command. Type help or ? to list commands")
+            return
+
         if fields[0] == "version":
             print(self.dbbc3.version())
 
@@ -286,6 +297,10 @@ class Prompt(Cmd):
         fields = args.split()
 
         boards = self.boards
+
+        if fields[0] not in commandTree["check"].keys():
+            print ("Unknown command. Type help or ? to list commands")
+            return
         
         if fields[0] == "sampler":
             if len(fields) == 1:
@@ -426,6 +441,11 @@ if __name__ == "__main__":
                     logger.info( "=== Disabling calibration loop  to speed up command processing")
                     dbbc3.disableloop()
 
+                # DSC < 120  
+                if (ver['mode'] == "DSC" and int(ver['majorVersion']) < 120):
+                    print ("DSC")
+                    commandTree["check"] = checkTree_DSC_110
+
                 useBoards = []
                 #print (dbbc3.config.numCoreBoards)
                 if args.boards:
@@ -438,7 +458,6 @@ if __name__ == "__main__":
                 logger.info( "=== Using boards: %s" % str(useBoards))
 
                 prompt = Prompt(dbbc3, useBoards, val)
-
                 count = 0
                 if (args.command):
                     if not args.repeat:
