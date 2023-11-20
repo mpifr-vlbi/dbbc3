@@ -21,6 +21,8 @@ checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":
 
 checkTree_DSC_110 = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "system": "#board" }
 
+checkTree_OCT_D_110 = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "system": "#board" }
+
 #printTree = {"setup":"#board"}
 getTree = {"version":""}
 commandTree = {"check": checkTree, "get": getTree }
@@ -333,17 +335,21 @@ class Prompt(Cmd):
             
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
-            if (self.dbbc3.config.mode == "DDC_U"):
-                self._noteSamplerTest()
-                self._checkSystem(boards)
-            elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
-                self._noteSamplerTest()
-                self._checkSystem(boards)
-            elif (self.dbbc3.config.cmdsetVersion['mode'] == "DSC"):
-                self._noteSamplerTest()
-                self._checkSystem(boards)
-            else:
-                print ("'check system' not yet supported for the current mode")
+
+            self._noteSamplerTest()
+            self._checkSystem(boards)
+
+#            if (self.dbbc3.config.mode == "DDC_U"):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            elif (self.dbbc3.config.cmdsetVersion['mode'] == "DSC"):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            else:
+#                print ("'check system' not yet supported for the current mode")
             
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
@@ -441,6 +447,7 @@ if __name__ == "__main__":
 
                 # for OCT_D mode prior to version 120 disable the calibration loop to speed up processing
                 if (ver['mode'] == "OCT_D" and int(ver['majorVersion']) < 120):
+                    commandTree["check"] = checkTree_OCT_D_110
                     logger.info( "=== Disabling calibration loop  to speed up command processing")
                     dbbc3.disableloop()
 
