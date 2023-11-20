@@ -3750,12 +3750,17 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
         clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
         clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
+        clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
         clas.core3h_sampler_offset = types.MethodType (self.core3h_sampler_offset.__func__, clas)
         clas.core3h_sampler_power = types.MethodType (self.core3h_sampler_power.__func__, clas)
         clas.pps_delay = types.MethodType (self.pps_delay.__func__, clas)
 
         clas.samplerstats = types.MethodType (DBBC3CommandsetStatic.samplerstats, clas)
+        clas.printmainconfig = types.MethodType (DBBC3CommandsetStatic.printmainconfig, clas)
+        clas.printadb3lconfig = types.MethodType (DBBC3CommandsetStatic.printadb3lconfig, clas)
+        clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
         clas.time = types.MethodType (DBBC3CommandsetStatic.timeV2, clas)
+        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
 
         # core3h_output was dropped from the command set of OCT_D_120
         del clas.core3h_output
@@ -4241,8 +4246,5 @@ class DBBC3Commandset_DSC_120(DBBC3CommandsetDefault):
         clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
         clas.core3h_sampler_offset = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_offset, clas)
         clas.core3h_sampler_power = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_power, clas)
-
-        #pps_delay/ [1]: 999999945 ns, [2] 999999961 ns, [3] 999999961 ns, [4] 999999945 ns, [5] 0 ns, [6] 0 ns, [7] 0 ns, [8] 0 ns;
-
 
 
