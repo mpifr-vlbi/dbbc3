@@ -414,6 +414,9 @@ if __name__ == "__main__":
         parser.add_argument("-l", "--log",
              action='store_true',
              help="Write log output to file.")
+        parser.add_argument("--debug",
+             action='store_true',
+             help="Enable debug mode. Will output additional information upon running into errors.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
         args = parser.parse_args()
@@ -479,17 +482,18 @@ if __name__ == "__main__":
 
         except Exception as e:
            
-           # make compatible with python 2 and 3
-           if hasattr(e, 'message'):
+            # make compatible with python 2 and 3
+            if hasattr(e, 'message'):
                 print("An error has occured: {0}".format(e.message))
-           else:
-
+            else:
                 print(e)
+                
+            if (args.debug):
                 import traceback
                 print(''.join(traceback.TracebackException.from_exception(e).format()))
-                pass
+                #pass
 #
-           exitClean()
+            exitClean()
                     
                 
 
