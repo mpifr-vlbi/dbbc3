@@ -257,6 +257,8 @@ autodoc_default_options = {
     'member_order': 'groupwise'
 }
 
+add_module_names = False
+
 # insert a custom css (must bde located in your html_static_path directory
 def setup(app):
     app.add_css_file('mycss.css')
