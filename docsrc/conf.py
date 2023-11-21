@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.abspath('../lib'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.todo', 'sphinx.ext.coverage' , 'sphinx.ext.napoleon', 'sphinx.ext.inheritance_diagram']
 
-#autosummary_generate = True
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
