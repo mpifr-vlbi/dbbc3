@@ -7,7 +7,7 @@
 
 .. toctree::
 
-   octd110
-   octd120
-   dsc110
+   source/octd110
+   source/octd120
+   source/dsc110
 
