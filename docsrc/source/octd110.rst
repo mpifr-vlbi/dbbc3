@@ -9,4 +9,7 @@
     :show-inheritance:
     :exclude-members: adb3l_biston, adb3l_bistoff, adb3l_SDA_on
 
+.. autosummary::
+     :toctree: stubs
+
 
