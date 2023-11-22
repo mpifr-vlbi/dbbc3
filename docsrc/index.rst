@@ -1,5 +1,5 @@
-dbbc3 - python control of the DBBC3 VLBI backend
-************************************************
+:mod: `dbbc3` - python control of the DBBC3 VLBI backend
+========================================================
 
 Introduction
 ------------
