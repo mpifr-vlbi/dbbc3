@@ -1,5 +1,7 @@
+@import url("theme.css");
+
 .wy-nav-content {
-max-width: 100% !important;
+max-width: 80% !important;
 }
 
 img.inheritance {
