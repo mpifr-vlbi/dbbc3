@@ -6,7 +6,9 @@
 
 
 .. toctree::
+:hidden:
 
+   source/introduction
    source/octd110
    source/octd120
    source/dsc110
