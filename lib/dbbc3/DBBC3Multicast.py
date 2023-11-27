@@ -60,7 +60,7 @@ class DBBC3MulticastFactory(object):
         if (csClassName == ""):
             csClassName = "DBBC3MulticastDefault"
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Multicast"), csClassName)
-#        print (csClassName, CsClass)
+        #print (csClassName, CsClass)
         return(CsClass(group, port ,timeout))
 
 def _getMatchingVersion(mode, majorVersion):
@@ -321,6 +321,9 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         return(offset+64)
         
+
+
+
 class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
     '''
     Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
@@ -668,3 +671,5 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
 
     
 
+class DBBC3Multicast_DDC_U_126(DBBC3Multicast_DDC_U_125):
+    pass
