@@ -191,10 +191,14 @@ class MainWindow():
             self.mode = self.messageVars["mode"].get()
             self.majorVersion = int(self.messageVars["majorVersion"].get())
 
-            self.enableSamplerOffset = False
-            if self.mode == "OCT_D":
-                self.enableSamplerOffset = True
+            self._setDisplayOptions()
 
+
+            if self.mode == "OCT_D":
+                self.displayOptions['samplerOffset'] = True
+
+            self.hideBBCVar = IntVar()
+            self.hideBBCVar.set(1)
             self._setupWidgets()
 
             # start the main widget updater loop (repeats every 1s)
@@ -204,9 +208,21 @@ class MainWindow():
             self.root.mainloop()
             
     def on_closing(self):
-            self.root.quit()
-            self.root.destroy()
+        self.root.quit()
+        self.root.destroy()
 
+    def _setDisplayOptions(self):
+
+        self.displayOptions = {
+            'samplerOffset' : False,
+            'tabBBC' : False
+            }
+
+        if self.mode == "OCT_D":
+            self.displayOptions['samplerOffset'] = True
+        elif self.mode == "DDC_U":
+            self.displayOptions['tabBBC'] = True
+        
     def setActiveBoards(self):
 
          # check if active / present boards are broadcasted over multicast
@@ -650,6 +666,101 @@ class MainWindow():
         #print (counts)
         yield counts
 
+    def _selectCboBoard(self, event):
+        self._updateTreeBBC()
+
+    def _updateTreeBBC(self):
+
+        print (self.hideBBCVar.get())
+
+        idx = self.cboBoardBBC['values'].index(self.cboBoardBBC.get())
+
+        # populate BBC tree
+        for i in self.treeBBC.get_children():
+            self.treeBBC.delete(i)
+
+        items = ['frequency',
+            'bandwidth',
+            'agcStatus', 
+            'gainUSB', 
+            'gainLSB', 
+            'powerOnUSB', 
+            'powerOnLSB', 
+            'powerOffUSB', 
+            'powerOffLSB', 
+            'stat00', 
+            'stat01', 
+            'stat10', 
+            'stat11', 
+            'tsysUSB', 
+            'tsysLSB', 
+            'sefdUSB', 
+            'sefdLSB'
+            ]
+
+        for set in range(2):
+            for bbc in range (1,9):
+                
+                bbcNum = (idx*8)+bbc+set*64
+                id1 = 'bbc_%d' %(bbcNum)
+                
+                #skip if no multicasxt message exists for BBC (should really not happen)
+                try:
+                    freq = float(self.messageVars["if_{}_bbc_{}_frequency".format(idx+1, bbcNum)].get())
+                except KeyError:
+                    print ("Missing key: ", "if_{}_bbc_{}_frequency".format(idx+1, bbcNum))
+                    continue
+
+                # skip unconfigureds BBCs ( if option is set)
+                if self.hideBBCVar.get() and freq == 0.0:
+                    continue
+
+                self.treeBBC.insert('', 'end', id1, text=id1)
+                for item in items:
+                    self.treeBBC.insert(id1, 'end', values=[item, self.messageVars["if_{}_bbc_{}_{}".format(idx+1, bbcNum,item)].get()])
+
+    def _setupTabBBC(self):
+
+        tabBBC =  ttk.Frame(self.notebook, height=280)
+        tabBBC.grid(row=0,column=0,sticky=E+W+S+N)
+        self.notebook.add(tabBBC, text='BBC Details')
+
+        #frmBBC = ttk.LabelFrame(tabBBC, text="")
+        #frmBBC.grid(row=1,column=0,sticky=E+W+S+N, padx=10, pady=10)
+
+        self.treeBBC = ttk.Treeview(tabBBC, height=20) 
+        self.treeBBC['columns'] = ('item', 'value')
+        self.treeBBC.heading("#0", text="bbc")
+        self.treeBBC.heading("item", text="item")
+        self.treeBBC.heading("value", text="value")
+        self.treeBBC.grid(row=10,column=0,columnspan=2,sticky=E+W+S+N, padx=15)
+
+        # add a scrollbar
+        scrollbar = ttk.Scrollbar(tabBBC, orient=VERTICAL, command=self.treeBBC.yview)
+        self.treeBBC.configure(yscroll=scrollbar.set)
+        scrollbar.grid(row=10, column=3, sticky='ns')
+
+        cbValues = []
+
+        for i in range(len(self.activeBoards)):
+            if not self.activeBoards[i]:
+                continue
+            b = i+1
+
+            cbValues.append( "Board %d" % (b))
+
+        self.cboBoardBBC = ttk.Combobox(tabBBC, values=cbValues)
+
+        ttk.Label(tabBBC, text="Display BBCs for board").grid(row=0,column=0, sticky=W, padx=15, pady=15)
+        self.cboBoardBBC.current(0)
+        self._updateTreeBBC()
+        self.cboBoardBBC.grid(row=0,column=1, pady=10, sticky=W)
+        self.cboBoardBBC['state'] = 'readonly'
+        self.cboBoardBBC.bind("<<ComboboxSelected>>", self._selectCboBoard)
+
+        chkHideBBC = ttk.Checkbutton(tabBBC, text='Hide unconfigured BBCs', variable=self.hideBBCVar, command=self._updateTreeBBC)
+        chkHideBBC.grid(row=2, column=0, padx=15, sticky=W)
+
     def _setupTabFilter(self):
 
         tabFilter = ttk.Frame(self.notebook, height=280)
@@ -667,13 +778,6 @@ class MainWindow():
         ttk.Label(frmPlots, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
 
         
-        #ax.set_title ("Counts", fontsize=16)
-        #ax.set_ylabel("counts", fontsize=11)
-        #ax.set_xlabel("time[s]", fontsize=11)
-        #ax.set_ylim([30000,40000])
-        #ax.set_xlim([-100,0])
-        #ax.grid(True)
-
         pltStats = []
         self.aniBstats = []
         count = 0
@@ -735,7 +839,7 @@ class MainWindow():
         ttk.Label(frmSamplerPower, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerPower, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
-        if (self.enableSamplerOffset):
+        if (self.displayOptions['samplerOffset']):
             frmSamplerOffset = ttk.LabelFrame(tabSampler, text="Sampler offset")
             frmSamplerOffset.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
             ttk.Label(frmSamplerOffset, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
@@ -776,7 +880,7 @@ class MainWindow():
             
 
             ttk.Label(frmSamplerPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            if (self.enableSamplerOffset):
+            if (self.displayOptions['samplerOffset']):
                 ttk.Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
             ttk.Label(frmSamplerDelay, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
             ttk.Label(frmBstat, text=str(b)).grid(row=0,column=i+1, sticky=E+W)
@@ -872,7 +976,6 @@ class MainWindow():
         frmSynth = ttk.LabelFrame(self.root, text="Downconversion")
         frmSynth.grid(row=20,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-
         frmSampler = ttk.LabelFrame(self.root, text="Sampler")
         frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
@@ -886,7 +989,6 @@ class MainWindow():
         self.messageComp["mode"].grid(row=2,column=10, columnspan=2, sticky='ew' )
         self.messageComp["majorVersion"].grid(row=3,column=10, sticky='ew')
         self.messageComp["minorVersion"].grid(row=3,column=11, sticky='ew')
-
 
 
         # frmTime setup
@@ -950,7 +1052,9 @@ class MainWindow():
         self._setupTabIF()
 
         self._setupTabSampler()
-        #print ("COMP: ", self.messageComp["if_1_sampler1_power"])
+
+        if (self.displayOptions["tabBBC"]):
+            self._setupTabBBC()
 
 
         if self.mode == "OCT_D" and self.majorVersion >= 120:
