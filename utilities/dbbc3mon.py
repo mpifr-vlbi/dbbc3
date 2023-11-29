@@ -48,17 +48,15 @@ class PlotBstat ():
 
         if abs(y[0]-16) > 3.2 or abs(y[3]-16) > 3.2:
             error = True
+#        print (y[0], y[1], y[2], y[3], error)
 
         for i in range(len(y)):
             self.bar[i].set_height(y[i])
             self.bar[i].set_zorder(-1)
             if error:
                 self.bar[i].set(color="red")
-
-#        self.ax.axhline(y=16,  color="black", linestyle="--", linewidth=0.5, zorder=10)
-#        self.ax.axhline(y=34,  color="black", linestyle="--", linewidth=0.5, zorder=10)
-#        self.ax.text(1.5, 16, "16%", fontsize='x-small', zorder=10)
-#        self.ax.text(1.5, 34, "34%", fontsize='x-small', zorder=10)
+            else:
+                self.bar[i].set(color="green")
 
         return (self.bar)
 
@@ -93,12 +91,14 @@ class PlotCounts ():
 
     def update(self, y):
 
-        margin = 1000
+#        margin = 1000
         yminVals = []
         ymaxVals = []
         
         resize=False
         for i in range(len(self.lines)):
+            #print (self.lines[i])
+            #print (self.ydata[i])
             self.ydata[i].append(y[i])
             self.tdata = list(range(-1*len(self.ydata[i])+1,1,1))
             self.lines[i].set_data(self.tdata, list(self.ydata[i]))
@@ -110,12 +110,15 @@ class PlotCounts ():
 
         ymax = max (ymaxVals)
         ymin = min (yminVals)
-#        print (ymin, ymax, yminVals, ymaxVals, self.minY, self.maxY)
 
-        if ymax > self.maxY or ymax + 2*margin <  self.maxY:
+        #margin = max([ymax*0.2, 1000])
+        margin = 1000
+        #print (ymin, ymax, yminVals, ymaxVals, self.minY, self.maxY)
+
+        if ymax >= self.maxY or ymax + 2*margin <  self.maxY:
             self.maxY = ymax + margin
             resize = True
-        if ymin < self.minY or ymin - 2*margin > self.minY:
+        if ymin <= self.minY or ymin - 2*margin > self.minY:
             self.minY = ymin - margin
             resize = True
         if resize:
@@ -132,7 +135,7 @@ def thread_mcPoll(name, mc, q):
     """
 
     while True:
-        print ("polling ", datetime.now())
+        #print ("polling ", datetime.now())
         res = mc.poll()
 
         # include receive time in the message
@@ -155,8 +158,13 @@ class MainWindow():
     def __init__(self, parent=None):
 
             self.root = Tk()
-            self.root.title ("dbbcmon")
+            self.root.title ("dbbc3mon")
             self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+            style = ttk.Style(self.root)
+            print(style.lookup('Label.label', 'background'))
+            #self.root.tk_setPalette(background='#F0F0F0', foreground='black', activeBackground='black', activeForeground="blue")
+            self.root.tk_setPalette(background='#d9d9d9', foreground='black')
 
             self.messageVars={}
             self.messageComp = {}
@@ -182,6 +190,10 @@ class MainWindow():
 
             self.mode = self.messageVars["mode"].get()
             self.majorVersion = int(self.messageVars["majorVersion"].get())
+
+            self.enableSamplerOffset = False
+            if self.mode == "OCT_D":
+                self.enableSamplerOffset = True
 
             self._setupWidgets()
 
@@ -215,6 +227,7 @@ class MainWindow():
                 self.activeBoards = np.array(list(self.lastMessage["boardActive"]), dtype=bool)
             else:
                 self.activeBoards = present
+
 
     def busy(self):
         self.root.config(cursor="watch")
@@ -296,11 +309,54 @@ class MainWindow():
         self._initVars(self.lastMessage)
 
         # update the state of the various widgets
-        self._setWidgetStates()
+        self._setDashboardStates()
+        self._setTabSamplerStates()
 
         self.root.after(1000, self.updateMessage)
     
-    def _setWidgetStates(self):
+    def _setTabSamplerStates(self):
+
+        for board in range(8):
+            if not self.activeBoards[board]:
+                continue
+            board += 1
+
+            # powers
+            states = self._getSamplerPowerState(board)
+            for sampler in range(4):
+                key ="if_{}_sampler{}_power".format(board,sampler)
+                if (states[sampler] == "OK"):
+                    self.messageComp[key].configure(style="OK.TButton")
+                elif (states[sampler] == "Error"):
+                    self.messageComp[key].configure(style="ERROR.TButton")
+                else:
+                    self.messageComp[key].configure(style="WARN.TButton")
+
+            states = self._getSamplerDelayState(board)
+            # delay sync
+            key ="if_{}_sync".format(board)
+            if ("Error" in states):
+                self.messageComp[key].configure(style="ERROR.TButton")
+            elif "OK" in states:
+                self.messageComp[key].configure(style="OK.TButton")
+            else:
+                self.messageComp[key].configure(style="WARN.TButton")
+                
+
+            # delay correlations
+            corrs = ["01","12","23"]
+            for i in range(len(corrs)):
+                key = "if_{}_delayCorr_{}".format(board, corrs[i])
+                if (states[i] == "OK"):
+                    self.messageComp[key].configure(style="OK.TButton")
+                elif (states[i] == "Error"):
+                    self.messageComp[key].configure(style="ERROR.TButton")
+                else:
+                    self.messageComp[key].configure(style="WARN.TButton")
+
+
+        
+    def _setDashboardStates(self):
 
         for board in range(8):
 
@@ -351,7 +407,6 @@ class MainWindow():
                 else:
                     self.messageComp[key].configure(style="ERROR.TButton")
 
-
             # sampler dashboard
             for s in range(4):
                 key = "if_{}_sampler{}_state".format(board, s)
@@ -374,11 +429,66 @@ class MainWindow():
         else:
             self.messageVars[key].set(str(value))
 
+
+    def _getSamplerPowerState(self, board):
+        '''
+        Returns the states of the sampler power for all 4 samplers
+
+        Possible states:
+            OK:     all good
+            --:     no IF power
+            Error:  in case of error
+
+        Returns:
+            list (str): 4 element list with a power state identifier for the 4 samplers
+        '''
+
+        ret = ["OK", "OK", "OK", "OK"]
+        
+        meanPower = 0
+        power = []
+        for s in range(4):
+            # power
+            key ="if_{}_sampler{}_power".format(board,s)
+            power.append(float(self.messageVars[key].get()))
+            meanPower += float(self.messageVars[key].get()) / 4
+            #print (self.messageVars[key].get(), meanPower)
+
+
+        # checks that sampler power does not deviate from the mean by more than 2%
+#        print (board, power, meanPower)
+        if meanPower == 0.0:
+            return (["--", "--","--","--"])
+
+        for s in range(4):
+            if abs(1 -  power[s]/ meanPower) > 0.02:
+                ret[s] = "Error"
+
+        return ret
+
+    def _getSamplerDelayState(self, board):
+        
+        ret = ["OK","OK","OK"]
+
+
+        # delay correlation checks if board is in sync
+        corrs = list(map(int, self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(",")))
+        if max(corrs) ==  0:
+            return(["--", "--", "--", "--"])
+
+        for i in range(len(corrs)):
+            if int(corrs[i]) < 160000000:
+                ret[i] = "Error"
+
+        return(ret)
+                
+
     def _getSamplerState(self, board):
         '''
         Returns the state of all sampler of the given board.
-        The sampler state is evaluated based on the
-        gain, offset and delay.
+        The sampler state is evaluated based on the gain, offset and delay.
+
+        
 
         Possible states:
             OK:     all good
@@ -392,11 +502,15 @@ class MainWindow():
         ret = ["OK", "OK", "OK", "OK"]
 
 
-        # delay correlation
-        corrs = list(self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(","))
-        for corr in corrs: 
-            if int(corr) < 160000000:
-                return (["Error", "Error", "Error", "Error"])
+        # delay correlation checks if board is in sync
+        corrs = list(map(int, self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(",")))
+        if max(corrs) > 0:
+            for corr in corrs: 
+                if int(corr) < 160000000:
+                    # if board not in sync return Error for all 4 samplers 
+                    return (["Error", "Error", "Error", "Error"])
+        else:
+            ret = ["--", "--", "--", "--"]
 
         meanPower = 0
         power = []
@@ -415,13 +529,14 @@ class MainWindow():
             #print (self.messageVars[key].get(), meanPower)
 
 
+        # checks that sampler power does not deviate from the mean by more than 2%
+#        print (board, power, meanPower)
         if meanPower == 0.0:
             return (["--", "--","--","--"])
 
         for s in range(4):
             if abs(1 -  power[s]/ meanPower) > 0.02:
                 ret[s] = "Error"
-
 
         return ret
 
@@ -452,11 +567,15 @@ class MainWindow():
             freq = float(self.messageVars["if_{}_synth_frequency".format(board)].get()) * 2
             self.messageVars["if_{}_synth_frequency".format(board)].set(str(freq))
 
-            # check sampler states
+            # sampler specifics
             state = self._getSamplerState(board)
-            #print (board, state)
             for s in range(4):
+                # sampler state summary
                 self._setStringVar("if_{}_sampler{}_state".format(board,s), state[s])
+
+                # convert sampler powers into scientific notation
+                val = int(self.messageVars["if_{}_sampler{}_power".format(board,s)].get())
+                self._setStringVar("if_{}_sampler{}_power".format(board,s), '{:.3e}'.format(val))
 
             # process delay correlation (sampler phase)
             key = "if_{}_delayCorr".format(board)
@@ -464,6 +583,17 @@ class MainWindow():
             self._setStringVar("if_{}_delayCorr_01".format(board,s), corrs[0].strip())
             self._setStringVar("if_{}_delayCorr_12".format(board,s), corrs[1].strip())
             self._setStringVar("if_{}_delayCorr_23".format(board,s), corrs[2].strip())
+
+            # delay sync
+            states = self._getSamplerDelayState(board)
+            if ("Error" in states):
+                self._setStringVar("if_{}_sync".format(board), "Error")
+            elif ("OK" in states):
+                self._setStringVar("if_{}_sync".format(board), "OK")
+            else:
+                self._setStringVar("if_{}_sync".format(board), "--")
+            
+            
             
 
     def _parseMessage(self, message, pre=None):
@@ -491,9 +621,8 @@ class MainWindow():
             #        print (pre + [key, value])
                     yield pre + [key, value]
         else:
-            #print (pre + [message])
+       #     print (pre + [message])
             yield pre + [message]
-
         
 #
     def test(self):
@@ -527,15 +656,15 @@ class MainWindow():
         tabFilter.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabFilter, text='Filter Details')
 
-        frmPower = LabelFrame(tabFilter, text="Power")
+        frmPower = ttk.LabelFrame(tabFilter, text="Power")
         frmPower.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmPower, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
-        Label(frmPower, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPower, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPower, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
 
-        frmPlots = LabelFrame(tabFilter, text="2-bit statistics")
+        frmPlots = ttk.LabelFrame(tabFilter, text="2-bit statistics")
         frmPlots.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmPlots, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
-        Label(frmPlots, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPlots, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPlots, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
 
         
         #ax.set_title ("Counts", fontsize=16)
@@ -548,22 +677,24 @@ class MainWindow():
         pltStats = []
         self.aniBstats = []
         count = 0
+
+        fig, axs = plt.subplots(4,8)
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
                 continue
             b = i+1
 
-            Label(frmPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            Label(frmPlots, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmPlots, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
 
             for f in range(1,3):
                 key ="if_{}_filter{}_power".format(b, f)
                 #print (self.messageVars[key].get())
-                self.messageComp[key] = ttk.Button(frmPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=f+1, column=i+1, sticky=E+W)
+                self.messageComp[key] = ttk.Button(frmPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
+                self.messageComp[key].grid(row=f+1, column=i+1, sticky=E+W)
 
-                fig, ax = plt.subplots()
                 fig.set_size_inches(0.8,0.8)
-                pltStats.append (PlotBstat(ax, self.messageVars["if_{}_filter{}_statsFrac".format(b, f)]))
+                pltStats.append (PlotBstat(axs[f], self.messageVars["if_{}_filter{}_statsFrac".format(b, f)]))
                 self.aniBstats.append( animate.FuncAnimation(fig, pltStats[count].update, interval=2000, blit=True))
                 canvasBstats = FigureCanvasTkAgg(fig, master=frmPlots)
                 canvasBstats.get_tk_widget().grid(row=1+f, column=i+1, sticky=E+W+S+N)
@@ -597,25 +728,45 @@ class MainWindow():
         self.notebook.add(tabSampler, text='Sampler Details') 
 
         # tabSampler
-        frmSamplerPower = LabelFrame(tabSampler, text="Sampler power")
-        frmSamplerPower.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmSamplerPower, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerPower, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerPower, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerPower, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
+        frmSamplerPower = ttk.LabelFrame(tabSampler, text="Sampler power")
+        frmSamplerPower.grid(row=20,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        ttk.Label(frmSamplerPower, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerPower, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerPower, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerPower, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
-        frmSamplerOffset = LabelFrame(tabSampler, text="Sampler offset")
-        frmSamplerOffset.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmSamplerOffset, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerOffset, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerOffset, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerOffset, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
+        if (self.enableSamplerOffset):
+            frmSamplerOffset = ttk.LabelFrame(tabSampler, text="Sampler offset")
+            frmSamplerOffset.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
+            ttk.Label(frmSamplerOffset, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
+            ttk.Label(frmSamplerOffset, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
+            ttk.Label(frmSamplerOffset, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
+            ttk.Label(frmSamplerOffset, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
-        frmSamplerDelay = LabelFrame(tabSampler, text="Sampler phase")
-        frmSamplerDelay.grid(row=20,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        Label(frmSamplerDelay, text="delay 0/1").grid(row=2,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerDelay, text="delay 1/2").grid(row=3,column=0, sticky=E+W, padx=5)
-        Label(frmSamplerDelay, text="delay 2/3").grid(row=4,column=0, sticky=E+W, padx=5)
+        frmSamplerDelay = ttk.LabelFrame(tabSampler, text="Sampler phase")
+        frmSamplerDelay.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        ttk.Label(frmSamplerDelay, text="sync").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerDelay, text="delay 0/1").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerDelay, text="delay 1/2").grid(row=4,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerDelay, text="delay 2/3").grid(row=5,column=0, sticky=E+W, padx=5)
+
+        frmBstat = ttk.LabelFrame(tabSampler, text="2-bit statistics")
+        frmBstat.grid(row=30,column=0,sticky=E+W+S+N, padx=10, pady=10)
+        ttk.Label(frmBstat, text="samp. 0").grid(row=1,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmBstat, text="samp. 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmBstat, text="samp. 2").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmBstat, text="samp. 3").grid(row=4,column=0, sticky=E+W, padx=5)
+
+        pltStats = []
+        self.aniSamplerBstats = []
+        count = 0
+
+        #fig, axs = plt.subplots(4,self.activeBoards.sum())
+        # in case of single column the axs array needs to be re-shaped
+        #if (axs.ndim == 1):
+        #    axs = np.reshape(axs, (-1,1))
+
+        #fig.set_size_inches(self.activeBoards.sum()*0.8, 4*0.8)
 
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
@@ -624,33 +775,66 @@ class MainWindow():
             b = i+1
             
 
-            Label(frmSamplerPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            Label(frmSamplerDelay, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            #Label(frmSampler, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            if (self.enableSamplerOffset):
+                ttk.Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerDelay, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmBstat, text=str(b)).grid(row=0,column=i+1, sticky=E+W)
 
+            # sampler power
             for sampler in range(4):
                 key ="if_{}_sampler{}_power".format(b,sampler)
-                self.messageComp[key] = ttk.Button(frmSamplerPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=sampler+2, column=i+1, sticky=E+W)
+                self.messageComp[key] = ttk.Button(frmSamplerPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
+                self.messageComp[key].grid(row=sampler+2, column=i+1, sticky=E+W)
             
+            # sampler sync
+            key ="if_{}_sync".format(b)
+            self.messageComp[key] = ttk.Button(frmSamplerDelay, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
+            self.messageComp[key].grid(row=2, column=i+1, sticky=E+W)
+
+            # sampler delay correlations
             corrs = ["01","12","23"]
-            row = 2
+            row = 3
             for corr in corrs:
                 key = "if_{}_delayCorr_{}".format(b, corr)
-                self.messageComp[key] = ttk.Button(frmSamplerDelay, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key]).grid(row=row, column=i+1, sticky=E+W )
+                self.messageComp[key] = ttk.Button(frmSamplerDelay, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
+                self.messageComp[key].grid(row=row, column=i+1, sticky=E+W )
                 row +=1
+
+
+            # sampler bstates
+            #TODO: get rid of bstate histograms. Only evaluate low/hi state asymetry to find sampler offset shifts
+            fig, ax = plt.subplots(4,1)
+            fig.set_size_inches(0.8, 4*0.7)
+            for f in range(4):
+                print (b,f)
+                pltStats.append (PlotBstat(ax[f], self.messageVars["if_{}_sampler{}_statsFrac".format(b, f)]))
+                self.aniSamplerBstats.append( animate.FuncAnimation(fig, pltStats[count].update, interval=1000,  blit=True))
+                count += 1
+
+            fig.tight_layout()
+            canvasBstats = FigureCanvasTkAgg(fig, master=frmBstat)
+            canvasBstats.get_tk_widget().grid(row=1, column=b, rowspan=4, sticky=E+W+S+N)
                 
+
+
+    def _setupWidgets_DDC_U(self):
+
+        pass
+
+    def _setupWidgets_OCT_D(self):
+
+        pass
 
     def _setupWidgets(self):
         '''
         Define the widget layout common to all DBBC3 multicast modes.
         '''
 
-
         # define styles
         self.style = ttk.Style()
         myfont = font.Font(family="Arial", size=11)
-        self.style.configure("My.TButton",font=myfont, foreground="black", relief="ridge", background="white", justify="center", width=self.txtWidth)
+        self.style.configure("My.TButton",font=myfont, foreground="black", relief="ridge",  justify="center", width=self.txtWidth)
         self.style.map( "My.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
 
         self.style.configure("OK.TButton",font=myfont, foreground="black", relief="ridge", background="lime green", justify="center", width=self.txtWidth)
@@ -672,47 +856,57 @@ class MainWindow():
         self.notebook = ttk.Notebook(self.root)
         self.notebook.grid(row=10, column=10, rowspan=100, sticky=E+W+S+N)
 
+        if (self.mode == "DDC_U"):
+            self._setupWidgets_DDC_U()
+
         # define the frames
-        frmInfo = LabelFrame(self.root, text="DBBC3")
+        frmInfo = ttk.LabelFrame(self.root, text="DBBC3")
         frmInfo.grid(row=5,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-        frmTime = LabelFrame(self.root, text="Last Multicast")
+        frmTime = ttk.LabelFrame(self.root, text="Last Multicast")
         frmTime.grid(row=5,column=10, sticky=E+W+N+S, padx=2,pady=2)
 
-        frmIf = LabelFrame(self.root, text="IF Power")
+        frmIf = ttk.LabelFrame(self.root, text="IF Power")
         frmIf.grid(row=10,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-        frmSynth = LabelFrame(self.root, text="Downconversion")
+        frmSynth = ttk.LabelFrame(self.root, text="Downconversion")
         frmSynth.grid(row=20,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
 
-        frmSampler = LabelFrame(self.root, text="Sampler")
+        frmSampler = ttk.LabelFrame(self.root, text="Sampler")
         frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
         # frmGeneral setup
-        Label(frmInfo, text="mode").grid(row=2,column=0, sticky=W, padx=2)
-        Label(frmInfo, text="FW Version").grid(row=3,column=0, sticky=W, padx=2)
-        self.messageComp["mode"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["mode"]).grid(row=2,column=10, columnspan=2, sticky='ew' )
-        self.messageComp["majorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["majorVersion"]).grid(row=3,column=10, sticky='ew')
-        self.messageComp["minorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["minorVersion"]).grid(row=3,column=11, sticky='ew')
+        ttk.Label(frmInfo, text="mode").grid(row=2,column=0, sticky=W, padx=2)
+        ttk.Label(frmInfo, text="FW Version").grid(row=3,column=0, sticky=W, padx=2)
+        self.messageComp["mode"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["mode"])
+        self.messageComp["majorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["majorVersion"])
+        self.messageComp["minorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["minorVersion"])
+
+        self.messageComp["mode"].grid(row=2,column=10, columnspan=2, sticky='ew' )
+        self.messageComp["majorVersion"].grid(row=3,column=10, sticky='ew')
+        self.messageComp["minorVersion"].grid(row=3,column=11, sticky='ew')
+
+
 
         # frmTime setup
-        self.messageComp["time"] = Label(frmTime, textvariable=self.messageVars["time"]).grid(row=4,column=10, columnspan=10, sticky=E+W+N+S, padx=2,pady=2)
+        self.messageComp["time"] = ttk.Label(frmTime, textvariable=self.messageVars["time"])
+        self.messageComp["time"].grid(row=4,column=10, columnspan=10, sticky=E+W+N+S, padx=2,pady=2)
 
         # frmIf setup
-        Label(frmIf, text="counts").grid(row=2,column=0, sticky=W)
-        Label(frmIf, text="target").grid(row=3,column=0, sticky=W)
-        Label(frmIf, text="mode").grid(row=4,column=0, sticky=W)
-        Label(frmIf, text="attenuation").grid(row=5,column=0, sticky=W)
-        Label(frmSynth, text="enabled").grid(row=2,column=0, sticky=W)
-        Label(frmSynth, text="synth").grid(row=3,column=0, sticky=W)
-        Label(frmSynth, text="frequency").grid(row=4,column=0, sticky=W)
+        ttk.Label(frmIf, text="counts").grid(row=2,column=0, sticky=W)
+        ttk.Label(frmIf, text="target").grid(row=3,column=0, sticky=W)
+        ttk.Label(frmIf, text="mode").grid(row=4,column=0, sticky=W)
+        ttk.Label(frmIf, text="attenuation").grid(row=5,column=0, sticky=W)
+        ttk.Label(frmSynth, text="enabled").grid(row=2,column=0, sticky=W)
+        ttk.Label(frmSynth, text="synth").grid(row=3,column=0, sticky=W)
+        ttk.Label(frmSynth, text="frequency").grid(row=4,column=0, sticky=W)
 
         # frmSampler setup
-        Label(frmSampler, text="s0 state").grid(row=2,column=0, sticky=W)
-        Label(frmSampler, text="s1 state").grid(row=3,column=0, sticky=W)
-        Label(frmSampler, text="s2 state").grid(row=4,column=0, sticky=W)
-        Label(frmSampler, text="s3 state").grid(row=5,column=0, sticky=W)
+        ttk.Label(frmSampler, text="s0 state").grid(row=2,column=0, sticky=W)
+        ttk.Label(frmSampler, text="s1 state").grid(row=3,column=0, sticky=W)
+        ttk.Label(frmSampler, text="s2 state").grid(row=4,column=0, sticky=W)
+        ttk.Label(frmSampler, text="s3 state").grid(row=5,column=0, sticky=W)
 
 
         for i in range(len(self.activeBoards)):
@@ -721,9 +915,9 @@ class MainWindow():
                 continue
             b = i+1
 
-            Label(frmIf, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            Label(frmSynth, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            Label(frmSampler, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmIf, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSynth, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSampler, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
             #frmIf.columnconfigure(i,minsize=100)
             #frmSynth.columnconfigure(i,minsize=100)
             #frmSampler.columnconfigure(i,minsize=100)
@@ -754,7 +948,10 @@ class MainWindow():
                 self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
 
         self._setupTabIF()
+
         self._setupTabSampler()
+        #print ("COMP: ", self.messageComp["if_1_sampler1_power"])
+
 
         if self.mode == "OCT_D" and self.majorVersion >= 120:
             self._setupTabFilter()
