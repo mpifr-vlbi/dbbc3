@@ -30,9 +30,9 @@ sys.path.insert(0, os.path.abspath('../lib'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.todo', 'sphinx.ext.coverage' , 'sphinxcontrib.napoleon', 'sphinx.ext.inheritance_diagram']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.todo', 'sphinx.ext.coverage' , 'sphinx.ext.napoleon', 'sphinx.ext.inheritance_diagram']
 
-#autosummary_generate = True
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -103,7 +103,7 @@ html_theme = 'default'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {'body_max_width': 'none', 'sidebarwidth': 300}
+html_theme_options = {'body_max_width': 'none', 'sidebarwidth': 400}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -139,6 +139,11 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'globaltoc.html', 'searchbox.html'
+    ]
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -256,6 +261,8 @@ inheritance_graph_attrs = dict(rankdir="TB", size='"18.0, 18.0"',
 autodoc_default_options = {
     'member_order': 'groupwise'
 }
+
+add_module_names = False
 
 # insert a custom css (must bde located in your html_static_path directory
 def setup(app):

@@ -1,10 +1,5 @@
-.. dbbc3 documentation master file, created by
-   sphinx-quickstart on Mon Mar 23 15:20:54 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-dbbc3 - python control of the DBBC3 VLBI backend
-************************************************
+:mod:`dbbc3` --- python control of the DBBC3 VLBI backend
+=========================================================
 
 Introduction
 ------------
@@ -33,39 +28,11 @@ The dbbcif command is executed and the power of the first board is obtained and 
     {'inputType': 2, 'attenuation': 24, 'mode': 'agc', 'count': 32095, 'target': 32000}
 
 
-DBBC3 Module Reference
-----------------------
+.. toctree::
+   :hidden:
 
-    * :mod:`dbbc3.DBBC3`
-    * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_126`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DSC_110`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_120`
-    * :mod:`dbbc3.DBBC3Config`
-    * :mod:`dbbc3.DBBC3Util`
-    * :mod:`dbbc3.DBBC3Validation`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3ValidationDefault`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_110`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_120`
-
-    * :mod:`dbbc3.DBBC3Multicast`
-
-
-Links
------
-    * `Github project pages <https://github.com/mpifr-vlbi/dbbc3/>`_
-    * `HatLab web pages <https://www.hat-lab.cloud/>`_
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   source/introduction
+   source/octd110
+   source/octd120
+   source/dsc110
 
