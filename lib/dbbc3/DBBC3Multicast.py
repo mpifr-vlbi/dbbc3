@@ -459,7 +459,7 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             if i < 64:
                     ifNum = int(math.floor(i /  8)) + 1
             else:
-                    ifNum = int(math.floor(i /  72)) + 1
+                    ifNum = int(math.floor((i-64) /  8)) + 1
             bbc= {}
             bbcValue = struct.unpack('IBBBBIIIIHHHHHHHH', message[offset:offset+40])
             offset = offset + 40
