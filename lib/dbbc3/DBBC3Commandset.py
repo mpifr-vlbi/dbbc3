@@ -154,6 +154,7 @@ class DBBC3CommandsetDefault(DBBC3Commandset):
         clas.adb3linit = types.MethodType (self.adb3linit.__func__, clas)
         clas.core3hinit = types.MethodType (self.core3hinit.__func__, clas)
         clas.synthinit = types.MethodType (self.synthinit.__func__, clas)
+        #clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
 
         clas.core3h_version = types.MethodType (self.core3h_version.__func__, clas)
         clas.core3h_sysstat = types.MethodType (self.core3h_sysstat.__func__, clas)
@@ -3714,7 +3715,70 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         clas.tap = types.MethodType (self.tap.__func__, clas)
         clas.tap2 = types.MethodType (self.tap2.__func__, clas)
+        clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
+        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
 
+
+    def core3hstats(self, board):
+        '''
+        Retrieves the power levels and bit statistics of the two FIR filters
+
+        the results are returned in a dictionary with the following structure::
+
+            ["filter1"]["power"] (int): the power value for filter 1
+            ["filter1"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter1"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["power"] (int): the power value for filter 1
+            ["filter2"]["bstat_val"] (list of int): the 2-bit statistics; 4 values representing [11, 10, 01, 00]
+            ["filter2"]["bstat_frac"] (list of float): the fractional 2-bit statistics; 4 values representing [11, 10, 01, 00]
+
+        Args:
+            board (int or str): the board number (starting at 0=A) or board ID (e.g "A")
+
+        Returns:
+            dictionary with the following structure::
+
+
+        '''
+        stats = {'filter1': {}, 'filter2': {}}
+        boardNum = self.boardToDigit(board) +1
+        cmd = "core3hstats=%d" % (boardNum)
+        ret = self.sendCommand(cmd)
+
+        pattern = {}
+        pattern["power"] = re.compile("\s*Filter\s*(\d)\s*:\s*(\d+)")
+        pattern["bstat"] = re.compile("\s*(\d{2})\s*:\s*(\d+)\s+(\d+\.\d+)\%")
+
+        parse = ""
+        for line in ret.split("\n"):
+            if "Power" in line:
+                parse = "power"
+                continue
+            elif "Bstat" in line:
+                parse = "bstat"
+                stats["filter1"]["bstat_val"] = []
+                stats["filter2"]["bstat_val"] = []
+                stats["filter1"]["bstat_frac"] = []
+                stats["filter2"]["bstat_frac"] = []
+                continue
+
+            filter = 1
+            if parse == "bstat":
+                if "Filter 1" in line:
+                    filter = 1
+                elif "Filter 2" in line:
+                    filter = 2
+            if parse == "":
+                continue
+            else:
+                match = pattern[parse].match(line)
+                if match:
+                    if parse == "power":
+                        stats["filter%s" % (match.group(1))]["power"] = int(match.group(2))
+                    elif parse == "bstat":
+                        stats["filter%s" % (filter)]["bstat_val"].append(int(match.group(2)))
+                        stats["filter%s" % (filter)]["bstat_frac"].append(float(match.group(3)))
+        return (stats)
 
     def tap2(self, boardNum, filterFile, scaling=1):
         '''
@@ -3740,14 +3804,13 @@ class DBBC3Commandset_OCT_D_110(DBBC3CommandsetDefault):
 
         return self.sendCommand("tap=%d,%s,%d" % (boardNum, filterFile,scaling))
 
-class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
+class DBBC3Commandset_OCT_D_120(DBBC3Commandset_OCT_D_110):
 
     def __init__(self, clas):
 
-        DBBC3CommandsetDefault.__init__(self,clas)
+        DBBC3Commandset_OCT_D_110.__init__(self,clas)
 
         clas.tap = types.MethodType (self.tap.__func__, clas)
-        clas.core3hstats = types.MethodType (self.core3hstats.__func__, clas)
         clas.core3h_core3_bstat = types.MethodType (self.core3h_core3_bstat.__func__, clas)
         clas.core3h_core3_power = types.MethodType (self.core3h_core3_power.__func__, clas)
         clas.core3h_sampler_delay = types.MethodType (DBBC3CommandsetStatic.core3h_sampler_delay, clas)
@@ -3760,10 +3823,11 @@ class DBBC3Commandset_OCT_D_120(DBBC3CommandsetDefault):
         clas.printadb3lconfig = types.MethodType (DBBC3CommandsetStatic.printadb3lconfig, clas)
         clas.printcore3hconfig = types.MethodType (DBBC3CommandsetStatic.printcore3hconfig, clas)
         clas.time = types.MethodType (DBBC3CommandsetStatic.timeV2, clas)
-        clas.core3h_vdif_leapsecs = types.MethodType (DBBC3CommandsetStatic.core3h_vdif_leapsecs, clas)
 
         # core3h_output was dropped from the command set of OCT_D_120
         del clas.core3h_output
+        # tap2 was dropped from the command set of OCT_D_120
+        del clas.tap2
 
     def pps_delay(self):
         '''
