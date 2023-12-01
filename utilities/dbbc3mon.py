@@ -183,15 +183,21 @@ class MainWindow():
             
             # obtain initial mc message
             self.lastMessage = self.q.get(block=True)
+
+            # determine mode and version
+            self.mode = self.lastMessage["mode"]
+            self.majorVersion = int(self.lastMessage["majorVersion"])
+
+            self._setDisplayOptions()
+
             self._initVars(self.lastMessage)
 
             # determine the currently activated boards
             self.setActiveBoards()
 
-            self.mode = self.messageVars["mode"].get()
-            self.majorVersion = int(self.messageVars["majorVersion"].get())
+#            self.mode = self.messageVars["mode"].get()
+#            self.majorVersion = int(self.messageVars["majorVersion"].get())
 
-            self._setDisplayOptions()
 
 
             self.hideBBCVar = IntVar()
@@ -213,12 +219,15 @@ class MainWindow():
         self.displayOptions = {
             'samplerOffset' : False,
             'tabBBC' : False,
+            'tabFilter' : False,
             'samplerBstate' : False,
             'samplerBstateOffset' : False
             }
 
         if self.mode == "OCT_D":
             self.displayOptions['samplerOffset'] = True
+            if self.majorVersion >= 120:
+                self.displayOptions['tabFilter'] = True
         elif self.mode == "DDC_U":
             self.displayOptions['tabBBC'] = True
             self.displayOptions['samplerBstateOffset'] = True
@@ -636,6 +645,16 @@ class MainWindow():
             # synthesizer lock
             freq = float(self.messageVars["if_{}_synth_frequency".format(board)].get()) * 2
             self.messageVars["if_{}_synth_frequency".format(board)].set(str(freq))
+            
+            # filter powers (OCT only)
+            if "if_1_filter1_power" in self.messageVars.keys():
+                #convert to scientific notation
+                val = int(self.messageVars["if_{}_filter1_power".format(board)].get())
+                self._setStringVar("if_{}_filter1_power".format(board), '{:.3e}'.format(val))
+            if "if_1_filter2_power" in self.messageVars.keys():
+                #convert to scientific notation
+                val = int(self.messageVars["if_{}_filter2_power".format(board)].get())
+                self._setStringVar("if_{}_filter2_power".format(board), '{:.3e}'.format(val))
 
             # sampler specifics
             #state = self._getSamplerState(board)
@@ -669,17 +688,15 @@ class MainWindow():
             self._setStringVar("if_{}_sampler_delta_power".format(board), "{:.2f}".format((max(self._getSamplerPowerDelta(board)))))
 
             # sampler offset asymmetry (based on bstates)
-            #if self.displayOptions['samplerBstateOffset']:
-            offsets = self._getSamplerOffsetAsymmetry(board)
-            for s in range(4):
-                self._setStringVar("if_{}_sampler{}_asymmetry".format(board,s), "{:.2f}".format(offsets[s]*100))
+            if self.displayOptions['samplerBstateOffset']:
+                offsets = self._getSamplerOffsetAsymmetry(board)
+                for s in range(4):
+                    self._setStringVar("if_{}_sampler{}_asymmetry".format(board,s), "{:.2f}".format(offsets[s]*100))
 
-
-            # shortened version of bstate fractions
-            for s in range(4):
-                bstats = eval(self.messageVars["if_{}_sampler{}_statsFrac".format(board, s)].get())
-                self._setStringVar("if_{}_sampler{}_statsFracShort".format(board, s), ' '.join("{:.1f}".format(i) for i in map(float,bstats))) 
-            
+                # shortened version of bstate fractions
+                for s in range(4):
+                    bstats = eval(self.messageVars["if_{}_sampler{}_statsFrac".format(board, s)].get())
+                    self._setStringVar("if_{}_sampler{}_statsFracShort".format(board, s), ' '.join("{:.1f}".format(i) for i in map(float,bstats))) 
             
 
     def _parseMessage(self, message, pre=None):
@@ -827,18 +844,22 @@ class MainWindow():
 
     def _setupTabFilter(self):
 
+        # column layout
+        labelWidth = 7
+        boardColWidth = 11
+
         tabFilter = ttk.Frame(self.notebook, height=280)
         tabFilter.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabFilter, text='Filter Details')
 
         frmPower = ttk.LabelFrame(tabFilter, text="Power")
         frmPower.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        ttk.Label(frmPower, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPower, text="filter 1", width=labelWidth).grid(row=2,column=0, sticky=E+W, padx=5)
         ttk.Label(frmPower, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
 
         frmPlots = ttk.LabelFrame(tabFilter, text="2-bit statistics")
         frmPlots.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        ttk.Label(frmPlots, text="filter 1").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmPlots, text="filter 1", width=labelWidth).grid(row=2,column=0, sticky=E+W, padx=5)
         ttk.Label(frmPlots, text="filter 2").grid(row=3,column=0, sticky=E+W, padx=5)
 
         
@@ -846,27 +867,28 @@ class MainWindow():
         self.aniBstats = []
         count = 0
 
-        fig, axs = plt.subplots(4,8)
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
                 continue
             b = i+1
 
-            ttk.Label(frmPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            ttk.Label(frmPlots, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmPower, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmPlots, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
 
+            fig, axs = plt.subplots(2,1)
+            fig.set_size_inches(0.8,1.6)
             for f in range(1,3):
                 key ="if_{}_filter{}_power".format(b, f)
                 #print (self.messageVars[key].get())
                 self.messageComp[key] = ttk.Button(frmPower, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
                 self.messageComp[key].grid(row=f+1, column=i+1, sticky=E+W)
 
-                fig.set_size_inches(0.8,0.8)
-                pltStats.append (PlotBstat(axs[f], self.messageVars["if_{}_filter{}_statsFrac".format(b, f)]))
+                pltStats.append (PlotBstat(axs[f-1], self.messageVars["if_{}_filter{}_statsFrac".format(b, f)]))
                 self.aniBstats.append( animate.FuncAnimation(fig, pltStats[count].update, interval=2000, blit=True))
-                canvasBstats = FigureCanvasTkAgg(fig, master=frmPlots)
-                canvasBstats.get_tk_widget().grid(row=1+f, column=i+1, sticky=E+W+S+N)
                 count += 1
+            fig.tight_layout()
+            canvasBstats = FigureCanvasTkAgg(fig, master=frmPlots)
+            canvasBstats.get_tk_widget().grid(row=2, rowspan=2, column=i+1, sticky=E+W+S+N)
         #self.canvasBstats.draw()
             
     def _setupTabIF(self):
@@ -889,40 +911,52 @@ class MainWindow():
         self.canvasCounts.get_tk_widget().pack()
         self.canvasCounts.draw()
 
-    def _setupFrameBstateOffset(self, parent, row, col):
+    def _setupFrameOffset(self, parent, row, col, labelWidth, boardWidth):
 
         frmSamplerOffset = ttk.LabelFrame(parent, text="Sampler offset")
         frmSamplerOffset.grid(row=row,column=col,sticky=E+W+S+N, padx=10, pady=10)
-        ttk.Label(frmSamplerOffset, text="asymm. 0").grid(row=1,column=0, sticky=E+W, padx=5)
-        ttk.Label(frmSamplerOffset, text="asymm. 1").grid(row=2,column=0, sticky=E+W, padx=5)
-        ttk.Label(frmSamplerOffset, text="asymm. 2").grid(row=3,column=0, sticky=E+W, padx=5)
-        ttk.Label(frmSamplerOffset, text="asymm. 3").grid(row=4,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="offset 0", width=labelWidth).grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="offset 1").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="offset 2").grid(row=4,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="offset 3").grid(row=5,column=0, sticky=E+W, padx=5)
 
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
                 continue
             b = i+1
-            ttk.Label(frmSamplerOffset, text=str(b)).grid(row=0,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerOffset, text=str(b), width=boardWidth).grid(row=1,column=i+1, sticky=E+W)
+
+            for sampler in range(4): 
+                key ="if_{}_sampler{}_offset".format(b,sampler)
+                self.messageComp[key] = ttk.Button(frmSamplerOffset, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
+                self.messageComp[key].grid(row=2+sampler, column=i+1, sticky=E+W)
+
+    def _setupFrameBstateOffset(self, parent, row, col, labelWidth, boardWidth):
+
+        frmSamplerOffset = ttk.LabelFrame(parent, text="Sampler offset")
+        frmSamplerOffset.grid(row=row,column=col,sticky=E+W+S+N, padx=10, pady=10)
+        ttk.Label(frmSamplerOffset, text="asymm. 0", width=labelWidth).grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="asymm. 1").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="asymm. 2").grid(row=4,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerOffset, text="asymm. 3").grid(row=5,column=0, sticky=E+W, padx=5)
+
+        for i in range(len(self.activeBoards)):
+            if not self.activeBoards[i]:
+                continue
+            b = i+1
+            ttk.Label(frmSamplerOffset, text=str(b), width=boardWidth).grid(row=0,column=i+1, sticky=E+W)
 
             for sampler in range(4): 
                 key ="if_{}_sampler{}_asymmetry".format(b,sampler)
                 self.messageComp[key] = ttk.Button(frmSamplerOffset, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
                 self.messageComp[key].grid(row=1+sampler, column=i+1, sticky=E+W)
                 
-            #    key ="if_{}_sampler{}_statsFracShort".format(b,sampler)
-                #bstats = eval(self.messageVars["if_{}_sampler{}_statsFrac".format(b, sampler)].get())
-                #test = ' '.join("{:.1f}".format(i) for i in map(float,bstats))
-                #self._setStringVar("test{}_{}".format(b, sampler), test) 
-            #    self.messageComp[key] = ttk.Button(frmSamplerOffset, style="Small.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
-            #    self.messageComp[key].grid(row=2+sampler, column=i+1, sticky=E+W,padx=0)
-
-            #    bstats = eval(self.messageVars["if_{}_sampler{}_statsFrac".format(b, sampler)].get())
-            #    test = ' '.join("{:.1f}".format(i) for i in map(float,bstats))
-            #    print (test)
-
-            
 
     def _setupTabSampler(self):
+
+        # column layout
+        labelWidth = 7
+        boardColWidth = 11
 
         tabSampler = ttk.Frame(self.notebook, height=280)
         tabSampler.grid(row=0,column=0,sticky=E+W+S+N)
@@ -931,34 +965,29 @@ class MainWindow():
         # tabSampler
         frmSamplerPower = ttk.LabelFrame(tabSampler, text="Sampler gain")
         frmSamplerPower.grid(row=20,column=0,sticky=E+W+S+N, padx=10, pady=10)
-        ttk.Label(frmSamplerPower, text="delta %").grid(row=2,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerPower, width=labelWidth, text="delta %").grid(row=2,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerPower, text="power 0").grid(row=3,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerPower, text="power 1").grid(row=4,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerPower, text="power 2").grid(row=5,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerPower, text="power 3").grid(row=6,column=0, sticky=E+W, padx=5)
 
         if self.displayOptions['samplerBstateOffset']:
-            self._setupFrameBstateOffset(tabSampler, 11, 0)
+            self._setupFrameBstateOffset(tabSampler, 11, 0, labelWidth, boardColWidth)
 
         if self.displayOptions['samplerOffset']:
-            frmSamplerOffset = ttk.LabelFrame(tabSampler, text="Sampler offset")
-            frmSamplerOffset.grid(row=10,column=0,sticky=E+W+S+N, padx=10, pady=10)
-            ttk.Label(frmSamplerOffset, text="samp. 0").grid(row=2,column=0, sticky=E+W, padx=5)
-            ttk.Label(frmSamplerOffset, text="samp. 1").grid(row=3,column=0, sticky=E+W, padx=5)
-            ttk.Label(frmSamplerOffset, text="samp. 2").grid(row=4,column=0, sticky=E+W, padx=5)
-            ttk.Label(frmSamplerOffset, text="samp. 3").grid(row=5,column=0, sticky=E+W, padx=5)
+            self._setupFrameOffset(tabSampler, 11, 0, labelWidth, boardColWidth)
 
         frmSamplerDelay = ttk.LabelFrame(tabSampler, text="Sampler phase")
         frmSamplerDelay.grid(row=0,column=0,sticky=E+W+S+N, padx=10, pady=10)
         #ttk.Label(frmSamplerDelay, text="sync").grid(row=2,column=0, sticky=E+W, padx=5)
-        ttk.Label(frmSamplerDelay, text="delay 0/1").grid(row=3,column=0, sticky=E+W, padx=5)
+        ttk.Label(frmSamplerDelay, text="delay 0/1", width=labelWidth).grid(row=3,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerDelay, text="delay 1/2").grid(row=4,column=0, sticky=E+W, padx=5)
         ttk.Label(frmSamplerDelay, text="delay 2/3").grid(row=5,column=0, sticky=E+W, padx=5)
 
         if (self.displayOptions['samplerBstate']):
             frmBstat = ttk.LabelFrame(tabSampler, text="2-bit statistics")
             frmBstat.grid(row=30,column=0,sticky=E+W+S+N, padx=10, pady=10)
-            ttk.Label(frmBstat, text="samp. 0").grid(row=1,column=0, sticky=E+W, padx=5)
+            ttk.Label(frmBstat, text="samp. 0", width=labelWidth).grid(row=1,column=0, sticky=E+W, padx=5)
             ttk.Label(frmBstat, text="samp. 1").grid(row=2,column=0, sticky=E+W, padx=5)
             ttk.Label(frmBstat, text="samp. 2").grid(row=3,column=0, sticky=E+W, padx=5)
             ttk.Label(frmBstat, text="samp. 3").grid(row=4,column=0, sticky=E+W, padx=5)
@@ -973,10 +1002,10 @@ class MainWindow():
             b = i+1
             
 
-            ttk.Label(frmSamplerPower, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            if (self.displayOptions['samplerOffset']):
-                ttk.Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            ttk.Label(frmSamplerDelay, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerPower, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+#            if (self.displayOptions['samplerOffset']):
+#               ttk.Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerDelay, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
 
             # sampler gain
             key = "if_{}_sampler_delta_power".format(b)
@@ -1020,15 +1049,6 @@ class MainWindow():
                 canvasBstats.get_tk_widget().grid(row=1, column=b, rowspan=4, sticky=E+W+S+N)
                 
 
-
-    def _setupWidgets_DDC_U(self):
-
-        pass
-
-    def _setupWidgets_OCT_D(self):
-
-        pass
-
     def _setupWidgets(self):
         '''
         Define the widget layout common to all DBBC3 multicast modes.
@@ -1057,7 +1077,7 @@ class MainWindow():
         self.style.configure("OFF.TButton",font=myfont, foreground="grey", relief="sunken", background="darkgrey", justify="center", width=self.txtWidth)
         self.style.map( "OFF.TButton", foreground=[("disabled", "grey")], background=[("disabled", "darkgrey")],justify=[("disabled", "center")])
 
-        # column layout
+        # dashboard column layout
         labelWidth = 10
         boardColWidth = 7
 
@@ -1070,6 +1090,7 @@ class MainWindow():
         #Notebook tab container
         self.notebook = ttk.Notebook(self.root)
         self.notebook.grid(row=10, column=10, rowspan=100, sticky=E+W+S+N)
+        self.notebook.columnconfigure(10, weight=2)
 
         if (self.mode == "DDC_U"):
             self._setupWidgets_DDC_U()
@@ -1162,6 +1183,7 @@ class MainWindow():
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
             #    self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
 
+        # setup notebook tabs
         self._setupTabIF()
 
         self._setupTabSampler()
@@ -1169,9 +1191,12 @@ class MainWindow():
         if (self.displayOptions["tabBBC"]):
             self._setupTabBBC()
 
-
-        if self.mode == "OCT_D" and self.majorVersion >= 120:
+        if (self.displayOptions["tabFilter"]):
             self._setupTabFilter()
+
+
+        #if self.mode == "OCT_D" and self.majorVersion >= 120:
+        #    self._setupTabFilter()
         
 
 def parseCommandLine():
