@@ -53,8 +53,8 @@ class DBBC3MulticastFactory(object):
 
         # obtain mode and version from parsing message
         mc = DBBC3MulticastBase(group, port, timeout)
-        print (mc.message["mode"])
-        print (mc.message["majorVersion"])
+        #print (mc.message["mode"])
+        #print (mc.message["majorVersion"])
          
         csClassName = _getMatchingVersion(mc.message["mode"], mc.message["majorVersion"])
         if (csClassName == ""):
@@ -625,7 +625,7 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
             filter1 = {}
             filter2 = {}
             timeValue = struct.unpack('I', message[offset:offset+4])
-            self.message["if_"+str(i+1)]["vdifTime"]= struct.unpack('I', message[offset:offset+4])[0]
+            self.message["if_"+str(i+1)]["vdifSeconds"]= struct.unpack('I', message[offset:offset+4])[0]
             offset = offset + 4
 
             self.message["if_"+str(i+1)]["vdifEpoch"] = struct.unpack('I', message[offset:offset+4])[0]
