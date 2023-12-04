@@ -29,6 +29,33 @@ import re
 import subprocess
 
 
+def vdiftimeToUTC(epoch, seconds):
+
+    year = 0
+    doy = 0
+    hour = 0
+    minute = 0
+    second = 0
+    timestamp = None
+
+    year = epoch // 2 + 2000
+    if (epoch % 2) == 0:
+        halfYearDays = 1
+    else:
+        halfYearDays = 182
+
+    doy = seconds // 86400 + halfYearDays
+
+    remSecs = seconds - (doy - halfYearDays) * 86400
+    hour = remSecs // 3600
+    minute = (remSecs - hour*3600) // 60
+    second = (remSecs - hour*3600 - minute*60)
+
+    timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
+
+    return(timestamp)
+
+
 def parseTimeResponse(response):
     '''
     Parses response of the core3h timesync command (VDIF time) and converts it into datetime (UTC)
@@ -40,11 +67,11 @@ def parseTimeResponse(response):
         datetime: the datetime representation of the returned timesync reponse; None in case of failure
     '''
 
-    year = 0
-    doy = 0
-    hour = 0
-    minute = 0
-    second = 0
+#    year = 0
+#    doy = 0
+#    hour = 0
+#    minute = 0
+#    second = 0
 
     timestamp = None
 
@@ -66,22 +93,25 @@ def parseTimeResponse(response):
         match = patVDIF.match(line)
 
         if (match):
-            year = int(match.group(1)) // 2 + 2000
-            if (int(match.group(1)) % 2) == 0:
-                halfYearDays = 1
-            else:
-                halfYearDays = 182
+            timestamp = vdiftimeToUTC(int(match.group(1)), int(match.group(2)))
+         #   year = int(match.group(1)) // 2 + 2000
+         #   if (int(match.group(1)) % 2) == 0:
+         #       halfYearDays = 1
+         #   else:
+         #       halfYearDays = 182
+#
+#            doy = int(match.group(2)) // 86400 + halfYearDays
 
-            doy = int(match.group(2)) // 86400 + halfYearDays
-
-            remSecs = int(match.group(2)) - (doy - halfYearDays) * 86400
-            hour = remSecs // 3600 
-            minute = (remSecs - hour*3600) // 60
-            second = (remSecs - hour*3600 - minute*60)
+#            remSecs = int(match.group(2)) - (doy - halfYearDays) * 86400
+#            hour = remSecs // 3600 
+#            minute = (remSecs - hour*3600) // 60
+#            second = (remSecs - hour*3600 - minute*60)
             #print (year, halfYearDays, doy, hour, minute, second)
 
-            timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
+#            timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
+            break
 
+#    print (val, timestamp)
     return(timestamp)
 
 
