@@ -16,7 +16,8 @@ from matplotlib.lines import Line2D
 import matplotlib.animation as animate
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from dbbc3.DBBC3Multicast import DBBC3MulticastFactory
-from datetime import datetime
+import dbbc3.DBBC3Util as d3u
+from datetime import datetime, timezone
 import numpy as np
 from matplotlib.figure import Figure
 from random import seed, gauss
@@ -72,6 +73,7 @@ class PlotCounts ():
 
         self.lines = []
         self.ydata = []
+        self.ymargin = 10
 
         count = 0
         colors = ['red','green', 'orange','blue', 'pink', 'violet', 'brown', 'gray']
@@ -88,6 +90,13 @@ class PlotCounts ():
         self.ax.set_ylim(30000, 35000)
         self.ax.set_xlim(-1*maxX, 0)
 
+    @property
+    def ymargin(self):
+        return self._ymargin
+
+    @ymargin.setter
+    def ymargin(self, value):
+        self._ymargin = value
 
     def update(self, y):
 
@@ -115,16 +124,15 @@ class PlotCounts ():
         margin = 1000
         #print (ymin, ymax, yminVals, ymaxVals, self.minY, self.maxY)
 
-        if ymax >= self.maxY or ymax + 2*margin <  self.maxY:
-            self.maxY = ymax + margin
+        if ymax >= self.maxY or ymax + 2*self.ymargin <  self.maxY:
+            self.maxY = ymax + self.ymargin
             resize = True
-        if ymin <= self.minY or ymin - 2*margin > self.minY:
-            self.minY = ymin - margin
+        if ymin <= self.minY or ymin - 2*self.ymargin > self.minY:
+            self.minY = ymin - self.ymargin
             resize = True
         if resize:
             self.ax.set_ylim(self.minY, self.maxY)
             self.ax.figure.canvas.resize_event()
-            
 
         return self.lines
 
@@ -149,7 +157,7 @@ def thread_mcPoll(name, mc, q):
             # estimate total power from count values
             res["if_{}".format(board)]["power"] = float(mc.message["if_{}".format(board)]["count"]) / 1420.0 + float(mc.message["if_{}".format(board)]["attenuation"]) / 2.0
 
-   #     print (res)
+        #print ("poll:", res["if_1"]["vdifSeconds"], d3u.vdiftimeToUTC(res["if_1"]["vdifEpoch"],res["if_1"]["vdifSeconds"]))
 
         q.put(res)
 
@@ -162,7 +170,7 @@ class MainWindow():
             self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
             style = ttk.Style(self.root)
-            print(style.lookup('Label.label', 'background'))
+            #print(style.lookup('Label.label', 'background'))
             #self.root.tk_setPalette(background='#F0F0F0', foreground='black', activeBackground='black', activeForeground="blue")
             self.root.tk_setPalette(background='#d9d9d9', foreground='black')
 
@@ -195,18 +203,12 @@ class MainWindow():
             # determine the currently activated boards
             self.setActiveBoards()
 
-#            self.mode = self.messageVars["mode"].get()
-#            self.majorVersion = int(self.messageVars["majorVersion"].get())
-
-
-
             self.hideBBCVar = IntVar()
             self.hideBBCVar.set(1)
             self._setupWidgets()
 
             # start the main widget updater loop (repeats every 1s)
             self.updateMessage()
-
 
             self.root.mainloop()
             
@@ -329,6 +331,7 @@ class MainWindow():
 
         # obtain new message from multicast reader thread
         self.lastMessage = self.q.get(block=True)
+#        print ("Queue:", self.lastMessage["if_1"]["vdifSeconds"], d3u.vdiftimeToUTC(self.lastMessage["if_1"]["vdifEpoch"],self.lastMessage["if_1"]["vdifSeconds"]))
 
         # serialize the mc message and auto-populate StringVars
         self._initVars(self.lastMessage)
@@ -337,7 +340,7 @@ class MainWindow():
         self._setDashboardStates()
         self._setTabSamplerStates()
 
-        self.root.after(1000, self.updateMessage)
+        self.root.after(500, self.updateMessage)
     
     def _setTabSamplerStates(self):
 
@@ -380,19 +383,6 @@ class MainWindow():
                 continue
             board += 1
 
-            # adjust width of widget if content is longer than default width
-            #for k in self.messageVars.keys():
-            #        
-            #    if len(self.messageVars[k].get()) > self.txtWidth:
-            #        #try:
-            #            if self.messageComp[k]:
-            #                print (k)
-            #                print (self.messageComp.keys())
-            #                self.messageComp[k].configure(width=len(self.messageVars[k].get()))
-            #        #except:
-            #        #    print ("error setting width for: ", k)
-            #        #    pass
-                    
             # IF dashboard
             key = "if_{}_mode".format(board)
             if self.messageVars[key].get() == 'agc':
@@ -423,19 +413,20 @@ class MainWindow():
                 else:
                     self.messageComp[key].configure(style="ERROR.TButton")
 
-            # sampler dashboard
-      #      for s in range(4):
-      #          key = "if_{}_sampler{}_state".format(board, s)
-      #          state = self.messageVars[key].get()
-      #      #  # print (state)
-      #          if state == 'OK':
-      #              self.messageComp[key].configure(style="OK.TButton")
-      #          elif state == '--':
-      #              self.messageComp[key].configure(style="WARN.TButton")
-      #          elif state == 'Error':
-      #              self.messageComp[key].configure(style="ERROR.TButton")
-      #          else:
-      #              self.messageComp[key].configure(style="My.TButton")
+            # PPS
+            key = "if_{}_ppsDelay".format(board)
+            if abs(int(self.messageVars[key].get())) > 1000:
+                self.messageComp[key].configure(style="ERROR.TButton")
+            else:
+                self.messageComp[key].configure(style="OK.TButton")
+
+            # VDIF time
+            key = "if_{}_vdifTimeUTC".format(board)
+            if abs(float(self.messageVars["if_{}_vdifTimeDiff".format(board)].get())) > 5.0:
+                self.messageComp[key].configure(style="font9ERROR.TButton")
+            else:
+                self.messageComp[key].configure(style="font9OK.TButton")
+
 
         
     def _setStringVar(self, key, value):
@@ -558,6 +549,13 @@ class MainWindow():
                 ret[i] = "Error"
 
         return(ret)
+
+    def _formatMessageVar(self, key, format):
+
+        if key not in self.messageVars.keys():
+            return None
+        val = int(self.messageVars[key].get())
+        self._setStringVar(key, format.format(val))
                 
 
  #   def _getSamplerState(self, board):
@@ -649,29 +647,27 @@ class MainWindow():
             # filter powers (OCT only)
             if "if_1_filter1_power" in self.messageVars.keys():
                 #convert to scientific notation
-                val = int(self.messageVars["if_{}_filter1_power".format(board)].get())
-                self._setStringVar("if_{}_filter1_power".format(board), '{:.3e}'.format(val))
+                 self._formatMessageVar ("if_{}_filter1_power".format(board), '{:.3e}')
             if "if_1_filter2_power" in self.messageVars.keys():
                 #convert to scientific notation
-                val = int(self.messageVars["if_{}_filter2_power".format(board)].get())
-                self._setStringVar("if_{}_filter2_power".format(board), '{:.3e}'.format(val))
+                 self._formatMessageVar ("if_{}_filter2_power".format(board), '{:.3e}')
 
             # sampler specifics
             #state = self._getSamplerState(board)
             for s in range(4):
-                # sampler state summary
-                #self._setStringVar("if_{}_sampler{}_state".format(board,s), state[s])
-
                 # convert sampler powers into scientific notation
-                val = int(self.messageVars["if_{}_sampler{}_power".format(board,s)].get())
-                self._setStringVar("if_{}_sampler{}_power".format(board,s), '{:.3e}'.format(val))
-
+                self._formatMessageVar ("if_{}_sampler{}_power".format(board,s), '{:.3e}')
+                
             # process delay correlation (sampler phase)
             key = "if_{}_delayCorr".format(board)
             corrs = list(self.messageVars["if_{}_delayCorr".format(board)].get()[1:-1].split(","))
-            self._setStringVar("if_{}_delayCorr_01".format(board,s), corrs[0].strip())
-            self._setStringVar("if_{}_delayCorr_12".format(board,s), corrs[1].strip())
-            self._setStringVar("if_{}_delayCorr_23".format(board,s), corrs[2].strip())
+            self._setStringVar("if_{}_delayCorr_01".format(board), corrs[0].strip())
+            self._setStringVar("if_{}_delayCorr_12".format(board), corrs[1].strip())
+            self._setStringVar("if_{}_delayCorr_23".format(board), corrs[2].strip())
+
+            self._formatMessageVar ("if_{}_delayCorr_01".format(board), '{:.3e}')
+            self._formatMessageVar ("if_{}_delayCorr_12".format(board), '{:.3e}')
+            self._formatMessageVar ("if_{}_delayCorr_23".format(board), '{:.3e}')
 
             # sampler delay sync
             states = self._getSamplerDelayState(board)
@@ -697,6 +693,24 @@ class MainWindow():
                 for s in range(4):
                     bstats = eval(self.messageVars["if_{}_sampler{}_statsFrac".format(board, s)].get())
                     self._setStringVar("if_{}_sampler{}_statsFracShort".format(board, s), ' '.join("{:.1f}".format(i) for i in map(float,bstats))) 
+
+            # pps delay (treat negativ values)
+            # 999999930
+            val = int(self.messageVars["if_{}_ppsDelay".format(board)].get())
+            if val > 555555555:
+                self._setStringVar("if_{}_ppsDelay".format(board), str(val - 1000000000))
+
+            # different broadcast of VDIF times for different modes
+            key = "if_{}_vdifTimeUTC".format(board)
+            if self.mode == "OCT_D":
+                val = d3u.vdiftimeToUTC(int(self.messageVars["if_{}_vdifEpoch".format(board)].get()), int(self.messageVars["if_{}_vdifSeconds".format(board)].get()))
+#                print ("diff: ", self.messageVars["if_{}_vdifTimeDiff".format(board)].get(), datetime.now(timezone.utc)- val)
+            elif self.mode == "DDC_U":
+                val = self.messageVars["if_{}_vdifTime".format(board)].get()
+                #datetime_object = datetime.strptime(, '%m/%d/%y %H:%M:%S')
+            # display time portion only
+            self._setStringVar(key, val.strftime("%H:%M:%S"))
+            self._setStringVar( "if_{}_vdifTimeDiff".format(board), (datetime.now(timezone.utc)- val).total_seconds())
             
 
     def _parseMessage(self, message, pre=None):
@@ -734,6 +748,19 @@ class MainWindow():
         stats = [float(i) for i in self.messageVars["if_{}_filter{}_statsFrac".format(board, filter)].get()[1:-1].split(",")]
         #print (stats)
         yield  stats
+
+    def getPPSDelays(self):
+        '''
+        Generator method to supply the FuncAnimation with the latest pps delays
+        '''
+
+        ppsdelays = []
+
+        for i in range(1, 9):
+            if (self.activeBoards[i-1]):
+                ppsdelays.append(float(self.messageVars["if_{}_ppsDelay".format(i)].get()))
+
+        yield ppsdelays
 
     def getCounts(self):
         '''
@@ -895,21 +922,38 @@ class MainWindow():
 
         tabIF = ttk.Frame(self.notebook, height=280)
         tabIF.grid(row=0,column=0,sticky=E+W+S+N)
-        self.notebook.add(tabIF, text='Total Power') 
+        self.notebook.add(tabIF, text='Plots') 
 
-        fig, ax = plt.subplots()
-        ax.set_title ("Counts", fontsize=16)
-        ax.set_ylabel("counts", fontsize=11)
-        ax.set_xlabel("time[s]", fontsize=11)
+        fig, ax = plt.subplots(figsize=(8, 2))
+        ax.set_title ("Counts", fontsize=14)
+        ax.set_ylabel("counts", fontsize=10)
+        ax.set_xlabel("time[s]", fontsize=10)
         ax.set_ylim([30000,40000])
         ax.set_xlim([-100,0])
         ax.grid(True)
 
         pltCounts = PlotCounts(ax, self.activeBoards, 30)
+        plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
+        pltCounts.ymargin = 1000
         self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
         self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
-        self.canvasCounts.get_tk_widget().pack()
+        self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
         self.canvasCounts.draw()
+
+        fig, ax = plt.subplots(figsize=(8, 2))
+        plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
+        ax.set_title ("PPS delay", fontsize=14)
+        ax.set_ylabel("pps delay", fontsize=10)
+        ax.set_xlabel("time[s]", fontsize=10)
+        ax.set_ylim([30000,40000])
+        ax.set_xlim([-100,0])
+        ax.grid(True)
+
+        pltPPSDelays = PlotCounts(ax, self.activeBoards, 800)
+        self.aniPPSDelays = animate.FuncAnimation(fig, pltPPSDelays.update, self.getPPSDelays, interval=2000, blit=True)
+        self.canvasPPSDelays = FigureCanvasTkAgg(fig, master=tabIF)
+        self.canvasPPSDelays.get_tk_widget().grid(row=1, column=0,padx=10,pady=10)
+        self.canvasPPSDelays.draw()
 
     def _setupFrameOffset(self, parent, row, col, labelWidth, boardWidth):
 
@@ -1039,7 +1083,7 @@ class MainWindow():
                 fig, ax = plt.subplots(4,1)
                 fig.set_size_inches(0.8, 4*0.7)
                 for f in range(4):
-                    print (b,f)
+                    #print (b,f)
                     pltStats.append (PlotBstat(ax[f], self.messageVars["if_{}_sampler{}_statsFrac".format(b, f)]))
                     self.aniSamplerBstats.append( animate.FuncAnimation(fig, pltStats[count].update, interval=1000,  blit=True))
                     count += 1
@@ -1057,10 +1101,20 @@ class MainWindow():
         # define styles
         self.style = ttk.Style()
         myfont = font.Font(family="Arial", size=11)
-        smallfont = font.Font(family="Arial", size=6)
+        font6 = font.Font(family="Arial", size=6)
+        font9 = font.Font(family="Arial", size=9)
 
-        self.style.configure("Small.TButton",font=smallfont, foreground="black", relief="ridge",  justify="center", width=self.txtWidth)
-        self.style.map( "Small.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
+        self.style.configure("font6.TButton",font=font6, foreground="black", relief="ridge",  justify="center", width=self.txtWidth)
+        self.style.map( "font6.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
+
+        self.style.configure("font9.TButton",font=font9, foreground="black", relief="ridge",  justify="center", width=self.txtWidth)
+        self.style.map( "font9.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
+
+        self.style.configure("font9OK.TButton",font=font9, foreground="black", relief="ridge", background="lime green", justify="center", width=self.txtWidth)
+        self.style.map( "font9OK.TButton", foreground=[("disabled", "black")], background=[("disabled", "lime green")],justify=[("disabled", "center")])
+
+        self.style.configure("font9ERROR.TButton",font=font9, foreground="black", relief="sunken", background="red", justify="center", width=self.txtWidth)
+        self.style.map( "font9ERROR.TButton", foreground=[("disabled", "black")], background=[("disabled", "red")],justify=[("disabled", "center")])
 
         self.style.configure("My.TButton",font=myfont, foreground="black", relief="ridge",  justify="center", width=self.txtWidth)
         self.style.map( "My.TButton", foreground=[("disabled", "black")], justify=[("disabled", "center")])
@@ -1111,6 +1165,9 @@ class MainWindow():
         frmSampler = ttk.LabelFrame(self.root, text="Sampler")
         frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
+        frmTiming = ttk.LabelFrame(self.root, text="Time")
+        frmTiming.grid(row=40,column=0, sticky=E+W+N+S, padx=2,pady=2)
+
         # frmGeneral setup
         ttk.Label(frmInfo, text="mode", width=labelWidth).grid(row=2,column=0, sticky=W, padx=2)
         ttk.Label(frmInfo, text="FW Version", width=labelWidth).grid(row=3,column=0, sticky=W, padx=2)
@@ -1138,6 +1195,10 @@ class MainWindow():
 
         # frmSampler setup
         ttk.Label(frmSampler, text="in-sync", width=labelWidth).grid(row=2,column=0, sticky=W)
+    
+        # frmTiming labels
+        ttk.Label(frmTiming, text="PPS delays", width=labelWidth).grid(row=2,column=0, sticky=W)
+        ttk.Label(frmTiming, text="VDIF time", width=labelWidth).grid(row=3,column=0, sticky=W)
 
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
@@ -1173,15 +1234,20 @@ class MainWindow():
             self.messageComp["if_{}_synth_lock".format(b)].grid(row=3,column=i+1,sticky=E+W)
             self.messageComp["if_{}_synth_frequency".format(b)].grid(row=4,column=i+1,sticky=E+W)
 
-            # sampler sync
+            # frmSampler
             key ="if_{}_sync".format(b)
             self.messageComp[key] = ttk.Button(frmSampler, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
             self.messageComp[key].grid(row=2, column=i+1, sticky=E+W)
 
-            # frmSampler
-            #for s in range(4):
-            #    self.messageComp["if_{}_sampler{}_state".format(b,s)] = ttk.Button(frmSampler, style="My.TButton", state=DISABLED, textvariable=self.messageVars["if_{}_sampler{}_state".format(b,s)])
-            #    self.messageComp["if_{}_sampler{}_state".format(b,s)].grid(row=2+s, column=i+1, sticky=E+W)
+            # frmTiming
+            key ="if_{}_ppsDelay".format(b)
+            self.messageComp[key] = ttk.Button(frmTiming, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key])
+            self.messageComp[key].grid(row=2, column=i+1, sticky=E+W)
+
+            key ="if_{}_vdifTimeUTC".format(b)
+            self.messageComp[key] = ttk.Button(frmTiming, style="font9.TButton", state=DISABLED, textvariable=self.messageVars[key])
+            self.messageComp[key].grid(row=3, column=i+1, sticky=E+W)
+            
 
         # setup notebook tabs
         self._setupTabIF()
