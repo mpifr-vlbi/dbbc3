@@ -610,18 +610,28 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
         return (offset)
 
     def _parseCore3h(self,message, offset):
+        '''
+        Parses the multicast message to obtain information about the CORE3H states
+
+        Parameters:
+            message( :obj of bytes) : the multicast binary message
+            offset (int): the byte index into the message to start the parsing
+
+        Returns:
+            the byte start index of the next multicast section
+        '''
 
         for i in range(0,8):
             filter1 = {}
             filter2 = {}
             timeValue = struct.unpack('I', message[offset:offset+4])
-            self.message["if_"+str(i+1)]["vdiftime"]= struct.unpack('I', message[offset:offset+4])[0]
+            self.message["if_"+str(i+1)]["vdifTime"]= struct.unpack('I', message[offset:offset+4])[0]
             offset = offset + 4
 
-            self.message["if_"+str(i+1)]["vdifepoch"] = struct.unpack('I', message[offset:offset+4])[0]
+            self.message["if_"+str(i+1)]["vdifEpoch"] = struct.unpack('I', message[offset:offset+4])[0]
             offset = offset + 4
 
-            self.message["if_"+str(i+1)]["ppsdelay"]= struct.unpack('I', message[offset:offset+4])[0]
+            self.message["if_"+str(i+1)]["ppsDelay"]= struct.unpack('I', message[offset:offset+4])[0]
             offset = offset + 4
 
             filter1["power"] = struct.unpack('I', message[offset:offset+4])[0]
@@ -644,29 +654,6 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
             self.message["if_"+str(i+1)]["filter1"] = filter1
             self.message["if_"+str(i+1)]["filter2"] = filter2
 
-
-#            self.message["if_"+str(i+1)]["filter1_01"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter1_10"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter1_11"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter2_00"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter2_01"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter2_10"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-#            self.message["if_"+str(i+1)]["filter2_11"]= struct.unpack('I', message[offset:offset+4])[0]
-#            offset = offset + 4
-#
-    
         return(offset)
 
     
