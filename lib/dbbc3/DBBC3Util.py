@@ -23,7 +23,7 @@ __copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
-from datetime import datetime
+from datetime import datetime, timezone
 import sys
 import re
 import subprocess
@@ -52,6 +52,8 @@ def vdiftimeToUTC(epoch, seconds):
     second = (remSecs - hour*3600 - minute*60)
 
     timestamp = datetime.strptime("%s %s %s %s %s UTC" %(year, doy, hour, minute, second), "%Y %j %H %M %S %Z")
+
+    timestamp = timestamp.replace(tzinfo=timezone.utc)
 
     return(timestamp)
 
