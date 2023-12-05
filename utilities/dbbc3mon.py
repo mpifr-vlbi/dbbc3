@@ -144,18 +144,27 @@ def thread_mcPoll(name, mc, q):
 
     while True:
         #print ("polling ", datetime.now())
-        res = mc.poll()
+
+        res = {}
+        try:
+            res = mc.poll()
+            res["status"] = 1
+        except:
+            # if no multicast is received continue to try
+            print ("no connection")
+            res["status"] = 0
 
         # include receive time in the message
         res["time"] = datetime.now()
 
         seed(datetime.now().microsecond)
-        for board in range(1,9):
-            # create random values when in simulation mode
-            if (args.simulate):
-                res["if_{}".format(board)]["count"] = int(32000 + gauss(0, 1000))
-            # estimate total power from count values
-            res["if_{}".format(board)]["power"] = float(mc.message["if_{}".format(board)]["count"]) / 1420.0 + float(mc.message["if_{}".format(board)]["attenuation"]) / 2.0
+        if res["status"] == 1:
+            for board in range(1,9):
+                # create random values when in simulation mode
+                if (args.simulate):
+                    res["if_{}".format(board)]["count"] = int(32000 + gauss(0, 1000))
+                # estimate total power from count values
+                res["if_{}".format(board)]["power"] = float(mc.message["if_{}".format(board)]["count"]) / 1420.0 + float(mc.message["if_{}".format(board)]["attenuation"]) / 2.0
 
         #print ("poll:", res["if_1"]["vdifSeconds"], d3u.vdiftimeToUTC(res["if_1"]["vdifEpoch"],res["if_1"]["vdifSeconds"]))
 
@@ -334,11 +343,16 @@ class MainWindow():
 #        print ("Queue:", self.lastMessage["if_1"]["vdifSeconds"], d3u.vdiftimeToUTC(self.lastMessage["if_1"]["vdifEpoch"],self.lastMessage["if_1"]["vdifSeconds"]))
 
         # serialize the mc message and auto-populate StringVars
-        self._initVars(self.lastMessage)
+        if self.lastMessage["status"] == 1:
+            self._initVars(self.lastMessage)
 
-        # update the state of the various widgets
-        self._setDashboardStates()
-        self._setTabSamplerStates()
+            # update the state of the various widgets
+            self._setDashboardStates()
+            self._setTabSamplerStates()
+            self.messageComp["canvasStatus"].itemconfig(self.messageComp["connectLED"], fill='green')
+
+        else:
+            self.messageComp["canvasStatus"].itemconfig(self.messageComp["connectLED"], fill='red')
 
         self.root.after(500, self.updateMessage)
     
@@ -383,6 +397,12 @@ class MainWindow():
                 continue
             board += 1
 
+            # last multicast
+            if (datetime.now() - self.lastMessage["time"]).total_seconds() > 2 :
+                self.messageComp["canvasStatus"].itemconfig(self.messageComp["connectLED"], fill='red')                
+            else:
+                self.messageComp["canvasStatus"].itemconfig(self.messageComp["connectLED"], fill='green')
+
             # IF dashboard
             key = "if_{}_mode".format(board)
             if self.messageVars[key].get() == 'agc':
@@ -426,7 +446,6 @@ class MainWindow():
                 self.messageComp[key].configure(style="font9ERROR.TButton")
             else:
                 self.messageComp[key].configure(style="font9OK.TButton")
-
 
         
     def _setStringVar(self, key, value):
@@ -920,7 +939,7 @@ class MainWindow():
             
     def _setupTabIF(self):
 
-        tabIF = ttk.Frame(self.notebook, height=280)
+        tabIF = ttk.Frame(self.notebook, height=380)
         tabIF.grid(row=0,column=0,sticky=E+W+S+N)
         self.notebook.add(tabIF, text='Plots') 
 
@@ -1143,7 +1162,7 @@ class MainWindow():
 
         #Notebook tab container
         self.notebook = ttk.Notebook(self.root)
-        self.notebook.grid(row=10, column=10, rowspan=100, sticky=E+W+S+N)
+        self.notebook.grid(row=5, column=10, rowspan=100, sticky=E+W+S+N)
         self.notebook.columnconfigure(10, weight=2)
 
         if (self.mode == "DDC_U"):
@@ -1153,36 +1172,43 @@ class MainWindow():
         frmInfo = ttk.LabelFrame(self.root, text="DBBC3")
         frmInfo.grid(row=5,column=0, sticky=E+W+N+S, padx=2,pady=2)
 
-        frmTime = ttk.LabelFrame(self.root, text="Last Multicast")
-        frmTime.grid(row=5,column=10, sticky=E+W+N+S, padx=2,pady=2)
+        frmConnect = ttk.LabelFrame(self.root, text="Connection")
+        frmConnect.grid(row=5,column=1, sticky=E+W+N+S, padx=2,pady=2)
+
+        #frmTime = ttk.LabelFrame(self.root, text="Last Multicast")
+        #frmTime.grid(row=5,column=10, sticky=E+W+N+S, padx=2,pady=2)
 
         frmIf = ttk.LabelFrame(self.root, text="IF Power")
-        frmIf.grid(row=10,column=0, sticky=E+W+N+S, padx=2,pady=2)
+        frmIf.grid(row=10,column=0, columnspan=2, sticky=E+W+N+S, padx=2,pady=2)
 
         frmSynth = ttk.LabelFrame(self.root, text="Downconversion")
-        frmSynth.grid(row=20,column=0, sticky=E+W+N+S, padx=2,pady=2)
+        frmSynth.grid(row=20,column=0, columnspan=2, sticky=E+W+N+S, padx=2,pady=2)
 
         frmSampler = ttk.LabelFrame(self.root, text="Sampler")
-        frmSampler.grid(row=30,column=0, sticky=E+W+N+S, padx=2,pady=2)
+        frmSampler.grid(row=30,column=0, columnspan=2, sticky=E+W+N+S, padx=2,pady=2)
 
         frmTiming = ttk.LabelFrame(self.root, text="Time")
-        frmTiming.grid(row=40,column=0, sticky=E+W+N+S, padx=2,pady=2)
+        frmTiming.grid(row=40,column=0, columnspan=2, sticky=E+W+N+S, padx=2,pady=2)
 
         # frmGeneral setup
         ttk.Label(frmInfo, text="mode", width=labelWidth).grid(row=2,column=0, sticky=W, padx=2)
-        ttk.Label(frmInfo, text="FW Version", width=labelWidth).grid(row=3,column=0, sticky=W, padx=2)
+        ttk.Label(frmInfo, text="version", width=labelWidth).grid(row=3,column=0, sticky=W, padx=2)
         self.messageComp["mode"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["mode"])
         self.messageComp["majorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["majorVersion"])
         self.messageComp["minorVersion"] = ttk.Button(frmInfo, style="My.TButton", state=DISABLED, textvariable=self.messageVars["minorVersion"])
 
-        self.messageComp["mode"].grid(row=2,column=10, columnspan=2, sticky='ew' )
-        self.messageComp["majorVersion"].grid(row=3,column=10, sticky='ew')
-        self.messageComp["minorVersion"].grid(row=3,column=11, sticky='ew')
+        self.messageComp["mode"].grid(row=2,column=11, columnspan=2, sticky='ew' )
+        self.messageComp["majorVersion"].grid(row=3,column=11, sticky='ew')
+        self.messageComp["minorVersion"].grid(row=3,column=12, sticky='ew')
 
+        # frmConnect
+        self.messageComp["canvasStatus"] = Canvas(frmConnect, width=40, height=40)
+        self.messageComp["canvasStatus"].grid(row=1, column=1, sticky=E+W+N+S)
+        self.messageComp["connectLED"] = self.messageComp["canvasStatus"].create_oval(3,3,40,40, fill="green")
 
         # frmTime setup
-        self.messageComp["time"] = ttk.Label(frmTime, textvariable=self.messageVars["time"])
-        self.messageComp["time"].grid(row=4,column=10, columnspan=10, sticky=E+W+N+S, padx=2,pady=2)
+        #self.messageComp["time"] = ttk.Label(frmTime, textvariable=self.messageVars["time"])
+        #self.messageComp["time"].grid(row=4,column=10, columnspan=10, sticky=E+W+N+S, padx=2,pady=2)
 
         # frmIf setup
         ttk.Label(frmIf, text="counts", width=labelWidth).grid(row=2,column=0, sticky=W)
