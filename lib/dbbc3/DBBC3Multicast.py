@@ -251,6 +251,44 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         return(32)
 
+    def _parseIFMask(self, mc, offset):
+        '''
+        Parses the multicast message to obtain information about IFs (boards)
+        installed in the system and activated boards
+
+        Results are appended to the message dictionary with keys: boardPresent, boardActive.:
+        Example:
+            "boardPresent": [ true, true, true, true, false, false, false, false ]
+            "boardActive": [ true, true, true, true, false, false, false, false ]
+
+            indicating boards 0-4 being present and active
+
+        Parameters:
+            message( :obj of bytes) : the multicast binary message
+            offset (int): the byte index into the message to start the parsing
+
+        Returns:
+            the byte start index of the next multicast section
+        '''
+        
+        end = offset+2
+        res = struct.unpack('cc', mc[offset:end])
+        present = int.from_bytes(res[0], "big")
+        active = int.from_bytes(res[1], "big")
+        
+        presentList = [False] * 8
+        activeList = [False] * 8
+        for bit in range(0 , 8, 1):
+            if present >> bit  & 1== 1:
+                presentList[bit] = True
+            if active >> bit  & 1== 1:
+                activeList[bit] = True
+                
+        
+        self.message["boardPresent"] = presentList
+        self.message["boardActive"] = activeList
+
+        return end
     def _parseGcomo(self, mc, offset):
         '''
         Parses the multicast message for the GCoMo states
@@ -322,6 +360,51 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         return(offset+64)
         
 
+    def _parseAdb3l(self,message, offset):
+        '''
+        Parses the multicast message to obtain information about the ADB3L states
+
+        Parameters:
+            message( :obj of bytes) : the multicast binary message
+            offset (int): the byte index into the message to start the parsing
+
+        Returns:
+            the byte start index of the next multicast section
+        '''
+
+        # ADB3L Values
+        for i in range(0,8):
+            s0 = {}
+            s1 = {}
+            s2 = {}
+            s3 = {}
+
+            res = struct.unpack('IIII', message[offset:offset+16])
+            s0["power"] = int(res[0])
+            s1["power"] = int(res[1])
+            s2["power"] = int(res[2])
+            s3["power"] = int(res[3])
+            offset += 16
+
+            res = struct.unpack('IIII', message[offset:offset+16])
+            s0["offset"] = int(res[0])
+            s1["offset"] = int(res[1])
+            s2["offset"] = int(res[2])
+            s3["offset"] = int(res[3])
+            offset = offset + 16
+
+            res = struct.unpack('III', message[offset:offset+12])
+            # include 4 bytes zero padding
+            offset += 16
+
+            self.message["if_"+str(i+1)]["sampler0"]= s0
+            self.message["if_"+str(i+1)]["sampler1"]= s1
+            self.message["if_"+str(i+1)]["sampler2"]= s2
+            self.message["if_"+str(i+1)]["sampler3"]= s3
+
+            self.message["if_"+str(i+1)]["delayCorr"]= res
+
+        return (offset)
 
 
 class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
@@ -524,90 +607,7 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
         return(self.message)
 
 
-    def _parseIFMask(self, mc, offset):
-        '''
-        Parses the multicast message to obtain information about IFs (boards)
-        installed in the system and activated boards
 
-        Results are appended to the message dictionary with keys: boardPresent, boardActive.:
-        Example:
-            "boardPresent": [ true, true, true, true, false, false, false, false ]
-            "boardActive": [ true, true, true, true, false, false, false, false ]
-
-            indicating boards 0-4 being present and active
-
-        Parameters:
-            message( :obj of bytes) : the multicast binary message
-            offset (int): the byte index into the message to start the parsing
-
-        Returns:
-            the byte start index of the next multicast section
-        '''
-        
-        end = offset+2
-        res = struct.unpack('cc', mc[offset:end])
-        present = int.from_bytes(res[0], "big")
-        active = int.from_bytes(res[1], "big")
-        
-        presentList = [False] * 8
-        activeList = [False] * 8
-        for bit in range(0 , 8, 1):
-            if present >> bit  & 1== 1:
-                presentList[bit] = True
-            if active >> bit  & 1== 1:
-                activeList[bit] = True
-                
-        
-        self.message["boardPresent"] = presentList
-        self.message["boardActive"] = activeList
-
-        return end
-
-    def _parseAdb3l(self,message, offset):
-        '''
-        Parses the multicast message to obtain information about the ADB3L states
-
-        Parameters:
-            message( :obj of bytes) : the multicast binary message
-            offset (int): the byte index into the message to start the parsing
-
-        Returns:
-            the byte start index of the next multicast section
-        '''
-
-        # ADB3L Values
-        for i in range(0,8):
-            s0 = {}
-            s1 = {}
-            s2 = {}
-            s3 = {}
-
-            res = struct.unpack('IIII', message[offset:offset+16])
-            s0["power"] = int(res[0])
-            s1["power"] = int(res[1])
-            s2["power"] = int(res[2])
-            s3["power"] = int(res[3])
-            offset += 16
-
-            res = struct.unpack('IIII', message[offset:offset+16])
-            s0["offset"] = int(res[0])
-            s1["offset"] = int(res[1])
-            s2["offset"] = int(res[2])
-            s3["offset"] = int(res[3])
-            offset = offset + 16
-
-            res = struct.unpack('III', message[offset:offset+12])
-            # include 4 bytes zero padding
-            offset += 16
-
-            self.message["if_"+str(i+1)]["sampler0"]= s0
-            self.message["if_"+str(i+1)]["sampler1"]= s1
-            self.message["if_"+str(i+1)]["sampler2"]= s2
-            self.message["if_"+str(i+1)]["sampler3"]= s3
-
-            self.message["if_"+str(i+1)]["delayCorr"]= res
-
-        return (offset)
 
     def _parseCore3h(self,message, offset):
         '''
@@ -656,7 +656,67 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
 
         return(offset)
 
-    
 
 class DBBC3Multicast_DDC_U_126(DBBC3Multicast_DDC_U_125):
     pass
+
+class DBBC3Multicast_DSC_120(DBBC3MulticastBase):
+
+    def poll(self):
+        self.message = {}
+        valueArray = self.sock.recv(16384)
+
+        self._parseVersion(valueArray, 0)
+        nIdx = self._parseIFMask(valueArray, 32)
+        nIdx = self._parseGcomo(valueArray, nIdx)
+        nIdx = self._parseDC(valueArray, nIdx)
+        nIdx = self._parseAdb3l(valueArray, nIdx)
+        nIdx = self._parseCore3h(valueArray, nIdx)
+
+        return(self.message)
+
+    def _parseCore3h(self,message, offset):
+
+        # Core3H Values
+        for i in range(0,8):
+            s0 = self.message["if_"+str(i+1)]["sampler0"]
+            s1 = self.message["if_"+str(i+1)]["sampler1"]
+            s2 = self.message["if_"+str(i+1)]["sampler2"]
+            s3 = self.message["if_"+str(i+1)]["sampler3"]
+
+            timeValue = struct.unpack('I', message[offset:offset+4])
+            #print("Time["+str(i)+"] " +str(timeValue))
+            self.message["if_"+str(i+1)]["vdifSeconds"]= timeValue[0]
+            offset = offset + 4
+
+            self.message["if_"+str(i+1)]["vdifEpoch"] = struct.unpack('I', message[offset:offset+4])[0]
+            offset = offset + 4
+
+            ppsDelayValue = struct.unpack('I', message[offset:offset+4])
+            #print("pps_delay["+str(i)+"] " +str(ppsDelayValue))
+            self.message["if_"+str(i+1)]["ppsDelay"]= ppsDelayValue[0]
+            offset = offset + 4
+
+            res = struct.unpack('IIII', message[offset:offset+16])
+            s0["core3hpower"] = int(res[0])
+            s1["core3hpower"] = int(res[1])
+            s2["core3hpower"] = int(res[2])
+            s3["core3hpower"] = int(res[3])
+            offset += 16
+
+            s0["stats"] = struct.unpack('IIII', message[offset:offset+16])
+            offset = offset + 16
+            s1["stats"] = struct.unpack('IIII', message[offset:offset+16])
+            offset = offset + 16
+            s2["stats"] = struct.unpack('IIII', message[offset:offset+16])
+            offset = offset + 16
+            s3["stats"] = struct.unpack('IIII', message[offset:offset+16])
+            offset = offset + 16
+
+            s0["statsFrac"] = self._calcStatsPercentage(s0["stats"])
+            s1["statsFrac"] = self._calcStatsPercentage(s0["stats"])
+            s2["statsFrac"] = self._calcStatsPercentage(s0["stats"])
+            s3["statsFrac"] = self._calcStatsPercentage(s0["stats"])
+
+
+        return(offset)
