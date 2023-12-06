@@ -242,6 +242,8 @@ class MainWindow():
         elif self.mode == "DDC_U":
             self.displayOptions['tabBBC'] = True
             self.displayOptions['samplerBstateOffset'] = True
+        elif self.mode == "DSC":
+            self.displayOptions['samplerOffset'] = True
         
     def setActiveBoards(self):
 
@@ -721,15 +723,16 @@ class MainWindow():
 
             # different broadcast of VDIF times for different modes
             key = "if_{}_vdifTimeUTC".format(board)
-            if self.mode == "OCT_D":
-                val = d3u.vdiftimeToUTC(int(self.messageVars["if_{}_vdifEpoch".format(board)].get()), int(self.messageVars["if_{}_vdifSeconds".format(board)].get()))
-#                print ("diff: ", self.messageVars["if_{}_vdifTimeDiff".format(board)].get(), datetime.now(timezone.utc)- val)
-            elif self.mode == "DDC_U":
-                val = self.messageVars["if_{}_vdifTime".format(board)].get()
-                #datetime_object = datetime.strptime(, '%m/%d/%y %H:%M:%S')
+            if self.mode == "DDC_U":
+                # TODO: DDC_U versions < 126 do not contain the epoch
+                # workaround: calculate time with the current epoch based on system time
+                timestamp = d3u.vdiftimeToUTC(47, int(self.messageVars["if_{}_time".format(board)].get()))
+            else:
+                timestamp = d3u.vdiftimeToUTC(int(self.messageVars["if_{}_vdifEpoch".format(board)].get()), int(self.messageVars["if_{}_vdifSeconds".format(board)].get()))
+                
             # display time portion only
-            self._setStringVar(key, val.strftime("%H:%M:%S"))
-            self._setStringVar( "if_{}_vdifTimeDiff".format(board), (datetime.now(timezone.utc)- val).total_seconds())
+            self._setStringVar(key, timestamp.strftime("%H:%M:%S"))
+            self._setStringVar( "if_{}_vdifTimeDiff".format(board), (datetime.now(timezone.utc)- timestamp).total_seconds())
             
 
     def _parseMessage(self, message, pre=None):
@@ -1165,8 +1168,8 @@ class MainWindow():
         self.notebook.grid(row=5, column=10, rowspan=100, sticky=E+W+S+N)
         self.notebook.columnconfigure(10, weight=2)
 
-        if (self.mode == "DDC_U"):
-            self._setupWidgets_DDC_U()
+        #if (self.mode == "DDC_U"):
+        #    self._setupWidgets_DDC_U()
 
         # define the frames
         frmInfo = ttk.LabelFrame(self.root, text="DBBC3")
