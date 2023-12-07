@@ -32,18 +32,13 @@ mc = mcFactory.create()
 
 while(True):
     print ("polling")
-    mc.poll()
+    ret = mc.poll(serialize=True)
+    
+    for key,value in ret.items():
+        print (key, ": ", value)
 
-    ret = mc.message
-
-    out = json.dumps(ret, indent=2, sort_keys=True,separators=(', ', ': '))
-    print (out)
-
-#    out1 = re.sub(r'":\s*\[\s+', '": \[', out)
-#    out2 = re.sub(r'\d+,\s+', '\, ', out)
-#    out2 = re.sub(r'",', '"\, ', out1)
-#    out3 = re.sub(r'"\s+\]', '"]', out)
-#    print (out3)
+    #out = json.dumps(ret, indent=2, sort_keys=True,separators=(', ', ': '))
+    #print (out)
 
 
 
