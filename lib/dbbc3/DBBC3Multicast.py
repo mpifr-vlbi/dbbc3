@@ -33,6 +33,7 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 
+
 class DBBC3MulticastFactory(object):
     '''
     Factory class to create an instance of a Multicast sub-class matching the current DBBC3 mode and software version
@@ -157,12 +158,12 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         super().__init__()
 
-
     @property
     def lastMessage(self):
         ''' dict: Returns the last received multicast message dictionary '''
 
         return self.message
+
 
     def _connect(self, timeout):
 
@@ -176,6 +177,17 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+    def serializeMessage(self, message):
+
+        ret = self._serializeMessage(message)
+        temp = {}
+        for train in ret:
+            key = "_".join(train[:-1])
+            temp[key] =  train[-1]
+
+        return(temp)
+
+        
     def poll(self, serialize=False):
 
         self.message = {}
@@ -186,13 +198,14 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         temp = {}
         if serialize:
-            ret = self._serializeMessage(self.message)
-            for train in ret:
-                key = "_".join(train[:-1])
-                temp[key] =  train[-1]
-
-            return(temp)
-
+            return(self.serializeMessage())
+            #ret = self.serializeMessage(self.message)
+            #for train in ret:
+            #    key = "_".join(train[:-1])
+            #    temp[key] =  train[-1]
+#
+#            return(temp)
+#
 
         return(self.message)
 
@@ -491,7 +504,7 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
         nIdx = self._parseDC(valueArray, nIdx)
         nIdx = self._parseAdb3l(valueArray, nIdx)
         nIdx = self._parseCore3h(valueArray, nIdx)
-        nIdx = self._parseBBC(valueArray, nIdx)
+        nIdx = self._parseBBC(valueArray, 128, nIdx)
 
 
     def _parseAdb3l(self,message, offset):
@@ -588,10 +601,10 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
         return(offset)
     
             
-    def _parseBBC(self, message, offset):
+    def _parseBBC(self, message, numBBC, offset):
 
         # BBC Values
-        for i in range(0,128):
+        for i in range(0, numBBC):
             if i < 64:
                     ifNum = int(math.floor(i /  8)) + 1
             else:
@@ -777,4 +790,4 @@ class DBBC3Multicast_DDC_V_125(DBBC3Multicast_DDC_U_125):
         nIdx = self._parseDC(valueArray, nIdx)
         nIdx = self._parseAdb3l(valueArray, nIdx)
         nIdx = self._parseCore3h(valueArray, nIdx)
-        nIdx = self._parseBBC(valueArray, nIdx)
+        nIdx = self._parseBBC(valueArray, 64, nIdx)
