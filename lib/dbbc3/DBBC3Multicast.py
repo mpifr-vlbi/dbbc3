@@ -118,7 +118,11 @@ class DBBC3MulticastAbstract(ABC):
     '''
 
     @abstractmethod
-    def poll(self):
+    def poll(self, serialize=False):
+        pass
+
+    @abstractmethod
+    def _parseMessage(self):
         pass
 
 class DBBC3MulticastBase(DBBC3MulticastAbstract):
@@ -145,6 +149,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         self.port = port
         self.message = {} 
 
+        # connect to multicast group
         self._connect(timeout)
 
         # configure multicast layout based on mode and version
@@ -171,8 +176,57 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+    def poll(self, serialize=False):
+
+        self.message = {}
         
-    def poll(self):
+        valueArray = self.sock.recv(16384)
+
+        self._parseMessage(valueArray)
+
+        temp = {}
+        if serialize:
+            ret = self._serializeMessage(self.message)
+            for train in ret:
+                key = "_".join(train[:-1])
+                temp[key] =  train[-1]
+
+            return(temp)
+
+
+        return(self.message)
+
+        
+    def _serializeMessage(self, message, pre=None):
+        # loop over mc message and serialize it.
+        # the train of keys and values will be returned
+        # and will be used as keys for the various tkinter variables and components
+
+        pre = pre[:] if pre else []
+
+        if isinstance(message, dict):
+            for key, value in message.items():
+            #    print (key, value)
+                if isinstance(value, dict):
+            #        print ("pre: ", pre, "key: ", key)
+                    for d in self._serializeMessage(value, pre + [key]):
+            #            print (d)
+                        yield d
+                #elif isinstance(value, list) or isinstance(value, tuple):
+                #elif isinstance(value, list):
+                #    for v in value:
+                #        for d in self._parseMessage(v, pre + [key]):
+                #            print (v, d)
+                #            yield d
+                else:
+            #        print (pre + [key, value])
+                    yield pre + [key, value]
+        else:
+       #     print (pre + [self.message])
+            yield pre + [message]
+
+
+    def _parseMessage(self, valueArray):
         '''
         Poll and parse the next multicast message
 
@@ -180,13 +234,17 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
             None
         '''
 
-        self.message = {}
-        valueArray = self.sock.recv(16384)
+        self._parseMessage(valueArray, 0)
 
-        self._parseVersion(valueArray, 0)
 
 
     def _setupLayout(self):
+        '''
+        Defines the binary multicast layout for the various modes and versions.
+
+        An initial receive is carried out in order to obtain the currently running
+        mode and version
+        '''
 
         # determine mode and version
         valueArray = self.sock.recv(16384)
@@ -275,6 +333,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         res = struct.unpack('cc', mc[offset:end])
         present = int.from_bytes(res[0], "big")
         active = int.from_bytes(res[1], "big")
+
         
         presentList = [False] * 8
         activeList = [False] * 8
@@ -412,7 +471,7 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
     Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
     '''
 
-    def poll(self):
+    def _parseMessage(self, valueArray):
         '''
         Parses the multicast message
 
@@ -425,12 +484,7 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
             "mode" (str): the mode of the the running DBBC3 control software
             "if_{1..8}" (dict): dictionaries holding the parameters of IF 1-8
 
-        Returns:
-            None
         '''
-
-        self.message = {}
-        valueArray = self.sock.recv(16384)
 
         self._parseVersion(valueArray, 0)
         nIdx = self._parseGcomo(valueArray, self.gcomoOffset)
@@ -439,7 +493,6 @@ class DBBC3Multicast_DDC_U_125(DBBC3MulticastBase):
         nIdx = self._parseCore3h(valueArray, nIdx)
         nIdx = self._parseBBC(valueArray, nIdx)
 
-        return(self.message)
 
     def _parseAdb3l(self,message, offset):
 #OK
@@ -577,7 +630,7 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
     Class for parsing multicast broadcasts specific to the the DDC_U 125 mode/version.
     '''
 
-    def poll(self):
+    def _parseMessage(self, valueArray):
         '''
         Parses the multicast message
 
@@ -594,8 +647,6 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
             None
         '''
 
-        self.message = {}
-        valueArray = self.sock.recv(16384)
 
         self._parseVersion(valueArray, 0)
         nIdx = self._parseIFMask(valueArray, 32)
@@ -603,10 +654,6 @@ class DBBC3Multicast_OCT_D_120(DBBC3MulticastBase):
         nIdx = self._parseDC(valueArray, nIdx)
         nIdx = self._parseAdb3l(valueArray, nIdx)
         nIdx = self._parseCore3h(valueArray, nIdx)
-
-        return(self.message)
-
-
 
 
     def _parseCore3h(self,message, offset):
@@ -662,18 +709,13 @@ class DBBC3Multicast_DDC_U_126(DBBC3Multicast_DDC_U_125):
 
 class DBBC3Multicast_DSC_120(DBBC3MulticastBase):
 
-    def poll(self):
-        self.message = {}
-        valueArray = self.sock.recv(16384)
-
+    def _parseMessage(self, valueArray):
         self._parseVersion(valueArray, 0)
         nIdx = self._parseIFMask(valueArray, 32)
         nIdx = self._parseGcomo(valueArray, nIdx)
         nIdx = self._parseDC(valueArray, nIdx)
         nIdx = self._parseAdb3l(valueArray, nIdx)
         nIdx = self._parseCore3h(valueArray, nIdx)
-
-        return(self.message)
 
     def _parseCore3h(self,message, offset):
 
@@ -720,3 +762,19 @@ class DBBC3Multicast_DSC_120(DBBC3MulticastBase):
 
 
         return(offset)
+
+class DBBC3Multicast_DDC_V_125(DBBC3Multicast_DDC_U_125):
+
+    def _parseMessage(self, valueArray):
+        '''
+        Implementation of abstract method for the DDC_V mode
+        '''
+
+        self._parseVersion(valueArray, 0)
+        #nIdx = self._parseIFMask(valueArray, 32)
+        nIdx = 32
+        nIdx = self._parseGcomo(valueArray, nIdx)
+        nIdx = self._parseDC(valueArray, nIdx)
+        nIdx = self._parseAdb3l(valueArray, nIdx)
+        nIdx = self._parseCore3h(valueArray, nIdx)
+        nIdx = self._parseBBC(valueArray, nIdx)
