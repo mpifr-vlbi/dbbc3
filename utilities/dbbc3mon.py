@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.animation as animate
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from dbbc3.DBBC3Multicast import DBBC3MulticastFactory
+#from dbbc3.DBBC3Multicast import DBBC3MulticastFactory
+import dbbc3.DBBC3Multicast as mc
 import dbbc3.DBBC3Util as d3u
 from datetime import datetime, timezone
 import numpy as np
@@ -190,7 +191,7 @@ class MainWindow():
             self.txtWidth = 6
 
             # get the Multicast instance matching the currently loaded firmware
-            mcFactory = DBBC3MulticastFactory()
+            mcFactory = mc.DBBC3MulticastFactory()
             self.mc = mcFactory.create()
 
             # start multicast polling in its own thread
@@ -647,12 +648,11 @@ class MainWindow():
         self.samplerStates = [{},{},{},{}]
 
         # serialize multicast message 
-        ret = self._parseMessage(message)
+        messageSerial = self.mc.serializeMessage(message)
 
         # autoassign StringVars
-        for train in ret:
-            key = "_".join(train[:-1])
-            self._setStringVar(key, train[-1])
+        for key, val in messageSerial.items():
+            self._setStringVar(key, val)
 
         # special treatment for a number of message items
         for board in range(1,9):
