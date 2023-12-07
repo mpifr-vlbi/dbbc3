@@ -232,7 +232,8 @@ class MainWindow():
             'tabBBC' : False,
             'tabFilter' : False,
             'samplerBstate' : False,
-            'samplerBstateOffset' : False
+            'samplerBstateOffset' : False,
+            'vdifTime' : True
             }
 
         if self.mode == "OCT_D":
@@ -242,6 +243,11 @@ class MainWindow():
         elif self.mode == "DDC_U":
             self.displayOptions['tabBBC'] = True
             self.displayOptions['samplerBstateOffset'] = True
+        elif self.mode == "DDC_V":
+            self.displayOptions['tabBBC'] = True
+            self.displayOptions['samplerBstateOffset'] = True
+            if self.majorVersion <= 125:
+                self.displayOptions['vdifTime'] = False
         elif self.mode == "DSC":
             self.displayOptions['samplerOffset'] = True
         
@@ -723,7 +729,7 @@ class MainWindow():
 
             # different broadcast of VDIF times for different modes
             key = "if_{}_vdifTimeUTC".format(board)
-            if self.mode == "DDC_U":
+            if self.mode == "DDC_U" or self.mode == "DDC_V":
                 # TODO: DDC_U versions < 126 do not contain the epoch
                 # workaround: calculate time with the current epoch based on system time
                 timestamp = d3u.vdiftimeToUTC(47, int(self.messageVars["if_{}_time".format(board)].get()))
@@ -1227,7 +1233,8 @@ class MainWindow():
     
         # frmTiming labels
         ttk.Label(frmTiming, text="PPS delays", width=labelWidth).grid(row=2,column=0, sticky=W)
-        ttk.Label(frmTiming, text="VDIF time", width=labelWidth).grid(row=3,column=0, sticky=W)
+        if self.displayOptions["vdifTime"]:
+            ttk.Label(frmTiming, text="VDIF time", width=labelWidth).grid(row=3,column=0, sticky=W)
 
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
@@ -1275,7 +1282,8 @@ class MainWindow():
 
             key ="if_{}_vdifTimeUTC".format(b)
             self.messageComp[key] = ttk.Button(frmTiming, style="font9.TButton", state=DISABLED, textvariable=self.messageVars[key])
-            self.messageComp[key].grid(row=3, column=i+1, sticky=E+W)
+            if self.displayOptions["vdifTime"]:
+                self.messageComp[key].grid(row=3, column=i+1, sticky=E+W)
             
 
         # setup notebook tabs
