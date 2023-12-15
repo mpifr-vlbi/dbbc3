@@ -3,24 +3,26 @@
 
 Introduction
 ------------
-The :mod:`dbbc3` package provides a python interface for monitoring and control of the DBBC3 VLBI backend.
+The :mod:`dbbc3` package provides a python interface for software control of the DBBC3 VLBI backend.
 It wraps most of the commands accepted by the DBBC3 control software and provides the 
-contents of the command response in pythonic ways (dictionaries, lists etc.)
+contents of the command response in pythonic ways (dictionaries, lists etc.). For a reference of
+the available commands consult the CommandSet section.
 
-
-Installation
-------------
+In addition the package provides a number of utilities for higher level functionality like pre-observation
+validation of the DBBC3 state or  graphical monitoring of the DBBC3 parameters during the observations.
 
 Usage example
 -------------
 
 The following simple example will connect to the DBBC3 with host name "dbbc3" on the default port.
-It will assume the DBBC3 is running the firmware and latest version control software of the DDC_V mode.
-The dbbcif command is executed and the power of the first board is obtained and printed.
+After a succefull connection the currently running DBBC3 software mode and version is automatically
+determined and the corresponding command set is enabled.
+The dbbcif command is executed and the power of the first board is obtained in form of a dictionary and is printed.
 
 .. code-block:: python
 
-    dbbc3 = DBBC3(host="dbbc3", mode="DDC_V")
+    
+    dbbc3 = DBBC3(host="dbbc3")
     print (dbbc3.dbbcif(0))
     dbbc3.disconnect()
 
@@ -29,7 +31,6 @@ The dbbcif command is executed and the power of the first board is obtained and 
 
 
 .. toctree::
-   :hidden:
 
    source/introduction
    source/octd110
