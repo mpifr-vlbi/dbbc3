@@ -31,9 +31,9 @@ The dbbcif command is executed and the power of the first board is obtained in f
 
 
 .. toctree::
+   :maxdepth: 2
 
-   source/introduction
-   source/octd110
-   source/octd120
-   source/dsc110
+   source/installation    
+   source/utilities
+   source/commandsets
 
