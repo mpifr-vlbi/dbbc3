@@ -10,7 +10,7 @@ Introduction
 ------------
 The :mod:`dbbc3` package provides a python interface for monitoring and control of the DBBC3 VLBI backend.
 It wraps most of the commands accepted by the DBBC3 control software and provides the 
-contents of the command response in pythonic ways (dictionaries, lists etc.)
+contents of the command response in pythonic ways (dictionaries, lists etc.) TEST!
 
 
 Installation
