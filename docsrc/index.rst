@@ -11,9 +11,8 @@ the available commands consult the CommandSet section.
 In addition the package provides a number of utilities for higher level functionality like pre-observation
 validation of the DBBC3 state or  graphical monitoring of the DBBC3 parameters during the observations.
 
-Usage example
--------------
-
+Getting started
+---------------
 The following simple example will connect to the DBBC3 with host name "dbbc3" on the default port.
 After a succefull connection the currently running DBBC3 software mode and version is automatically
 determined and the corresponding command set is enabled.
@@ -33,7 +32,6 @@ More detailed instructions for using the python package can be found in the usag
 
 Installation
 -------------
-
 Clone the code from github::
 
     ``git clone https://github.com/mpifr-vlbi/dbbc3.git``
@@ -58,6 +56,9 @@ Using the package
 .. toctree::
    :maxdepth: 2
 
+   Introdcution
+   Getting started
+   Installtion
    source/ddcu125
    source/ddcu126
    source/installation    
