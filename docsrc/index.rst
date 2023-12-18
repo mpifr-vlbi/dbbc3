@@ -1,7 +1,3 @@
-.. contents:: In this page
-    :local:
-
-
 :mod:`dbbc3` --- python control of the DBBC3 VLBI backend
 =========================================================
 
@@ -61,6 +57,7 @@ Using the package
    :hidden:
    :maxdepth: 2
 
+   :local: 
    source/ddcu125
    source/ddcu126
    source/installation    
