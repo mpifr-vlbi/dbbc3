@@ -29,6 +29,12 @@ The dbbcif command is executed and the power of the first board is obtained in f
     Output:
     {'inputType': 2, 'attenuation': 24, 'mode': 'agc', 'count': 32095, 'target': 32000}
 
+More detailed instructions for using the python package can be found in the usage section. 
+
+Installation
+-------------
+
+
 
 .. toctree::
    :maxdepth: 2
