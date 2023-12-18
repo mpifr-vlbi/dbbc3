@@ -34,7 +34,7 @@ Installation
 -------------
 Clone the code from github::
 
-    ``git clone https://github.com/mpifr-vlbi/dbbc3.git``
+    git clone https://github.com/mpifr-vlbi/dbbc3.git
 
 Do a system wide installation (might require root priviliges)::
 
@@ -54,11 +54,9 @@ Using the package
 
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
 
-   Introdcution
-   Getting started
-   Installtion
    source/ddcu125
    source/ddcu126
    source/installation    
