@@ -54,7 +54,7 @@ Using the package
 
 
 .. toctree::
-   :hidden:
+   :hidden
    :maxdepth: 2
 
    source/ddcu125
