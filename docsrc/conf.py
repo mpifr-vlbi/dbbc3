@@ -103,7 +103,7 @@ html_theme = 'default'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'body_max_width': 'none', 'sidebarwidth': 400}
+html_theme_options = {'body_max_width': 'none', 'sidebarwidth': 400, 'prev_next_buttons_location': both}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -144,8 +144,6 @@ html_sidebars = {
         'globaltoc.html', 'searchbox.html'
     ]
 }
-# location to display Next and Previous buttons. This can be either bottom, top, both , or None.
-prev_next_buttons_location = both
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
