@@ -1,3 +1,7 @@
+.. contents:: In this page
+    :local:
+
+
 :mod:`dbbc3` --- python control of the DBBC3 VLBI backend
 =========================================================
 
