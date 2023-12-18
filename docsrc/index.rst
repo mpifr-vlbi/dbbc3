@@ -51,16 +51,15 @@ manually copied to the target location by the user.
 Using the package
 -----------------
 
-
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   :local: 
-   source/ddcu125
-   source/ddcu126
-   source/installation    
-   source/utilities
-   source/commandsets
+..
+    .. toctree::
+       :hidden:
+       :maxdepth: 2
+    
+       :local: 
+       source/ddcu125
+       source/ddcu126
+       source/installation    
+       source/utilities
+       source/commandsets
 
