@@ -48,11 +48,12 @@ Alternatively you can do a local installation (current user only):
 ``python setup.py install --user``
 
 Note: This will only install the dbbc3 package. The standalone utilities and scripts located in the utilities subdirectory must be
-manually installed by the user.
+manually copied to the target location by the user.
+
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    source/installation    
    source/utilities
