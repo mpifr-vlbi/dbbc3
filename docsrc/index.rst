@@ -50,11 +50,16 @@ Alternatively you can do a local installation (current user only)::
 Note: This will only install the dbbc3 package. The standalone utilities and scripts located in the utilities subdirectory must be
 manually copied to the target location by the user.
 
+Using the package
+-----------------
+
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
+   source/ddcu125
+   source/ddcu126
    source/installation    
    source/utilities
    source/commandsets
