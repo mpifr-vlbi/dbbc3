@@ -144,6 +144,8 @@ html_sidebars = {
         'globaltoc.html', 'searchbox.html'
     ]
 }
+# location to display Next and Previous buttons. This can be either bottom, top, both , or None.
+prev_next_buttons_location = both
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
