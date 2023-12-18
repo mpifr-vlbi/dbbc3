@@ -40,9 +40,8 @@ Clone the code from github:
 
 Do a system wide installation (might require root priviliges):
 
-.. code-block::
-    cd dbbc3/lib
-    python setup.py install
+    ``cd dbbc3/lib``
+   `` python setup.py install``
 
 Alternatively you can do a local installation (current user only):
 
