@@ -37,11 +37,10 @@ Using the package
 ..
     .. toctree::
        :maxdepth: 2
-    
-       :local: 
+
+       source/installation
        source/ddcu125
        source/ddcu126
-       source/installation    
        source/utilities
        source/commandsets
 
