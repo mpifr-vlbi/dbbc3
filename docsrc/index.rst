@@ -38,6 +38,7 @@ More detailed instructions for using the python package can be found in the usag
    :maxdepth: 2
 
    source/installation
+   source/fundamentals
    source/ddcu125
    source/ddcu126
    source/utilities
