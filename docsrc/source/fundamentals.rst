@@ -1,3 +1,4 @@
+============
 Fundamentals
 ============
 
@@ -25,7 +26,35 @@ Finally the connection should be released:
 
 Note that the  control software running on the DBBC3 computer accepts a single client connection only. Make sure that all other client connections, e.g. by the dbbc3 client software, the VLBI Field System etc. have been closed prior to starting your script.
 
+-----------------
 Command structure
 -----------------
 
-The dbbc3 commands provided by the python module tyically follow the nameing scheme of the original DBBC3 commands accepted by the DBBC3 control software.
+The dbbc3 commands provided by the python module tyically follow the nameing scheme of the original DBBC3 commands accepted by the DBBC3 control software::
+
+  python method = prefix_dbbc3CommandName
+
+Possible prefixes are:
+
+* no prefix: for general DBBC3 commands e.g. time()
+* adb3l:  for adb3l commands e.g. adb3l_reseth()
+* core3h: for core3h commands e.g. core3h_destination(...)
+
+Some examples:
+
+.. list-table:: dbbc3 vss python commands
+   :widths: 25 25
+   :header-rows: 1
+
+   * - dbbc3 command
+     - python command
+   * - command 1
+     - python 1
+   * - Row 2, column 1
+     - Row 2, column 2
+
+----------------------
+Core3h board numbering
+----------------------
+
+Unlink in the the DBBC3 control software the python packages starts numbering the core3h parts starting from 0. Alternatively all methods expecting a core board number except characters ('A' = 0, 'B' = 1 etc.)
