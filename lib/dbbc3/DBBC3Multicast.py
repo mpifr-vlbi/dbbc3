@@ -39,7 +39,7 @@ class DBBC3MulticastFactory(object):
     Factory class to create an instance of a Multicast sub-class matching the current DBBC3 mode and software version
     '''
 
-    def create(self, group="224.0.0.255", port=25000, timeout=10):
+    def create(self, group="224.0.0.255", port=25000, timeout=10, iface=None):
         """
         Return an instance of the Multicast sub-class that matches the currently running mode and software version
 
@@ -47,13 +47,14 @@ class DBBC3MulticastFactory(object):
             group (str, optional): the multicast group to use (default: 224.0.0.255)
             port (int, optional): the multicast port to use (default: 25000)
             timeout (int, optional): the socket timeout in seconds (default: 10)
+            iface (str, optional): ip of interface on which to listen (default: None, let the OS pick one)
 
         Returns:
             the instance of the multicast class matching the current mode and software version
         """
 
         # obtain mode and version from parsing message
-        mc = DBBC3MulticastBase(group, port, timeout)
+        mc = DBBC3MulticastBase(group, port, timeout, iface)
         #print (mc.message["mode"])
         #print (mc.message["majorVersion"])
          
@@ -62,7 +63,7 @@ class DBBC3MulticastFactory(object):
             csClassName = "DBBC3MulticastDefault"
         CsClass = getattr(importlib.import_module("dbbc3.DBBC3Multicast"), csClassName)
         #print (csClassName, CsClass)
-        return(CsClass(group, port ,timeout))
+        return(CsClass(group, port, timeout, iface))
 
 def _getMatchingVersion(mode, majorVersion):
     '''
@@ -141,14 +142,19 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
         group (str, optional): the multicast group to use (default: 224.0.0.255)
         port (int, optional): the multicast port to use (default: 25000)
         timeout (int, optional): the socket timeout in seconds (default: 10)
+        iface (str, optional): ip of interface on which to listen (default: None, let the OS pick one)
 '''
 
-    def __init__(self, group, port, timeout):
+    def __init__(self, group, port, timeout, iface):
 
         self.socket = None
         self.group = group
         self.port = port
-        self.message = {} 
+        self.message = {}
+        if iface is None:
+            self.iface = "0.0.0.0" # or socket.INADDR_ANY?
+        else:
+            self.iface = str(iface)
 
         # connect to multicast group
         self._connect(timeout)
@@ -173,7 +179,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         self.sock.bind((self.group, self.port))
 
-        mreq = struct.pack("4sl", socket.inet_aton(self.group), socket.INADDR_ANY)
+        mreq = socket.inet_aton(self.group) + socket.inet_aton(self.iface)
 
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
@@ -198,7 +204,7 @@ class DBBC3MulticastBase(DBBC3MulticastAbstract):
 
         temp = {}
         if serialize:
-            return(self.serializeMessage())
+            return(self.serializeMessage(self.message))
             #ret = self.serializeMessage(self.message)
             #for train in ret:
             #    key = "_".join(train[:-1])

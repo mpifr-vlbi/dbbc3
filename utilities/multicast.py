@@ -7,6 +7,7 @@ import sys
 
 MCAST_GRP = '224.0.0.255'
 MCAST_PORT = 25000
+MCAST_IFACE = '192.168.0.1'
 IS_ALL_GROUPS = True
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -17,8 +18,7 @@ if IS_ALL_GROUPS:
 else:
     # on this port, listen ONLY to MCAST_GRP
     sock.bind((MCAST_GRP, MCAST_PORT))
-mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-
+mreq = socket.inet_aton(MCAST_GRP) + socket.inet_aton(MCAST_IFACE)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 while True:
