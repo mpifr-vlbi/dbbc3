@@ -36,7 +36,7 @@ if args.boards:
 else:
     boards = [0,1,2,3,4,5,6,7]
 
-f = open(args.logfile, "w")
+f = open(args.logfile, "a")
 
 
 # write headline

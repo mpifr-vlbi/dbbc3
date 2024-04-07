@@ -37,7 +37,7 @@ if args.boards:
 else:
     boards = [0,1,2,3,4,5,6,7]
 
-f = open(args.logfile, "w")
+f = open(args.logfile, "a")
 
 
 # write headline
@@ -53,8 +53,8 @@ while True:
     line = ""
     f.write("{} ".format(datetime.now().replace(microsecond=0).isoformat()))
     for board in boards:
-#        f.write("{} ".format(mc.message["if_{0}".format(board+1)]["ppsdelay"]))
-        line += "{} ".format(mc.message["if_{0}".format(board+1)]["ppsdelay"])
+#        f.write("{} ".format(mc.message["if_{0}".format(board+1)]["ppsDelay"]))
+        line += "{} ".format(mc.message["if_{0}".format(board+1)]["ppsDelay"])
     f.write(line + "\n")
     print (line)
     f.flush()
