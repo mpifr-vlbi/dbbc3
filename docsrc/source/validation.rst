@@ -26,17 +26,17 @@ The ValidationReport can contain multiple entries of type :py:class:`dbbc3.DBBC3
 Item properties
 ---------------
 
-  action:     a description of what was validated
+  ``action``:     a description of what was validated
 
-  state:      the outcome of the the validation
+  ``state``:      the outcome of the the validation
 
-  level:      the logging level of the validation
+  ``level``:      the logging level of the validation
 
-  message:    the validation outcome message
+  ``message``:    the validation outcome message
 
-  exit:       True if the validation should trigger and exit event
+  ``exit``:       True if the validation should trigger and exit event
 
-  resolution: A message describing possible solutions for failed validations
+  ``resolution``: A message describing possible solutions for failed validations
 
 
 An example response for validating the synthesizer lock status:
