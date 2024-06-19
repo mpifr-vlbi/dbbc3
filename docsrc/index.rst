@@ -40,8 +40,8 @@ More detailed instructions for using the python package can be found in the usag
    source/installation
    source/fundamentals
    source/validation
-   source/utilities
    source/multicast
+   source/utilities
    source/ddcu125
    source/ddcu126
    source/commandsets
