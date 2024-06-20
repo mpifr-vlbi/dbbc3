@@ -48,10 +48,14 @@ Some examples:
 
    * - dbbc3 command
      - python command
-   * - command 1
-     - python 1
-   * - Row 2, column 1
-     - Row 2, column 2
+   * - time
+     - dbbc3.time()
+   * - dbbcifa=2,10
+     - dbbc3.dbbcif('A', 2, mode=10)
+   * - core3h=1,sysstat
+     - dbbc3.core3h_sysstat(0)
+   * - adb3l=reseth
+     - dbbc3.adb3l_reseth()
 
 ----------------------
 Core3h board numbering
