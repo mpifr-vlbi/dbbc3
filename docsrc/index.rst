@@ -42,7 +42,9 @@ More detailed instructions for using the python package can be found in the usag
    source/validation
    source/multicast
    source/utilities
-   source/ddcu125
+   source/dsc110
+   source/octd120
+   source/ddcv124
    source/ddcu126
    source/commandsets
 
