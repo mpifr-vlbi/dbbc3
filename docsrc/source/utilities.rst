@@ -88,3 +88,14 @@ Execute commands multiple times (e.g. 10):
 
   > ./dbbc3ctl.py -c "check synthesizer lock" –r 10 134.104.30.223
 
+dbbc3mon.py
+-----------
+
+GUI tool for monitoring the DBBC3 state (not fully implemented yet)
+
+.. image:: dbbc3mon_01.png
+
+.. image:: dbbc3mon_02.png
+
+.. image:: dbbc3mon_03.png
+
