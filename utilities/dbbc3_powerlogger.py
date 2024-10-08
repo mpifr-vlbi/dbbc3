@@ -108,7 +108,7 @@ while True:
 
     f.write("{} ".format(datetime.now().replace(microsecond=0).isoformat()))
     line = ""
-    print (mc.message["if_1"]["bbc_1"])
+#    print (mc.message["if_1"]["bbc_1"])
     for board in boards:
         # Per-whole-IF count and attenuation
         count = mc.message["if_{0}".format(board+1)]["count"]
