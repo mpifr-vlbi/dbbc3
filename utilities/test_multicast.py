@@ -15,6 +15,7 @@ def parseCommandLine():
     parser.add_argument("-g", "--group", default="224.0.0.255", type=str, help="The multicast group (default: %(default)s)")
     parser.add_argument("-m", "--mode", required=False, help="The current DBBC3 mode, e.g. OCT_D or DDC_V")
     parser.add_argument("-t", "--timeout", required=False, help="The maximum number of seconds to wait for a multicast message.")
+    parser.add_argument("-i", "--iface", default="0.0.0.0", type=str, required=False, help="The interface (IP) on which to listen for multicast messages (default: %(default)s; let the OS pick one.)")
     parser.add_argument("--use-version", dest='ver', default= "", help="The version of the DBBC3 software.  Will assume the latest release version if not specified")
 
     return(parser.parse_args())
@@ -25,10 +26,7 @@ def parseCommandLine():
 args = parseCommandLine()
 
 mcFactory = DBBC3MulticastFactory()
-mc = mcFactory.create()
-
-
-#mc = DBBC3Multicast(args.group, args.port, args.timeout)
+mc = mcFactory.create(group=args.group, port=args.port, timeout=args.timeout, iface=args.iface)
 
 while(True):
     print ("polling")

@@ -192,7 +192,7 @@ class MainWindow():
 
             # get the Multicast instance matching the currently loaded firmware
             mcFactory = mc.DBBC3MulticastFactory()
-            self.mc = mcFactory.create()
+            self.mc = mcFactory.create(group=args.group, port=args.port, timeout=args.timeout, iface=args.iface)
 
             # start multicast polling in its own thread
             self.q = queue.Queue(maxsize=1)
@@ -1310,6 +1310,7 @@ def parseCommandLine():
     parser.add_argument("-g", "--group", default="224.0.0.255", type=str, help="The multicast group (default: %(default)s)")
     parser.add_argument("-b", "--boards", dest='boards', type=lambda s: list(map(str, s.split(","))), help="A comma separated list of core boards to be used for setup and validation. Can be specified as 0,1 or A,B,.. (default: use all activated core boards)")
     parser.add_argument("-t", "--timeout", required=False, help="The maximum number of seconds to wait for a multicast message.")
+    parser.add_argument("-i", "--iface", default="0.0.0.0", type=str, required=False, help="The interface (IP) on which to listen for multicast messages (default: %(default)s; let the OS pick one.)")
     parser.add_argument("-s", "--simulate", action='store_true', required=False, help="Produce simulated IF counts.")
 
     return(parser.parse_args())
