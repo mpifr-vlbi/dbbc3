@@ -40,9 +40,11 @@ def vdiftimeToUTC(epoch, seconds):
 
     year = epoch // 2 + 2000
     if (epoch % 2) == 0:
+        # even epochs start at midnight (UTC) January 1st 
         halfYearDays = 1
     else:
-        halfYearDays = 182
+        # odd epochs start at midnight (UTC) July 1st
+        halfYearDays = 183
 
     doy = seconds // 86400 + halfYearDays
 
