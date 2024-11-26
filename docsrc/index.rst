@@ -35,7 +35,7 @@ More detailed instructions for using the python package can be found in the usag
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    source/installation
    source/fundamentals
