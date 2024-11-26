@@ -23,7 +23,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.1',
+    version='1.0.0',
 
     description='A python package for control and monitoring of the DBBC3 VLBI backend.',
     long_description=long_description,
@@ -60,7 +60,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-#        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3',
 #        'Programming Language :: Python :: 3.2',
 #        'Programming Language :: Python :: 3.3',
 #        'Programming Language :: Python :: 3.4',
