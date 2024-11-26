@@ -18,6 +18,11 @@ from signal import signal, SIGINT
 from time import sleep
 
 checkTree = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "pps":"", "system": "#board" }
+
+checkTree_DSC_110 = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "system": "#board" }
+
+checkTree_OCT_D_110 = {"recorder":"@host @interface", "sampler":{"offset":"#board","gain":"#board","phase":"#board"}, "timesync":"#board", "synthesizer":{"lock":"#board", "freq":"#board"}, "bstate": "#board", "system": "#board" }
+
 #printTree = {"setup":"#board"}
 getTree = {"version":""}
 commandTree = {"check": checkTree, "get": getTree }
@@ -114,6 +119,7 @@ class Spinner:
             self.remove_spinner(cleanup=True)
         else:
             sys.stdout.write('\r')
+
 class Prompt(Cmd):
 
     def __init__(self, dbbc3, boards, val):
@@ -203,14 +209,18 @@ class Prompt(Cmd):
             if (cmd.startswith(topic)):
                 print (cmd)
 
-    def _checkSystemOCT_D(self, boards):
+    def _checkSystem(self, boards):
+
         logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
         with Spinner(""):
             rep = val.validateSamplerPhases()
         reportResult(rep)
         for board in boards:
             logger.info ("=== Checking board {0}".format(board))
-            reportResult(val.validatePPS())
+            try:
+                reportResult(val.validatePPS())
+            except:
+                pass
             reportResult(val.validateTimesync(board))
             reportResult(val.validateSynthesizerLock(board))
             reportResult(val.validateSynthesizerFreq(board))
@@ -223,29 +233,6 @@ class Prompt(Cmd):
             reportResult(rep)
 
             reportResult(val.validateBitStatistics(board))
-
-    def _checkSystemDDC_U(self, boards):
-
-        logger.info ("=== Doing full system validation of {0} mode".format(self.dbbc3.config.mode))
-        with Spinner(""):
-            rep = val.validateSamplerPhases()
-        reportResult(rep)
-
-        for board in boards:
-            logger.info ("=== Checking board {0}".format(board))
-            reportResult(val.validatePPS())
-            reportResult(val.validateTimesync(board))
-            reportResult(val.validateSynthesizerLock(board))
-            reportResult(val.validateSynthesizerFreq(board))
-            reportResult(val.validateIFLevel(board))
-            with Spinner(""):
-                rep = val.validateSamplerPower(board)
-            reportResult(rep)
-            with Spinner(""):
-                rep = val.validateSamplerOffsets(board)
-            reportResult(rep)
-
-            reportResult(val.validateBitStatistics(board)) 
 
     def _checkSynthesizer(self, subcommand, boards):
         for board in boards:
@@ -300,14 +287,22 @@ class Prompt(Cmd):
 
         fields = args.split()
 
+        if fields[0] not in commandTree["get"].keys():
+            print ("Unknown command. Type help or ? to list commands")
+            return
+
         if fields[0] == "version":
-            print(self.dbbc3.version())
+            logger.info(str(self.dbbc3.version()))
 
     def do_check(self, args):
 
         fields = args.split()
 
         boards = self.boards
+
+        if fields[0] not in commandTree["check"].keys():
+            print ("Unknown command. Type help or ? to list commands")
+            return
         
         if fields[0] == "sampler":
             if len(fields) == 1:
@@ -340,14 +335,21 @@ class Prompt(Cmd):
             
             if len(fields) == 2:
                 boards = self._resolveBoards(fields[1])
-            if (self.dbbc3.config.mode == "DDC_U"):
-                self._noteSamplerTest()
-                self._checkSystemDDC_U(boards)
-            elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
-                self._noteSamplerTest()
-                self._checkSystemOCT_D(boards)
-            else:
-                print ("'check system' not yet supported for the current mode")
+
+            self._noteSamplerTest()
+            self._checkSystem(boards)
+
+#            if (self.dbbc3.config.mode == "DDC_U"):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            elif (self.dbbc3.config.cmdsetVersion['mode'] == "OCT_D" and self.dbbc3.config.cmdsetVersion['majorVersion'] > 110):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            elif (self.dbbc3.config.cmdsetVersion['mode'] == "DSC"):
+#                self._noteSamplerTest()
+#                self._checkSystem(boards)
+#            else:
+#                print ("'check system' not yet supported for the current mode")
             
         elif fields[0] == "recorder":
             self._checkRecorder(fields)
@@ -418,6 +420,9 @@ if __name__ == "__main__":
         parser.add_argument("-l", "--log",
              action='store_true',
              help="Write log output to file.")
+        parser.add_argument("--debug",
+             action='store_true',
+             help="Enable debug mode. Will output additional information upon running into errors.")
         parser.add_argument('ipaddress',  help="the IP address of the DBBC3 running the control software")
         
         args = parser.parse_args()
@@ -442,8 +447,14 @@ if __name__ == "__main__":
 
                 # for OCT_D mode prior to version 120 disable the calibration loop to speed up processing
                 if (ver['mode'] == "OCT_D" and int(ver['majorVersion']) < 120):
+                    commandTree["check"] = checkTree_OCT_D_110
                     logger.info( "=== Disabling calibration loop  to speed up command processing")
                     dbbc3.disableloop()
+
+                # DSC < 120  
+                if (ver['mode'] == "DSC" and int(ver['majorVersion']) < 120):
+                    print ("DSC")
+                    commandTree["check"] = checkTree_DSC_110
 
                 useBoards = []
                 #print (dbbc3.config.numCoreBoards)
@@ -457,7 +468,6 @@ if __name__ == "__main__":
                 logger.info( "=== Using boards: %s" % str(useBoards))
 
                 prompt = Prompt(dbbc3, useBoards, val)
-
                 count = 0
                 if (args.command):
                     if not args.repeat:
@@ -479,13 +489,18 @@ if __name__ == "__main__":
 
         except Exception as e:
            
-           # make compatible with python 2 and 3
-           if hasattr(e, 'message'):
+            # make compatible with python 2 and 3
+            if hasattr(e, 'message'):
                 print("An error has occured: {0}".format(e.message))
-           else:
+            else:
                 print(e)
+                
+            if (args.debug):
+                import traceback
+                print(''.join(traceback.TracebackException.from_exception(e).format()))
+                #pass
 #
-           exitClean()
+            exitClean()
                     
                 
 

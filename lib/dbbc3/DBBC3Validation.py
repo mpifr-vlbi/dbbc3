@@ -1048,7 +1048,7 @@ class DBBC3Validation_OCT_D_120(DBBC3ValidationDefault):
                 break
 
         bw = int(stop) - int(tmp[0])
-        for item in self.validateBitmask(board, bw).items():
+        for item in self.validateBitmask(board, bw).items:
             rep.add(item)
 
         return(rep)

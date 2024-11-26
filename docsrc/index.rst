@@ -1,71 +1,50 @@
-.. dbbc3 documentation master file, created by
-   sphinx-quickstart on Mon Mar 23 15:20:54 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-dbbc3 - python control of the DBBC3 VLBI backend
-************************************************
+:mod:`dbbc3` --- python control of the DBBC3 VLBI backend
+=========================================================
 
 Introduction
 ------------
-The :mod:`dbbc3` package provides a python interface for monitoring and control of the DBBC3 VLBI backend.
+
+The :mod:`dbbc3` package provides a python interface for software control of the DBBC3 VLBI backend.
 It wraps most of the commands accepted by the DBBC3 control software and provides the 
-contents of the command response in pythonic ways (dictionaries, lists etc.) 
+contents of the command response in pythonic ways (dictionaries, lists etc.). For a reference of
+the available commands consult the CommandSet section.
 
+In addition the package provides a number of utilities for higher level functionality like pre-observation
+validation of the DBBC3 state or  graphical monitoring of the DBBC3 parameters during the observations.
 
-Installation
-------------
-
-Usage example
--------------
+Getting started
+---------------
 
 The following simple example will connect to the DBBC3 with host name "dbbc3" on the default port.
-It will assume the DBBC3 is running the firmware and latest version control software of the DDC_V mode.
-The dbbcif command is executed and the power of the first board is obtained and printed.
+After a succefull connection the currently running DBBC3 software mode and version is automatically
+determined and the corresponding command set is enabled.
+The dbbcif command is executed and the power of the first board is obtained in form of a dictionary and is printed.
 
 .. code-block:: python
 
-    dbbc3 = DBBC3(host="dbbc3", mode="DDC_V")
+    
+    dbbc3 = DBBC3(host="dbbc3")
     print (dbbc3.dbbcif(0))
     dbbc3.disconnect()
 
     Output:
     {'inputType': 2, 'attenuation': 24, 'mode': 'agc', 'count': 32095, 'target': 32000}
 
-
-DBBC3 Module Reference
-----------------------
-
-    * :mod:`dbbc3.DBBC3`
-    * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_126`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_U_125`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_V_124`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DDC_L_121`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_DSC_110`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_110`
-        * :mod:`dbbc3.DBBC3Commandset.DBBC3Commandset_OCT_D_120`
-    * :mod:`dbbc3.DBBC3Config`
-    * :mod:`dbbc3.DBBC3Util`
-    * :mod:`dbbc3.DBBC3Validation`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3ValidationDefault`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_110`
-        * :mod:`dbbc3.DBBC3Validation.DBBC3Validation_OCT_D_120`
-
-    * :mod:`dbbc3.DBBC3Multicast`
-
-
-Links
------
-    * `Github project pages <https://github.com/mpifr-vlbi/dbbc3/>`_
-    * `HatLab web pages <https://www.hat-lab.cloud/>`_
+More detailed instructions for using the python package can be found in the usage section. 
 
 
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 3
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   source/installation
+   source/fundamentals
+   source/validation
+   source/multicast
+   source/utilities
+   source/dsc110
+   source/octd120
+   source/ddcv124
+   source/ddcu126
+   source/commandsets
 

@@ -24,6 +24,8 @@ __copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
+from dbbc3.DBBC3Exception import DBBC3Exception
+
 class DBBC3Config(object):
     '''
     Class for storing and handling of the DBBC3 configuration. 
@@ -72,6 +74,10 @@ class DBBC3Config(object):
             self._setupOCT_D()
         elif (self._cmdsetVersion["mode"] == "OCT_S"):
             self._setupOCT_S()
+        elif (self._cmdsetVersion["mode"] == "DSC"):
+            self._setupDSC()
+        else:
+            raise DBBC3Exception("Unsupported mode: %s" % (self._cmdsetVersion["mode"]))
 
     @property
     def host(self):
@@ -180,6 +186,13 @@ class DBBC3Config(object):
     def _setupOCT_S(self):
         '''
         Configuration settings specific to the OCT_S mode
+        '''
+        # the maximum number of BBCs per core board
+        self._maxBoardBBCs = 8
+
+    def _setupDSC(self):
+        '''
+        Configuration settings specific to the DSC mode
         '''
         # the maximum number of BBCs per core board
         self._maxBoardBBCs = 8

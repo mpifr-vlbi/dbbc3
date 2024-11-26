@@ -104,7 +104,12 @@ class DBBC3(object):
             # attach final command set
             DBBC3Commandset(self, retVersion)
 
-            # determine number of enabled GComos (should be equal to number of installed core3h boards)
+            # attempt to parse the main configuration to determine the activated CORE3H boards
+            self._config.boardStates = self._getBoardStates()
+
+            #print (self._config.boardStates)
+
+            # determine number of physically installted Core3H boards
             self._config.numCoreBoards = self._getNumCoreBoards()
 
             self._timeout = timeout
@@ -288,19 +293,69 @@ class DBBC3(object):
             if (tpint < 1 or tpint > 60):
                 raise ValueError("tpint value must be in the range 1-60")
 
+        def _getBoardStates(self):
+            '''
+            Determines the state of the Core3H boards by parsing the DBBC3 configuration file
+
+            The method tries to read the DBBC3 main configuration in order to parse the
+            state of the 8 possible Core3H boards.
+
+            Possible states:
+
+                3: the board is present and has been initialized and checked by the control software
+                30: the board is present but has not been checked upon initialization
+                0: the board is not present
+
+            Note: that some (older) DBBC3 modes do not support reading of the configuration. 
+
+            Returns:
+                list (int): A list with 8 elements containing the state for each of the Core3H boards.
+            '''
+
+            # try to read the main DBBC3 configuration
+            # not all modes support this
+            try:
+                config = self.printmainconfig()
+            except:
+                return None
+
+            boardStates = []
+
+            for i in range(2,10):
+                field = config[i].split()
+                boardStates.append (int(field[0]))
+                    
+            return(boardStates)
+
+
         def _getNumCoreBoards(self):
             '''
-            Determines the number of active GComo units by issuing dbbcif commands
-            Because the number of GComos must match the number of installed 
-            core3h boards this method is used to determine the number of boards.
+            Determines the number of Core3H boards physically installed in the DBBC3.
 
-            Note: This does not catch cases where the core3h board is installed but
+            In case the board states can be determined by reading the main DBBC3
+            configuration file the number of installed boards is obtained
+            from evaluation the states (3 and 30 being physically present).
+            
+            In case the board states are not available (for older modes) the
+            number of installed boards is obtained by issuing dbbcif commands 
+            to the GComo units which should match the number of installed Core3H 
+            boards.
+
+            Note: This does not catch cases where the core3h board is physically present but
             disabled by a prefix of 30 in the configuration file.
 
             Returns:
-                int: the number of core boards installed in the system
+                int: the number of core boards physically installed in the system
             '''
 
+            count = 0
+            if self._config.boardStates:
+                for i in range(8):
+                    if self._config.boardStates[i] == 0:
+                        continue
+                    count += 1
+                return(count)
+                
             for board in range(8):
                 if not self.dbbcif(board):
                     return(board)
