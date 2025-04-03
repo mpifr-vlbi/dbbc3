@@ -1226,7 +1226,7 @@ class MainWindow():
         ttk.Label(frmIf, text="attenuation", width=labelWidth).grid(row=5,column=0, sticky=W)
         ttk.Label(frmSynth, text="enabled", width=labelWidth).grid(row=2,column=0, sticky=W)
         ttk.Label(frmSynth, text="synth", width=labelWidth).grid(row=3,column=0, sticky=W)
-        ttk.Label(frmSynth, text="frequency", width=labelWidth).grid(row=4,column=0, sticky=W)
+        ttk.Label(frmSynth, text="frequency (*)", width=labelWidth).grid(row=4,column=0, sticky=W)
 
         # frmSampler setup
         ttk.Label(frmSampler, text="in-sync", width=labelWidth).grid(row=2,column=0, sticky=W)
@@ -1285,6 +1285,8 @@ class MainWindow():
             if self.displayOptions["vdifTime"]:
                 self.messageComp[key].grid(row=3, column=i+1, sticky=E+W)
             
+        label = ttk.Label(frmSynth, text="(*) Config values (no updates)")
+        label.grid(row=10,column=0, columnspan=5, sticky=W)
 
         # setup notebook tabs
         self._setupTabIF()
