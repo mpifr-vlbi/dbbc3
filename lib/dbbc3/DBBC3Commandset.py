@@ -3090,16 +3090,28 @@ class DBBC3Commandset_DDC_Common (DBBC3CommandsetDefault):
         # first obtain the current settings
         ret = self._dbbc(bbc, None, None, None, None)
 
+        setup = {'freq': float(ret["freq"]), 'bw': int(ret["bw"]), 'ifLabel': ret["ifLabel"], 'tpint': int(ret["tpint"])}
+
         if (freq):
-            ret["freq"] = freq 
+    
+            try:
+                setup['freq'] = float(freq)
+            except:
+                raise ValueError("BBC frequency must be floating point value")
 
             if (bw):
-                ret["bw"] = bw 
+                try:
+                    setup['bw'] = int(bw)
+                except:
+                    raise ValueError("BBC bandwidth must be an integer value")
             if (ifLabel):
-                ret["ifLabel"] = ifLabel 
+                setup["ifLabel"] = ifLabel 
             if (tpint):
-                ret["tpint"] = tpint 
-            ret = self._dbbc(bbc,ret["freq"],ret["bw"],ret["ifLabel"],ret["tpint"])
+                try:
+                    setup['tpint'] = int(tpint)
+                except:
+                    raise ValueError("BBC integration time must be an integer value")
+            ret = self._dbbc(bbc, setup["freq"], setup["bw"],setup["ifLabel"],setup["tpint"])
 
         return(ret)
 
