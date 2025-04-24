@@ -4243,6 +4243,17 @@ class DBBC3Commandset_DDC_U_126(DBBC3Commandset_DDC_U_125):
         '''
         DBBC3Commandset_DDC_U_125.__init__(self,clas)
 
+class DBBC3Commandset_DDC_E_128(DBBC3Commandset_DDC_U_126):
+    '''
+    Implementation of the DBBC3 commandset for the
+    DDC_E mode version 128
+    '''
+
+    def __init__(self, clas):
+        '''
+        '''
+        DBBC3Commandset_DDC_U_126.__init__(self,clas)
+
 class DBBC3Commandset_DDC_L_121(DBBC3Commandset_DDC_Common):
     '''
     Implementation of the DBBC3 commandset for the
