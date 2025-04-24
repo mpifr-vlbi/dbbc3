@@ -18,7 +18,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 #from dbbc3.DBBC3Multicast import DBBC3MulticastFactory
 import dbbc3.DBBC3Multicast as mc
 import dbbc3.DBBC3Util as d3u
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import numpy as np
 from matplotlib.figure import Figure
 from random import seed, gauss
@@ -729,10 +729,10 @@ class MainWindow():
 
             # different broadcast of VDIF times for different modes
             key = "if_{}_vdifTimeUTC".format(board)
-            if self.mode == "DDC_U" or self.mode == "DDC_V":
-                # TODO: DDC_U versions < 126 do not contain the epoch
+            if (self.mode == "DDC_U" and self.majorVersion <= 126) or (self.mode == "DDC_V" and self.majorVersion <= 126):
+                # TODO: DDC_U versions <= 126 do not contain the epoch
                 # workaround: calculate time with the current epoch based on system time
-                timestamp = d3u.vdiftimeToUTC(47, int(self.messageVars["if_{}_time".format(board)].get()))
+                timestamp = d3u.vdiftimeToUTC(d3u.vdifEpochOfToday() , int(self.messageVars["if_{}_time".format(board)].get()))
             else:
                 timestamp = d3u.vdiftimeToUTC(int(self.messageVars["if_{}_vdifEpoch".format(board)].get()), int(self.messageVars["if_{}_vdifSeconds".format(board)].get()))
                 
