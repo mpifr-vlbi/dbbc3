@@ -23,10 +23,24 @@ __copyright__ = "2022, Max-Planck-Institut für Radioastronomie, Bonn, Germany"
 __contact__ = "rottmann[at]mpifr-bonn.mpg.de"
 __license__ = "GPLv3"
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import sys
 import re
 import subprocess
+
+
+def vdifEpochOfToday():
+    '''
+    Calculates the VDIF epoch of today
+    '''
+
+    today = date.today()
+    epoch = (today.year -2000) * 2
+
+    if today.month > 6:
+        epoch += 1
+    
+    return(epoch)
 
 
 def vdiftimeToUTC(epoch, seconds):
