@@ -8,6 +8,7 @@ import json
 import re
 import threading
 import queue
+import sys
 from tkinter import *
 from tkinter import font
 from tkinter import ttk
@@ -265,8 +266,11 @@ class MainWindow():
         #present = np.array([1,1,1,1,1,1,1,1], dtype=bool)
         if (args.boards):
             for board in list(args.boards):
-                if present[int(board)]:
-                    self.activeBoards[int(board)] = True
+                boardNum = d3u.boardToDigit(board)
+                if boardNum > len(present):
+                    sys.exit("Invalid board specified")
+                if present[boardNum]:
+                    self.activeBoards[boardNum] = True
         else:
             if "boardActive" in self.lastMessage.keys():
                 self.activeBoards = np.array(list(self.lastMessage["boardActive"]), dtype=bool)
