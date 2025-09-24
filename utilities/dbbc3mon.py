@@ -463,7 +463,7 @@ class MainWindow():
 
             # VDIF time
             key = "if_{}_vdifTimeUTC".format(board)
-            if abs(float(self.messageVars["if_{}_vdifTimeDiff".format(board)].get())) > 5.0:
+            if abs(float(self.messageVars["if_{}_vdifTimeDiff".format(board)].get())) > 1.0:
                 self.messageComp[key].configure(style="font9ERROR.TButton")
             else:
                 self.messageComp[key].configure(style="font9OK.TButton")
