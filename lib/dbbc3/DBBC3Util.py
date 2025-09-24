@@ -29,6 +29,27 @@ import re
 import subprocess
 
 
+def boardToDigit(board):
+    '''
+    Converts the core board ID (e.g. A) into the board number (starting at 0)
+
+    Args:
+        board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+    Returns:
+        int: the core board identifier as integer (starting at 0 for board A)
+    '''
+    board = (str(board)).upper()
+
+    # if board was given as number fetch the correct board letter
+    if board.isdigit():
+        board = int(board)
+    elif board.isalpha():
+        board = ord(board) - 65
+
+    return(board)
+
+
+
 def vdifEpochOfToday():
     '''
     Calculates the VDIF epoch of today
