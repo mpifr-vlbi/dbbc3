@@ -119,6 +119,9 @@ class PlotCounts ():
                 yminVals.append( min(self.ydata[i]))
 
 
+        if len(yminVals) == 0  or len(ymaxVals) == 0:
+            return
+
         ymax = max (ymaxVals)
         ymin = min (yminVals)
 
@@ -370,36 +373,41 @@ class MainWindow():
         self.root.after(500, self.updateMessage)
     
     def _setTabSamplerStates(self):
+        '''
+        Sets the state color of the fields containing sampler relevant values (power, offset, delay)
+        '''
 
         for board in range(8):
+            states = []
+
             if not self.activeBoards[board]:
                 continue
             board += 1
         
-            # delta power
-            self._setSamplerPowerState(board)
-                
-            # delay sync
-            colType = "My.TButton"
-            states = self._getSamplerDelayState(board)
+            #  power
+            states.append( self._setSamplerPowerState(board))
+
+            # delay 
+            states.append( self._setSamplerDelayState(board))
+
+            # offset asymmetry
+            if "if_{}_sampler0_asymmetry".format(board) in self.messageComp.keys():
+                states.append(self._setSamplerOffsetAsymmetryState(board))
 
             key ="if_{}_sync".format(board)
             if ("Error" in states):
                 self.messageComp[key].configure(style="ERROR.TButton")
-            elif "OK" in states:
+                self._setStringVar("if_{}_sync".format(board), "Error")
+            elif "Warning" in states:
+                self.messageComp[key].configure(style="WARN.TButton")
+                self._setStringVar("if_{}_sync".format(board), "Warn")
+            elif "Ok" in states:
                 self.messageComp[key].configure(style="OK.TButton")
+                self._setStringVar("if_{}_sync".format(board), "OK")
             else:
                 self.messageComp[key].configure(style="OFF.TButton")
+                self._setStringVar("if_{}_sync".format(board), "--")
                 colType = "OFF.TButton"
-
-            corrs = ["01","12","23"]
-            for i in range(len(corrs)):
-                key = "if_{}_delayCorr_{}".format(board, corrs[i])
-                self.messageComp[key].configure(style=colType)
-
-            # offset asymmetry
-            if "if_{}_sampler0_asymmetry".format(board) in self.messageComp.keys():
-                self._setSamplerOffsetAsymmetryState(board)
 
 
     def _setDashboardStates(self):
@@ -515,33 +523,75 @@ class MainWindow():
 
         return(deltas)
 
-    def _setSamplerOffsetAsymmetryState(self, board):
+    def _setSamplerDelayState(self, board):
+        '''
+        Sets the color for the cells displaying the sampler delay correlation values
+        based on a threshold.
+        '''
 
-        state = []
+        state = ""
+        corrs = []
+        for corr in ["if_{}_delayCorr_01", "if_{}_delayCorr_12", "if_{}_delayCorr_23"]:
+            key = corr.format(board)
+            val = float(self.messageVars[key].get())
+            if val == 0.0:
+                self.messageComp[key].configure(style="OFF.TButton")
+                corrs.append("Off")
+            elif val < 1.55e8:
+                self.messageComp[key].configure(style="ERROR.TButton")
+                corrs.append("Error")
+            else:
+                self.messageComp[key].configure(style="OK.TButton")
+                corrs.append("Ok")
+        if "Error" in corrs:
+            state = "Error"
+        elif "Off" in corrs:
+            state = "Off"
+        else:
+            state = "Ok"
+        return (state)
+
+        
+    def _setSamplerOffsetAsymmetryState(self, board):
+        '''
+        Sets the color for the cells displaying the sampler offset assymetries
+        based on  thresholds.
+        '''
+
+        states = []
         for s in range(4):
             key = "if_{}_sampler{}_asymmetry".format(board,s)
             val = float(self.messageVars[key].get())
-            if val > 10.0:
+            if val > 2.0:
                 self.messageComp[key].configure(style="ERROR.TButton")
-            elif val > 5.0:
+                states.append("Error")
+            elif val > 1.0:
                 self.messageComp[key].configure(style="WARN.TButton")
+                states.append("Warning")
             elif val == 0.0:
                 self.messageComp[key].configure(style="OFF.TButton")
+                states.append("Off")
             else:
                 self.messageComp[key].configure(style="OK.TButton")
-                
-    
-
+                states.append("OK")
+        if "Error" in states:
+            return("Error")
+        elif "Warning" in states:
+            return("Warning")
+        elif "Off" in states:
+            return("Off")
+        else:
+            return("Ok")
         
     def _setSamplerPowerState(self, board):
         '''
-        Sets the state of the sampler powers of the specified board
+        Sets the color of the cells displaying the sampler powers of the specified board
 
         The state is evaluated based on the deviation of the power values of
         all four samplers with respect to the mean power value.
-
         '''
 
+        state = ""
         deltas = self._getSamplerPowerDelta (board)
 
         key ="if_{}_sampler_delta_power".format(board) 
@@ -551,22 +601,36 @@ class MainWindow():
         maxDelta = max(deltas)
 
         colType = "My.TButton"
-        if maxDelta > 20.0:
+        if maxDelta > 2.0:
             self.messageComp[key].configure(style="ERROR.TButton")
-        elif (maxDelta > 5.0):
+            state = "Error"
+        elif (maxDelta > 1.0):
             self.messageComp[key].configure(style="WARN.TButton")
+            state = "Warning"
         elif (maxDelta == 0.0):
             colType = "OFF.TButton"
             self.messageComp[key].configure(style="OFF.TButton")
+            state= "Off"
         else:
             self.messageComp[key].configure(style="OK.TButton")
+            state = "OK"
 
         for i in range(4):
             key = "if_{}_sampler{}_power".format(board, i)
             self.messageComp[key].configure(style=colType)
+
+        return(state)
         
 
     def _getSamplerDelayState(self, board):
+
+        '''
+        Evaluates the sampler delay states for the given board based on the delay correlation values
+
+        Returns:
+#            list (str): 4 element list with a state identifier for the 4 samplers
+    
+        '''
         
         ret = ["OK","OK","OK"]
 
@@ -577,7 +641,7 @@ class MainWindow():
             return(["--", "--", "--", "--"])
 
         for i in range(len(corrs)):
-            if int(corrs[i]) < 160000000:
+            if int(corrs[i]) < 155000000:
                 ret[i] = "Error"
 
         return(ret)
@@ -700,16 +764,18 @@ class MainWindow():
             self._formatMessageVar ("if_{}_delayCorr_12".format(board), '{:.3e}')
             self._formatMessageVar ("if_{}_delayCorr_23".format(board), '{:.3e}')
 
+            self._setStringVar("if_{}_sync".format(board), "OK")
+
             # sampler delay sync
-            states = self._getSamplerDelayState(board)
-            if ("Error" in states):
-                self._setStringVar("if_{}_sync".format(board), "Error")
-            elif ("OK" in states):
-                self._setStringVar("if_{}_sync".format(board), "OK")
-            else:
-                self._setStringVar("if_{}_sync".format(board), "--")
-                # this board is inactive (or not present)
-                
+            #states = self._getSamplerDelayState(board)
+            #if ("Error" in states):
+            #    self._setStringVar("if_{}_sync".format(board), "Error")
+            #elif ("OK" in states):
+            #    self._setStringVar("if_{}_sync".format(board), "OK")
+            #else:
+            #    self._setStringVar("if_{}_sync".format(board), "--")
+            #    # this board is inactive (or not present)
+            #    
 
             # sampler power deviation from mean
             self._setStringVar("if_{}_sampler_delta_power".format(board), "{:.2f}".format((max(self._getSamplerPowerDelta(board)))))
@@ -967,10 +1033,11 @@ class MainWindow():
         pltCounts = PlotCounts(ax, self.activeBoards, 30)
         plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
         pltCounts.ymargin = 1000
-        self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
-        self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
-        self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
-        self.canvasCounts.draw()
+        if (len(pltCounts.ydata[0]) > 0):
+            self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
+            self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
+            self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
+            self.canvasCounts.draw()
 
         fig, ax = plt.subplots(figsize=(8, 2))
         plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
@@ -1025,7 +1092,7 @@ class MainWindow():
             for sampler in range(4): 
                 key ="if_{}_sampler{}_asymmetry".format(b,sampler)
                 self.messageComp[key] = ttk.Button(frmSamplerOffset, style="My.TButton", state=DISABLED, textvariable=self.messageVars[key], width=9)
-                self.messageComp[key].grid(row=1+sampler, column=i+1, sticky=E+W)
+                self.messageComp[key].grid(row=2+sampler, column=i+1, sticky=E+W)
                 
 
     def _setupTabSampler(self):
