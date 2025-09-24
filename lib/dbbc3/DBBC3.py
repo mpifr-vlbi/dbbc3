@@ -395,7 +395,7 @@ class DBBC3(object):
             '''
             board = (str(board)).upper()
 
-            # if board was given as number fetch the correct board letter
+            # if board was given as a letter fetch the correct board number
             if board.isdigit():
                 if ((int(board) < 0) or (int(board) >= self.config.numCoreBoards)):
                     raise ValueError("Core board must be within %s" % (self.config.coreBoards))
