@@ -388,7 +388,7 @@ class MainWindow():
             states.append( self._setSamplerPowerState(board))
 
             # delay 
-            states.append( self._setSamplerDelayState(board))
+            #states.append( self._setSamplerDelayState(board))
 
             # offset asymmetry
             if "if_{}_sampler0_asymmetry".format(board) in self.messageComp.keys():
@@ -1033,7 +1033,7 @@ class MainWindow():
         pltCounts = PlotCounts(ax, self.activeBoards, 30)
         plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
         pltCounts.ymargin = 1000
-        if (len(pltCounts.ydata[0]) > 0):
+        if True:
             self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
             self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
             self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
@@ -1049,10 +1049,11 @@ class MainWindow():
         ax.grid(True)
 
         pltPPSDelays = PlotCounts(ax, self.activeBoards, 800)
-        self.aniPPSDelays = animate.FuncAnimation(fig, pltPPSDelays.update, self.getPPSDelays, interval=2000, blit=True)
-        self.canvasPPSDelays = FigureCanvasTkAgg(fig, master=tabIF)
-        self.canvasPPSDelays.get_tk_widget().grid(row=1, column=0,padx=10,pady=10)
-        self.canvasPPSDelays.draw()
+        if True:
+            self.aniPPSDelays = animate.FuncAnimation(fig, pltPPSDelays.update, self.getPPSDelays, interval=2000, blit=True)
+            self.canvasPPSDelays = FigureCanvasTkAgg(fig, master=tabIF)
+            self.canvasPPSDelays.get_tk_widget().grid(row=1, column=0,padx=10,pady=10)
+            self.canvasPPSDelays.draw()
 
     def _setupFrameOffset(self, parent, row, col, labelWidth, boardWidth):
 
@@ -1087,7 +1088,9 @@ class MainWindow():
             if not self.activeBoards[i]:
                 continue
             b = i+1
-            ttk.Label(frmSamplerOffset, text=str(b), width=boardWidth).grid(row=0,column=i+1, sticky=E+W)
+            boardStr = d3u.boardToChar(i)
+
+            ttk.Label(frmSamplerOffset, text=str(boardStr), width=boardWidth).grid(row=0,column=i+1, sticky=E+W)
 
             for sampler in range(4): 
                 key ="if_{}_sampler{}_asymmetry".format(b,sampler)
@@ -1142,13 +1145,13 @@ class MainWindow():
         for i in range(len(self.activeBoards)):
             if not self.activeBoards[i]:
                 continue
+            boardStr = d3u.boardToChar(i)
             b = i+1
-            
 
-            ttk.Label(frmSamplerPower, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerPower, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
 #            if (self.displayOptions['samplerOffset']):
 #               ttk.Label(frmSamplerOffset, text=str(b)).grid(row=1,column=i+1, sticky=E+W)
-            ttk.Label(frmSamplerDelay, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSamplerDelay, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
 
             # sampler gain
             key = "if_{}_sampler_delta_power".format(b)
@@ -1312,10 +1315,12 @@ class MainWindow():
                 #print (i, self.activeBoards[i])
                 continue
             b = i+1
+            boardStr = d3u.boardToChar(i)
 
-            ttk.Label(frmIf, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
-            ttk.Label(frmSynth, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
-            ttk.Label(frmSampler, text=str(b), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmIf, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSynth, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmSampler, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
+            ttk.Label(frmTiming, text=str(boardStr), width=boardColWidth).grid(row=1,column=i+1, sticky=E+W)
 
             #frmIf
             key = "if_{}_count".format(b)
