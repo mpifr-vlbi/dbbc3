@@ -29,6 +29,25 @@ import re
 import subprocess
 
 
+def boardToChar(board):
+    '''
+    Converts the core board number (starting at 0) into a board ID (e.g. A,B,C....)
+
+    Args:
+        board (str or int): board identifier; can be numeric e.g. 0, or char e.g. 'A'
+    Returns:
+        char: the core board identifier as uppercase char e.g. A
+    '''
+    boardStr = (str(board)).upper()
+
+    # if board was given as number fetch the correct board letter
+    if boardStr.isdigit():
+        
+        return(chr(board+65))
+    elif boardStr.isalpha():
+        return(boardStr)
+
+
 def boardToDigit(board):
     '''
     Converts the core board ID (e.g. A) into the board number (starting at 0)
@@ -79,7 +98,7 @@ def vdiftimeToUTC(epoch, seconds):
         halfYearDays = 1
     else:
         # odd epochs start at midnight (UTC) July 1st
-        halfYearDays = 183
+        halfYearDays = 182
 
     doy = seconds // 86400 + halfYearDays
 
