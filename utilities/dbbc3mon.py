@@ -399,6 +399,7 @@ class MainWindow():
             if "if_{}_sampler0_asymmetry".format(board) in self.messageComp.keys():
                 states.append(self._setSamplerOffsetAsymmetryState(board))
 
+
             key ="if_{}_sync".format(board)
             if ("Error" in states):
                 self.messageComp[key].configure(style="ERROR.TButton")
@@ -578,7 +579,7 @@ class MainWindow():
                 states.append("Off")
             else:
                 self.messageComp[key].configure(style="OK.TButton")
-                states.append("OK")
+                states.append("Ok")
         if "Error" in states:
             return("Error")
         elif "Warning" in states:
@@ -618,7 +619,7 @@ class MainWindow():
             state= "Off"
         else:
             self.messageComp[key].configure(style="OK.TButton")
-            state = "OK"
+            state = "Ok"
 
         for i in range(4):
             key = "if_{}_sampler{}_power".format(board, i)
