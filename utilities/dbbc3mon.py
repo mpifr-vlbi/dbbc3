@@ -115,15 +115,16 @@ class PlotCounts ():
             self.lines[i].set_data(self.tdata, list(self.ydata[i]))
 
             ymaxVals.append( max(self.ydata[i]))
-            if y[i] != 0:
-                yminVals.append( min(self.ydata[i]))
+            #if y[i] != 0:
+            yminVals.append( min(self.ydata[i]))
 
 
         if len(yminVals) == 0  or len(ymaxVals) == 0:
-            return
-
-        ymax = max (ymaxVals)
-        ymin = min (yminVals)
+            ymax = 100
+            ymin = -100
+        else: 
+            ymax = max (ymaxVals)
+            ymin = min (yminVals)
 
         #margin = max([ymax*0.2, 1000])
         margin = 1000
@@ -134,6 +135,10 @@ class PlotCounts ():
             resize = True
         if ymin <= self.minY or ymin - 2*self.ymargin > self.minY:
             self.minY = ymin - self.ymargin
+            resize = True
+        if (ymin == ymax):
+            self.minY = ymin -10
+            self.maxY = ymax + 10
             resize = True
         if resize:
             self.ax.set_ylim(self.minY, self.maxY)
@@ -793,6 +798,9 @@ class MainWindow():
 
             # pps delay (treat negativ values)
             # 999999930
+            # unfortunately the pps_delay is implemeted as an unsigned property in the DBBC3 as negativ delays were not foreseen.
+            # however these can occur, if e.g. a 1pps from the GPS is being used.
+            # In this case the behaviour is undefined
             val = int(self.messageVars["if_{}_ppsDelay".format(board)].get())
             if val > 555555555:
                 self._setStringVar("if_{}_ppsDelay".format(board), str(val - 1000000000))
@@ -871,7 +879,6 @@ class MainWindow():
             if (self.activeBoards[i-1]):
                 counts.append(float(self.messageVars["if_{}_count".format(i)].get()))
         
-        #print (counts)
         yield counts
 
     def _selectCboBoard(self, event):
@@ -1033,11 +1040,11 @@ class MainWindow():
         pltCounts = PlotCounts(ax, self.activeBoards, 30)
         plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
         pltCounts.ymargin = 1000
-        if True:
-            self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
-            self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
-            self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
-            self.canvasCounts.draw()
+
+        self.aniCounts = animate.FuncAnimation(fig, pltCounts.update, self.getCounts, interval=2000, blit=True)
+        self.canvasCounts = FigureCanvasTkAgg(fig, master=tabIF)
+        self.canvasCounts.get_tk_widget().grid(row=0, column=0,padx=10,pady=10)
+        self.canvasCounts.draw()
 
         fig, ax = plt.subplots(figsize=(8, 2))
         plt.subplots_adjust(left=0.1, bottom=0.25,top=0.85, wspace=0, hspace=0)
@@ -1049,11 +1056,10 @@ class MainWindow():
         ax.grid(True)
 
         pltPPSDelays = PlotCounts(ax, self.activeBoards, 800)
-        if True:
-            self.aniPPSDelays = animate.FuncAnimation(fig, pltPPSDelays.update, self.getPPSDelays, interval=2000, blit=True)
-            self.canvasPPSDelays = FigureCanvasTkAgg(fig, master=tabIF)
-            self.canvasPPSDelays.get_tk_widget().grid(row=1, column=0,padx=10,pady=10)
-            self.canvasPPSDelays.draw()
+        self.aniPPSDelays = animate.FuncAnimation(fig, pltPPSDelays.update, self.getPPSDelays, interval=2000, blit=True)
+        self.canvasPPSDelays = FigureCanvasTkAgg(fig, master=tabIF)
+        self.canvasPPSDelays.get_tk_widget().grid(row=1, column=0,padx=10,pady=10)
+        self.canvasPPSDelays.draw()
 
     def _setupFrameOffset(self, parent, row, col, labelWidth, boardWidth):
 
